@@ -1,6 +1,6 @@
-# Portfolio
+# Henry's Portfolio
 
-My projects in one place: AI tools, developer tools, strategy games and chess bots. Every project can be played from the site.
+Henry's projects in one place: AI tools, developer tools, strategy games and chess bots. Every project can be played from the site.
 
 ## Run it
 

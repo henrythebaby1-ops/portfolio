@@ -96,9 +96,17 @@ const PROJECTS = [
       <a class="pt-go" data-magnet href="${p.play}" target="_blank" rel="noopener">Launch</a>
     </li>`).join('');
 
+  // On the public site, server projects only run on my computer, so don't ping the visitor's localhost
+  const local = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
   const status = async p => {
     const dot = list.querySelector(`.pt-dot[data-id="${p.id}"]`);
     if (!p.port) { dot.className = 'pt-dot ok'; dot.title = 'Ready'; return; }
+    if (!local) {
+      dot.className = 'pt-dot local'; dot.title = 'Runs locally';
+      dot.nextElementSibling.querySelector('small').textContent = 'runs locally with node serve.mjs';
+      document.querySelectorAll(`.badge[data-port="${p.port}"]`).forEach(b => { b.textContent = 'local'; });
+      return;
+    }
     try {
       await fetch(`http://localhost:${p.port}/`, { mode: 'no-cors', cache: 'no-store' });
       dot.className = 'pt-dot ok'; dot.title = 'Server running';
