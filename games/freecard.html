@@ -1,0 +1,1978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FreeCard — Everything Free</title>
+<link href="https://fonts.googleapis.com/css2?family=gg+sans:wght@400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#313338;--sidebar:#2b2d31;--server-list:#1e1f22;--chat:#313338;
+  --input:#383a40;--text:#dcddde;--muted:#96989d;--accent:#5865f2;
+  --green:#23a55a;--gold:#f0b232;--red:#ed4245;--pink:#eb459e;
+  --hover:#35373c;--selected:#404249;--border:#1e1f22;--surface:#232428;
+  --msg-hover:#2e3035;--header:#2b2d31;
+}
+html,body{height:100%;overflow:hidden;font-family:'Outfit',sans-serif;background:#111;color:var(--text)}
+#app{display:flex;height:100vh;background:var(--bg);font-size:14px}
+
+/* TOAST */
+#toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#23a55a;color:#fff;padding:9px 22px;border-radius:8px;font-weight:600;font-size:13px;display:none;z-index:9999;white-space:nowrap;animation:toastIn .25s ease;box-shadow:0 4px 20px #0008}
+@keyframes toastIn{from{top:0;opacity:0}to{top:16px;opacity:1}}
+
+/* SERVER LIST */
+#server-list{width:72px;background:var(--server-list);display:flex;flex-direction:column;align-items:center;padding:8px 0;gap:6px;overflow-y:auto;flex-shrink:0;scrollbar-width:none}
+#server-list::-webkit-scrollbar{display:none}
+.srv-icon{width:48px;height:48px;border-radius:50%;cursor:pointer;transition:border-radius .2s,filter .2s;overflow:hidden;flex-shrink:0;position:relative;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;color:#fff;background:var(--accent);user-select:none}
+.srv-icon img{width:100%;height:100%;object-fit:cover}
+.srv-icon:hover,.srv-icon.active{border-radius:16px}
+.srv-icon.active::before{content:'';position:absolute;left:-20px;width:4px;height:38px;background:#fff;border-radius:0 4px 4px 0}
+.srv-sep{width:32px;height:2px;background:#3a3c42;border-radius:1px;flex-shrink:0}
+.srv-add{background:#36393f;font-size:22px;color:var(--green)}
+.srv-add:hover{background:var(--green);color:#fff}
+.srv-discover{background:#36393f;font-size:20px;color:var(--accent)}
+.unread-dot{position:absolute;bottom:-2px;right:-2px;width:14px;height:14px;border-radius:50%;background:var(--red);border:2px solid var(--server-list);font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center}
+
+/* LEFT PANEL */
+#left-panel{width:240px;background:var(--sidebar);display:flex;flex-direction:column;flex-shrink:0}
+#panel-header{padding:0 12px;height:48px;display:flex;align-items:center;font-weight:700;font-size:15px;border-bottom:1px solid var(--border);cursor:pointer;gap:8px;flex-shrink:0}
+#panel-header img{width:20px;height:20px;border-radius:4px;object-fit:cover}
+#panel-search{padding:8px 12px;flex-shrink:0}
+#panel-search input{width:100%;background:#1e1f22;border:none;border-radius:4px;padding:6px 10px;color:var(--text);font-size:13px;font-family:inherit;outline:none}
+#panel-search input::placeholder{color:var(--muted)}
+#panel-list{flex:1;overflow-y:auto;padding:4px 0;scrollbar-width:thin;scrollbar-color:#1a1b1e transparent}
+.panel-cat{padding:16px 8px 4px 12px;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.8px}
+.panel-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;margin:1px 6px;cursor:pointer;color:var(--muted);transition:background .1s,color .1s;position:relative}
+.panel-item:hover{background:var(--hover);color:var(--text)}
+.panel-item.active{background:var(--selected);color:#fff}
+.panel-item .pi-icon{width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;background:#36393f;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;overflow:hidden}
+.panel-item .pi-icon img{width:100%;height:100%;object-fit:cover}
+.pi-name{font-size:14px;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pi-badge{background:var(--red);color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pi-online{width:10px;height:10px;border-radius:50%;background:var(--green);flex-shrink:0}
+#user-panel{background:var(--surface);padding:8px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:0}
+.u-av{width:34px;height:34px;border-radius:50%;flex-shrink:0;position:relative;overflow:visible}
+.u-av img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.u-frame{position:absolute;inset:-3px;border-radius:50%;border:3px solid transparent;pointer-events:none}
+.u-frame.frame-gold{border-color:var(--gold);box-shadow:0 0 8px #f0b23266}
+.u-frame.frame-nitro{border-image:linear-gradient(135deg,#5865f2,#eb459e) 1;border-radius:50%;border:3px solid;border-image-slice:1}
+.u-frame.frame-fire{border-color:#ff4400;box-shadow:0 0 10px #ff440066;animation:fireAnim 1s infinite alternate}
+@keyframes fireAnim{from{box-shadow:0 0 6px #ff4400}to{box-shadow:0 0 14px #ff8800}}
+.u-status{position:absolute;bottom:-1px;right:-1px;width:12px;height:12px;border-radius:50%;background:var(--green);border:2px solid var(--surface)}
+.u-info{flex:1;min-width:0}
+.u-name{font-size:13px;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.u-tag{font-size:11px;color:var(--muted)}
+.u-actions{display:flex;gap:4px}
+.u-btn{background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;border-radius:4px;font-size:16px;transition:color .1s,background .1s}
+.u-btn:hover{color:var(--text);background:var(--hover)}
+
+/* MAIN */
+#main{flex:1;display:flex;flex-direction:column;min-width:0}
+#chat-header{height:48px;background:var(--header);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0}
+.ch-icon-img{width:24px;height:24px;border-radius:50%;object-fit:cover}
+.ch-title{font-weight:700;font-size:15px;color:#fff}
+.ch-desc{font-size:13px;color:var(--muted);margin-left:4px}
+.header-btns{margin-left:auto;display:flex;gap:4px}
+.hbtn{background:none;border:none;color:var(--muted);cursor:pointer;padding:6px 8px;border-radius:4px;font-size:14px;font-weight:600;transition:color .1s,background .1s;white-space:nowrap}
+.hbtn:hover{color:var(--text);background:var(--hover)}
+.hbtn.active{color:var(--accent)}
+#content-wrap{flex:1;display:flex;overflow:hidden}
+#chat-area{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+#messages{flex:1;overflow-y:auto;padding:16px 16px 0;display:flex;flex-direction:column;gap:2px;scrollbar-width:thin;scrollbar-color:#1a1b1e transparent}
+.msg{display:flex;gap:12px;padding:4px 8px;border-radius:6px;transition:background .1s}
+.msg:hover{background:var(--msg-hover)}
+.msg .av{width:40px;height:40px;border-radius:50%;flex-shrink:0;object-fit:cover;cursor:pointer}
+.msg-body{flex:1;min-width:0}
+.msg-head{display:flex;align-items:baseline;gap:8px;margin-bottom:2px;flex-wrap:wrap}
+.msg-name{font-weight:700;cursor:pointer}
+.msg-time{font-size:11px;color:var(--muted)}
+.msg-text{color:var(--text);line-height:1.5;word-break:break-word}
+.msg-text a{color:var(--accent)}
+.bot-tag{background:var(--accent);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;vertical-align:middle;margin-left:4px}
+.mention{color:#c9cdfb;background:#3c3f8f44;padding:0 2px;border-radius:3px}
+.msg-img{max-width:300px;max-height:220px;border-radius:8px;margin-top:6px;cursor:pointer;display:block}
+.embed{border-left:4px solid var(--accent);background:#2b2d31;border-radius:0 6px 6px 0;padding:12px;margin-top:6px;max-width:440px}
+.embed-title{font-weight:700;color:#fff;font-size:14px;margin-bottom:4px}
+.embed-desc{font-size:13px;color:var(--text);line-height:1.4}
+.embed-thumb{width:80px;height:60px;border-radius:6px;object-fit:cover;float:right;margin-left:12px}
+.embed-img{width:100%;max-height:200px;object-fit:cover;border-radius:6px;margin-top:8px}
+#msg-input-area{padding:12px 16px;flex-shrink:0}
+#msg-box{background:var(--input);border-radius:8px;display:flex;align-items:center;padding:10px 14px;gap:10px}
+#msg-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:15px;font-family:inherit}
+#msg-input::placeholder{color:var(--muted)}
+.msg-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:2px;transition:color .1s}
+.msg-btn:hover{color:var(--text)}
+
+/* RIGHT PANEL */
+#right-panel{width:240px;background:var(--sidebar);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.rp-head{padding:12px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);border-bottom:1px solid var(--border)}
+.rp-list{flex:1;overflow-y:auto;padding:8px 0;scrollbar-width:thin;scrollbar-color:#1a1b1e transparent}
+.member-item{display:flex;align-items:center;gap:10px;padding:6px 16px;cursor:pointer;border-radius:4px;margin:0 8px;transition:background .1s}
+.member-item:hover{background:var(--hover)}
+.m-av{width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;position:relative}
+.m-av img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.m-status{position:absolute;bottom:-1px;right:-1px;width:11px;height:11px;border-radius:50%;border:2px solid var(--sidebar)}
+.m-name{font-size:14px;color:var(--text);font-weight:500}
+.m-sub{font-size:11px;color:var(--muted)}
+.m-badge{font-size:13px;margin-left:2px}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(4px)}
+.modal-bg.open{display:flex}
+.modal{background:#2b2d31;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;max-height:90vh;box-shadow:0 20px 60px #0006}
+.modal-header{background:#232428;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-title{font-weight:700;font-size:17px;color:#fff}
+.modal-close{background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1;padding:0 4px}
+.modal-close:hover{color:#fff}
+.modal-body{overflow-y:auto;padding:20px;flex:1;scrollbar-width:thin;scrollbar-color:#1a1b1e transparent}
+
+/* TABS */
+.tabs{display:flex;gap:4px;background:#1e1f22;border-radius:8px;padding:4px;flex-shrink:0}
+.tab{padding:7px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);transition:all .15s;border:none;background:none;font-family:inherit}
+.tab.active{background:var(--accent);color:#fff}
+.tab:hover:not(.active){color:#fff}
+
+/* BUTTONS */
+.btn{border:none;padding:9px 20px;border-radius:4px;cursor:pointer;font-size:14px;font-weight:600;font-family:inherit;transition:filter .15s}
+.btn:hover{filter:brightness(1.1)}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-success{background:var(--green);color:#fff}
+.btn-danger{background:var(--red);color:#fff}
+.btn-ghost{background:#4e5058;color:#fff}
+.btn-sm{padding:6px 14px;font-size:13px}
+.btn-xs{padding:4px 10px;font-size:12px;border-radius:4px}
+
+/* FORMS */
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:6px}
+.form-input{width:100%;background:#1e1f22;border:1px solid #4e5058;border-radius:4px;padding:9px 12px;color:var(--text);font-size:15px;font-family:inherit;outline:none;transition:border-color .15s}
+.form-input:focus{border-color:var(--accent)}
+.form-input::placeholder{color:var(--muted)}
+textarea.form-input{resize:vertical;min-height:80px}
+
+/* GAMES */
+#chess-board{display:grid;grid-template-columns:repeat(8,1fr);border:2px solid var(--accent);border-radius:4px;overflow:hidden;max-width:320px;margin:0 auto}
+.c-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer;transition:.1s}
+.c-cell.light{background:#f0d9b5}.c-cell.dark{background:#b58863}
+.c-cell.sel{background:#7fc97f!important}.c-cell.pos{background:#7fc9c9!important}
+#orbs-board{display:grid;grid-template-columns:repeat(8,1fr);gap:3px;max-width:320px;margin:0 auto}
+.o-cell{width:36px;height:36px;border-radius:50%;cursor:pointer;transition:transform .15s;display:flex;align-items:center;justify-content:center;font-size:20px;background:#1e1f22}
+.o-cell:hover{transform:scale(1.15)}.o-cell.sel{box-shadow:0 0 0 3px #fff}
+#wordle-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;max-width:270px;margin:0 auto 12px}
+.w-cell{width:50px;height:50px;border:2px solid #4e5058;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;text-transform:uppercase;color:#fff}
+.w-cell.correct{background:#538d4e;border-color:#538d4e}.w-cell.present{background:#b59f3b;border-color:#b59f3b}.w-cell.absent{background:#3a3a3c;border-color:#3a3a3c}
+#slot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;max-width:200px;margin:12px auto;background:#1e1f22;border-radius:8px;padding:12px;border:2px solid var(--gold)}
+.slot-reel{font-size:44px;text-align:center;height:60px;display:flex;align-items:center;justify-content:center;transition:transform .3s}
+
+/* SHOP */
+.shop-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.shop-card{background:#1e1f22;border-radius:10px;overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .15s;position:relative}
+.shop-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px #0004}
+.shop-card .preview{width:100%;height:140px;object-fit:cover;background:#232428;display:flex;align-items:center;justify-content:center;font-size:52px}
+.shop-card .sc-body{padding:10px}
+.shop-card .sc-name{font-weight:700;font-size:13px;color:#fff;margin-bottom:2px}
+.shop-card .sc-price{font-size:12px;color:var(--green);font-weight:700}
+.shop-card .sc-price.free{color:var(--green)}
+.shop-card .sc-badge{position:absolute;top:8px;right:8px;background:var(--gold);color:#000;font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px}
+.frame-preview{width:80px;height:80px;border-radius:50%;position:relative;margin:0 auto 8px;display:flex;align-items:center;justify-content:center}
+.frame-preview img{width:70px;height:70px;border-radius:50%;object-fit:cover}
+
+/* DISCOVER */
+.discover-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.disc-card{background:#1e1f22;border-radius:10px;overflow:hidden;cursor:pointer;transition:transform .15s}
+.disc-card:hover{transform:translateY(-2px)}
+.disc-banner{width:100%;height:90px;object-fit:cover;background:#232428}
+.disc-body{padding:10px}
+.disc-icon{width:44px;height:44px;border-radius:12px;object-fit:cover;margin-top:-28px;border:3px solid #1e1f22;margin-bottom:6px}
+.disc-name{font-weight:700;font-size:14px;color:#fff;margin-bottom:2px}
+.disc-desc{font-size:12px;color:var(--muted);line-height:1.4;margin-bottom:8px}
+.disc-stats{display:flex;gap:12px;font-size:11px;color:var(--muted)}
+.disc-stats span{display:flex;align-items:center;gap:4px}
+.online-dot{width:7px;height:7px;border-radius:50%;background:var(--green)}
+.member-dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+
+/* DM */
+.dm-header{display:flex;align-items:center;gap:12px;padding:16px;border-bottom:1px solid var(--border)}
+.dm-av{width:48px;height:48px;border-radius:50%;object-fit:cover}
+.dm-name-big{font-size:18px;font-weight:800;color:#fff}
+.dm-status{font-size:13px;color:var(--muted)}
+
+/* PROFILE */
+.profile-modal{width:360px}
+.profile-banner{width:100%;height:100px;object-fit:cover;background:linear-gradient(135deg,var(--accent),var(--pink))}
+.profile-av-wrap{position:relative;width:80px;margin:-36px 0 0 16px}
+.profile-av{width:80px;height:80px;border-radius:50%;border:5px solid #232428;object-fit:cover}
+.profile-frame{position:absolute;inset:-5px;border-radius:50%;pointer-events:none}
+.profile-info{padding:16px}
+.profile-name{font-size:19px;font-weight:800;color:#fff}
+.profile-tag{font-size:13px;color:var(--muted)}
+.profile-bio{font-size:13px;color:var(--text);margin-top:8px;line-height:1.4}
+.profile-badges{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.p-badge{width:26px;height:26px;border-radius:4px;object-fit:cover;cursor:pointer;transition:transform .15s}
+.p-badge:hover{transform:scale(1.2)}
+.profile-section{border-top:1px solid #3a3c42;margin-top:12px;padding-top:12px}
+.ps-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:6px}
+
+/* CREATE SERVER */
+.create-opt{display:flex;align-items:center;gap:14px;background:#1e1f22;border-radius:8px;padding:14px;cursor:pointer;transition:background .15s;margin-bottom:10px}
+.create-opt:hover{background:var(--hover)}
+.create-opt .co-icon{width:44px;height:44px;border-radius:12px;object-fit:cover;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fff;flex-shrink:0}
+.create-opt .co-icon img{width:100%;height:100%;border-radius:12px;object-fit:cover}
+.create-opt h3{font-size:14px;font-weight:700;color:#fff;margin-bottom:2px}
+.create-opt p{font-size:12px;color:var(--muted)}
+
+/* NITRO HERO */
+.nitro-hero{background:linear-gradient(135deg,#5865f2 0%,#eb459e 60%,#f47b67 100%);border-radius:10px;padding:22px;text-align:center;color:#fff;margin-bottom:16px}
+.nitro-hero h2{font-size:24px;font-weight:800;margin-bottom:4px}
+.feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.feat-card{background:#1e1f22;border-radius:8px;padding:12px;display:flex;gap:10px}
+.feat-icon{width:36px;height:36px;border-radius:8px;object-fit:cover;flex-shrink:0;background:#36393f;display:flex;align-items:center;justify-content:center;font-size:18px}
+.feat-title{font-size:13px;font-weight:700;color:#fff;margin-bottom:2px}
+.feat-desc{font-size:11px;color:var(--muted)}
+
+/* NOTIFICATION */
+.notif-item{display:flex;gap:10px;padding:10px;border-radius:6px;margin-bottom:8px;background:#1e1f22;cursor:pointer;transition:background .1s}
+.notif-item:hover{background:var(--hover)}
+.notif-item.unread{border-left:3px solid var(--accent)}
+.notif-av{width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0}
+.notif-body{flex:1;min-width:0}
+.notif-name{font-weight:700;font-size:13px;color:#fff}
+.notif-text{font-size:12px;color:var(--muted);line-height:1.3}
+.notif-time{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* ANIMATIONS */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.typing{color:var(--muted);font-size:12px;padding:4px 8px;animation:pulse 1.4s infinite}
+
+/* SCROLLBARS */
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#1a1b1e;border-radius:2px}
+
+.color-swatch{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .15s,border-color .15s;flex-shrink:0;position:relative}
+.color-swatch:hover{transform:scale(1.15)}
+.color-swatch.active{border-color:#fff;box-shadow:0 0 0 2px var(--accent)}
+#edit-av-preview:hover~#edit-av-overlay,#edit-av-overlay:hover{opacity:1!important}
+.badge-card.equipped{border:2px solid var(--green)!important;box-shadow:0 0 8px #23a55a44}
+.badge-card.equipped .sc-price::before{content:'✓ '}
+.effect-card.active-effect{border:2px solid var(--accent)!important;box-shadow:0 0 8px #5865f244}
+.shop-card{transition:transform .15s,box-shadow .15s,border .1s}
+#my-effect-indicator{position:absolute;bottom:-4px;left:-4px;font-size:14px;line-height:1;pointer-events:none;animation:effectPop .6s infinite alternate}
+@keyframes effectPop{from{transform:scale(1)}to{transform:scale(1.3)}}
+/* ONBOARDING */
+.onboard-av-opt{width:100%;aspect-ratio:1;border-radius:50%;overflow:hidden;cursor:pointer;border:3px solid transparent;transition:border-color .15s,transform .15s}
+.onboard-av-opt:hover{transform:scale(1.06)}
+.onboard-av-opt.selected{border-color:var(--accent);box-shadow:0 0 0 3px #5865f244}
+.onboard-av-opt img{width:100%;height:100%;object-fit:cover;display:block}
+.onboard-banner-opt{border-radius:8px;overflow:hidden;cursor:pointer;border:3px solid transparent;transition:border-color .15s;font-size:12px;color:var(--muted);text-align:center}
+.onboard-banner-opt:hover{border-color:#4e5058}
+.onboard-banner-opt.selected{border-color:var(--accent)}
+.onboard-banner-opt img{width:100%;height:60px;object-fit:cover;display:block}
+.onboard-banner-opt span{display:block;padding:4px 0}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+
+<div id="app">
+  <!-- SERVER LIST -->
+  <div id="server-list" id="srv-list"></div>
+
+  <!-- LEFT PANEL -->
+  <div id="left-panel">
+    <div id="panel-header">
+      <span id="panel-icon" style="font-size:20px">💬</span>
+      <span id="panel-title">Direct Messages</span>
+    </div>
+    <div id="panel-search"><input placeholder="Find or start a conversation" id="search-input" oninput="filterPanel()"></div>
+    <div id="panel-list"></div>
+    <div id="user-panel" onclick="openProfile('me')">
+      <div class="u-av" id="my-av-wrap">
+        <img id="my-av" src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/User_icon_2.svg/220px-User_icon_2.svg.png" alt="me">
+        <div class="u-frame frame-gold" id="my-frame"></div>
+        <div class="u-status"></div>
+      </div>
+      <div class="u-info">
+        <div class="u-name" id="my-username">CoolUser</div>
+        <div class="u-tag" id="my-tag">Free Nitro Active 💎</div>
+      </div>
+      <div class="u-actions">
+        <button class="u-btn" onclick="event.stopPropagation();openEditProfile()" title="Settings">⚙️</button>
+        <button class="u-btn" onclick="event.stopPropagation();openModal('nitro-modal')" title="Nitro">💎</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN AREA -->
+  <div id="main">
+    <div id="chat-header">
+      <img class="ch-icon-img" id="ch-icon" src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Flag_of_South_Korea.svg/255px-Flag_of_South_Korea.svg.png" alt="">
+      <span class="ch-title" id="ch-title">general</span>
+      <span class="ch-desc" id="ch-desc">Welcome to the server!</span>
+      <div class="header-btns">
+        <button class="hbtn" onclick="openModal('notif-modal')">🔔 Notifications</button>
+        <button class="hbtn" onclick="openModal('shop-modal')">🛒 Shop</button>
+        <button class="hbtn" onclick="openModal('discover-modal')">🔭 Discover</button>
+        <button class="hbtn" onclick="openModal('games-modal')">🎮 Games</button>
+        <button class="hbtn" onclick="openModal('nitro-modal')">💎 Nitro FREE</button>
+        <button class="hbtn" onclick="toggleRightPanel()">👥</button>
+      </div>
+    </div>
+    <div id="content-wrap">
+      <div id="chat-area">
+        <div id="messages"></div>
+        <div id="typing-area"></div>
+        <div id="msg-input-area">
+          <div id="msg-box">
+            <button class="msg-btn" onclick="toast('File uploaded FREE — 500MB limit!')">➕</button>
+            <input id="msg-input" placeholder="Message #general" onkeydown="sendMsg(event)">
+            <button class="msg-btn" onclick="toast('GIF sent FREE!')">GIF</button>
+            <button class="msg-btn" onclick="toast('Animated emoji sent! (FREE with Nitro)')">😄</button>
+            <button class="msg-btn" onclick="handleSend()">➤</button>
+          </div>
+        </div>
+      </div>
+      <div id="right-panel">
+        <div class="rp-head">Members Online — <span id="member-count">5</span></div>
+        <div class="rp-list" id="members-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODALS ========== -->
+
+<!-- GAMES -->
+<div class="modal-bg" id="games-modal">
+  <div class="modal" style="width:520px">
+    <div class="modal-header">
+      <span class="modal-title">🎮 Games — All FREE</span>
+      <button class="modal-close" onclick="closeModal('games-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="tabs" style="margin-bottom:16px">
+        <button class="tab active" onclick="switchTab('games','all',this)">All Games</button>
+        <button class="tab" onclick="switchTab('games','chess',this)">Chess</button>
+        <button class="tab" onclick="switchTab('games','orbs',this)">Orbs</button>
+        <button class="tab" onclick="switchTab('games','wordle',this)">Wordle</button>
+        <button class="tab" onclick="switchTab('games','slots',this)">Slots</button>
+      </div>
+      <div id="game-tab-all" class="game-tab">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+          <div class="create-opt" style="flex-direction:column;text-align:center;cursor:pointer" onclick="switchTab('games','chess',document.querySelector('#games-modal .tabs .tab:nth-child(2)'))">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Chess_kdt45.svg/200px-Chess_kdt45.svg.png" style="width:56px;height:56px;margin:0 auto 8px">
+            <h3>Chess</h3><p style="color:var(--green);font-size:12px;font-weight:700">FREE</p>
+          </div>
+          <div class="create-opt" style="flex-direction:column;text-align:center" onclick="switchTab('games','orbs',document.querySelector('#games-modal .tabs .tab:nth-child(3)'))">
+            <div style="font-size:48px;margin-bottom:8px">🔮</div>
+            <h3>Orbs</h3><p style="color:var(--green);font-size:12px;font-weight:700">FREE</p>
+          </div>
+          <div class="create-opt" style="flex-direction:column;text-align:center" onclick="switchTab('games','wordle',document.querySelector('#games-modal .tabs .tab:nth-child(4)'))">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Wordle_196_example.svg/220px-Wordle_196_example.svg.png" style="width:56px;height:56px;margin:0 auto 8px;object-fit:contain">
+            <h3>Wordle</h3><p style="color:var(--green);font-size:12px;font-weight:700">FREE</p>
+          </div>
+          <div class="create-opt" style="flex-direction:column;text-align:center" onclick="switchTab('games','slots',document.querySelector('#games-modal .tabs .tab:nth-child(5)'))">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Slot_machine_icon.png/240px-Slot_machine_icon.png" style="width:56px;height:56px;margin:0 auto 8px;object-fit:contain" onerror="this.textContent='🎰';this.style.fontSize='48px'">
+            <h3>Slots</h3><p style="color:var(--green);font-size:12px;font-weight:700">FREE</p>
+          </div>
+          <div class="create-opt" style="flex-direction:column;text-align:center" onclick="toast('Snake coming soon!')">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Snake_icon_transparent_background.svg/200px-Snake_icon_transparent_background.svg.png" style="width:56px;height:56px;margin:0 auto 8px;object-fit:contain" onerror="this.innerHTML='🐍';this.style.fontSize='48px'">
+            <h3>Snake</h3><p style="color:var(--muted);font-size:12px">Coming Soon</p>
+          </div>
+          <div class="create-opt" style="flex-direction:column;text-align:center" onclick="toast('Trivia coming soon!')">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/QuestionMark.png/240px-QuestionMark.png" style="width:56px;height:56px;margin:0 auto 8px;object-fit:contain">
+            <h3>Trivia</h3><p style="color:var(--muted);font-size:12px">Coming Soon</p>
+          </div>
+        </div>
+      </div>
+      <div id="game-tab-chess" class="game-tab" style="display:none">
+        <div id="chess-board"></div>
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">
+          <button class="btn btn-primary btn-sm" onclick="initChess();renderChess()">New Game</button>
+          <button class="btn btn-ghost btn-sm" id="chess-turn">White's Turn</button>
+        </div>
+      </div>
+      <div id="game-tab-orbs" class="game-tab" style="display:none">
+        <p style="text-align:center;color:var(--muted);font-size:13px;margin-bottom:10px">Swap orbs to match 3+ of the same color!</p>
+        <div id="orbs-board"></div>
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">
+          <button class="btn btn-primary btn-sm" onclick="initOrbs();renderOrbs()">Shuffle</button>
+          <span id="orbs-score" style="color:var(--gold);font-weight:700;align-self:center">Score: 0</span>
+        </div>
+      </div>
+      <div id="game-tab-wordle" class="game-tab" style="display:none">
+        <div id="wordle-grid"></div>
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">
+          <input class="form-input" id="wordle-input" maxlength="5" placeholder="TYPE GUESS" style="width:160px;text-align:center;text-transform:uppercase" onkeydown="if(event.key==='Enter')wordleSubmit()">
+          <button class="btn btn-primary btn-sm" onclick="wordleSubmit()">Guess</button>
+        </div>
+        <div style="text-align:center;margin-top:8px">
+          <button class="btn btn-ghost btn-sm" onclick="initWordle();renderWordle()">New Word</button>
+        </div>
+      </div>
+      <div id="game-tab-slots" class="game-tab" style="display:none">
+        <div style="text-align:center">
+          <div id="slot-grid"><div class="slot-reel">🍒</div><div class="slot-reel">⭐</div><div class="slot-reel">7️⃣</div></div>
+          <div id="slot-result" style="color:var(--gold);font-weight:700;font-size:14px;min-height:22px;margin-bottom:12px">Spin to win FREE coins!</div>
+          <button class="btn btn-primary" onclick="spinSlots()">🎰 SPIN — FREE</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SHOP -->
+<div class="modal-bg" id="shop-modal">
+  <div class="modal" style="width:620px">
+    <div class="modal-header">
+      <span class="modal-title">🛒 FreeCard Shop — Everything $0</span>
+      <button class="modal-close" onclick="closeModal('shop-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="tabs" style="margin-bottom:16px">
+        <button class="tab active" onclick="switchTab('shop','frames',this)">Profile Frames</button>
+        <button class="tab" onclick="switchTab('shop','banners',this)">Banners</button>
+        <button class="tab" onclick="switchTab('shop','effects',this)">Effects</button>
+        <button class="tab" onclick="switchTab('shop','badges',this)">Badges</button>
+        <button class="tab" onclick="switchTab('shop','avatars',this)">Avatars</button>
+      </div>
+      <div id="shop-tab-frames">
+        <div class="shop-grid">
+          <div class="shop-card" onclick="applyFrame('gold')">
+            <div class="preview" style="background:#2a2300">
+              <div class="frame-preview">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/User_icon_2.svg/220px-User_icon_2.svg.png" style="width:60px;height:60px;border-radius:50%">
+                <div style="position:absolute;inset:-4px;border-radius:50%;border:4px solid var(--gold);box-shadow:0 0 12px #f0b23288"></div>
+              </div>
+            </div>
+            <div class="sc-body"><div class="sc-name">Golden Frame</div><div class="sc-price free">FREE</div></div>
+            <div class="sc-badge">HOT</div>
+          </div>
+          <div class="shop-card" onclick="applyFrame('nitro')">
+            <div class="preview" style="background:#1a1a2e">
+              <div class="frame-preview">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/User_icon_2.svg/220px-User_icon_2.svg.png" style="width:60px;height:60px;border-radius:50%">
+                <div style="position:absolute;inset:-4px;border-radius:50%;border:4px solid;border-image:linear-gradient(135deg,#5865f2,#eb459e) 1;box-shadow:0 0 12px #5865f266"></div>
+              </div>
+            </div>
+            <div class="sc-body"><div class="sc-name">Nitro Frame</div><div class="sc-price free">FREE</div></div>
+          </div>
+          <div class="shop-card" onclick="applyFrame('fire')">
+            <div class="preview" style="background:#1a0a00">
+              <div class="frame-preview">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/User_icon_2.svg/220px-User_icon_2.svg.png" style="width:60px;height:60px;border-radius:50%">
+                <div style="position:absolute;inset:-4px;border-radius:50%;border:4px solid #ff4400;box-shadow:0 0 14px #ff440099"></div>
+              </div>
+            </div>
+            <div class="sc-body"><div class="sc-name">Fire Frame</div><div class="sc-price free">FREE</div></div>
+          </div>
+          <div class="shop-card" onclick="applyFrame('ice')">
+            <div class="preview" style="background:#00101a">
+              <div class="frame-preview">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/User_icon_2.svg/220px-User_icon_2.svg.png" style="width:60px;height:60px;border-radius:50%">
+                <div style="position:absolute;inset:-4px;border-radius:50%;border:4px solid #00cfff;box-shadow:0 0 12px #00cfff88"></div>
+              </div>
+            </div>
+            <div class="sc-body"><div class="sc-name">Ice Frame</div><div class="sc-price free">FREE</div></div>
+          </div>
+          <div class="shop-card" onclick="applyFrame('rainbow')">
+            <div class="preview" style="background:#111">
+              <div class="frame-preview">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/User_icon_2.svg/220px-User_icon_2.svg.png" style="width:60px;height:60px;border-radius:50%">
+                <div style="position:absolute;inset:-4px;border-radius:50%;border:4px solid transparent;background:linear-gradient(#111,#111) padding-box,conic-gradient(red,orange,yellow,green,blue,violet,red) border-box"></div>
+              </div>
+            </div>
+            <div class="sc-body"><div class="sc-name">Rainbow Frame</div><div class="sc-price free">FREE</div></div>
+          </div>
+          <div class="shop-card" onclick="applyFrame('none')">
+            <div class="preview" style="background:#111">
+              <div class="frame-preview">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/User_icon_2.svg/220px-User_icon_2.svg.png" style="width:60px;height:60px;border-radius:50%">
+              </div>
+            </div>
+            <div class="sc-body"><div class="sc-name">No Frame</div><div class="sc-price free">FREE</div></div>
+          </div>
+        </div>
+      </div>
+      <div id="shop-tab-banners" style="display:none">
+        <p style="color:var(--muted);font-size:12px;margin-bottom:12px">Click any banner to apply it to your profile.</p>
+        <div class="shop-grid">
+          <div class="shop-card" onclick="applyBanner('https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Crab_Nebula.jpg/320px-Crab_Nebula.jpg','Space Galaxy')">
+            <div class="preview" style="padding:0"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Crab_Nebula.jpg/320px-Crab_Nebula.jpg" style="width:100%;height:140px;object-fit:cover"></div>
+            <div class="sc-body"><div class="sc-name">Space Galaxy</div><div class="sc-price free">FREE</div></div>
+          </div>
+          <div class="shop-card" onclick="applyBanner('https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Southwest_corner_of_Central_Park%2C_looking_east%2C_NYC.jpg/320px-Southwest_corner_of_Central_Park%2C_looking_east%2C_NYC.jpg','City Night')">
+            <div class="preview" style="padding:0"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Southwest_corner_of_Central_Park%2C_looking_east%2C_NYC.jpg/320px-Southwest_corner_of_Central_Park%2C_looking_east%2C_NYC.jpg" style="width:100%;height:140px;object-fit:cover"></div>
+            <div class="sc-body"><div class="sc-name">City Night</div><div class="sc-price free">FREE</div></div>
+          </div>
+          <div class="shop-card" onclick="applyBanner('https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/ChessSet.jpg/320px-ChessSet.jpg','Chess Classic')">
+            <div class="preview" style="padding:0"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/ChessSet.jpg/320px-ChessSet.jpg" style="width:100%;height:140px;object-fit:cover"></div>
+            <div class="sc-body"><div class="sc-name">Chess Classic</div><div class="sc-price free">FREE</div></div>
+          </div>
+          <div class="shop-card" onclick="applyBanner('https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Huskiesatrest.jpg/320px-Huskiesatrest.jpg','Puppy Vibes')">
+            <div class="preview" style="padding:0"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Huskiesatrest.jpg/320px-Huskiesatrest.jpg" style="width:100%;height:140px;object-fit:cover"></div>
+            <div class="sc-body"><div class="sc-name">Puppy Vibes</div><div class="sc-price free">FREE</div></div>
+          </div>
+          <div class="shop-card" onclick="applyBannerGradient('linear-gradient(135deg,#5865f2,#eb459e)','Nitro Gradient')">
+            <div class="preview" style="background:linear-gradient(135deg,#5865f2,#eb459e);height:140px"></div>
+            <div class="sc-body"><div class="sc-name">Nitro Gradient</div><div class="sc-price free">FREE</div></div>
+          </div>
+          <div class="shop-card" onclick="applyBannerGradient('linear-gradient(135deg,#f093fb,#f5576c,#4facfe)','Neon Dream')">
+            <div class="preview" style="background:linear-gradient(135deg,#f093fb,#f5576c,#4facfe);height:140px"></div>
+            <div class="sc-body"><div class="sc-name">Neon Dream</div><div class="sc-price free">FREE</div></div>
+          </div>
+        </div>
+      </div>
+      <div id="shop-tab-effects" style="display:none">
+        <p style="color:var(--muted);font-size:12px;margin-bottom:12px">Effects animate around your avatar in the bottom-left corner. Click to apply, click again to remove.</p>
+        <div class="shop-grid">
+          <div class="shop-card effect-card" data-effect="sparkle" onclick="applyEffect(this,'sparkle','✨','#1a1a00')">
+            <div class="preview" style="background:#111;font-size:48px;display:flex;align-items:center;justify-content:center">✨</div>
+            <div class="sc-body"><div class="sc-name">Sparkle Trail</div><div class="sc-price free">FREE</div></div>
+            <div class="sc-badge">NEW</div>
+          </div>
+          <div class="shop-card effect-card" data-effect="wave" onclick="applyEffect(this,'wave','🌊','#001a33')">
+            <div class="preview" style="background:#001a33;font-size:48px;display:flex;align-items:center;justify-content:center">🌊</div>
+            <div class="sc-body"><div class="sc-name">Ocean Wave</div><div class="sc-price free">FREE</div></div>
+          </div>
+          <div class="shop-card effect-card" data-effect="fire" onclick="applyEffect(this,'fire','🔥','#1a0500')">
+            <div class="preview" style="background:#1a0500;font-size:48px;display:flex;align-items:center;justify-content:center">🔥</div>
+            <div class="sc-body"><div class="sc-name">Fire Aura</div><div class="sc-price free">FREE</div></div>
+            <div class="sc-badge">HOT</div>
+          </div>
+          <div class="shop-card effect-card" data-effect="lightning" onclick="applyEffect(this,'lightning','⚡','#0d0d1a')">
+            <div class="preview" style="background:#0d0d1a;font-size:48px;display:flex;align-items:center;justify-content:center">⚡</div>
+            <div class="sc-body"><div class="sc-name">Lightning</div><div class="sc-price free">FREE</div></div>
+          </div>
+          <div class="shop-card effect-card" data-effect="sakura" onclick="applyEffect(this,'sakura','🌸','#1a0010')">
+            <div class="preview" style="background:#1a0010;font-size:48px;display:flex;align-items:center;justify-content:center">🌸</div>
+            <div class="sc-body"><div class="sc-name">Sakura Rain</div><div class="sc-price free">FREE</div></div>
+          </div>
+          <div class="shop-card effect-card" data-effect="galaxy" onclick="applyEffect(this,'galaxy','🌌','#000')">
+            <div class="preview" style="background:#000;font-size:48px;display:flex;align-items:center;justify-content:center">🌌</div>
+            <div class="sc-body"><div class="sc-name">Galaxy Spiral</div><div class="sc-price free">FREE</div></div>
+          </div>
+        </div>
+        <div id="active-effect-bar" style="display:none;margin-top:14px;background:#1e1f22;border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
+          <span style="color:var(--text);font-size:13px">Active: <span id="active-effect-name" style="font-weight:700;color:#fff"></span></span>
+          <button class="btn btn-ghost btn-xs" onclick="removeEffect()">Remove</button>
+        </div>
+      </div>
+      <div id="shop-tab-badges" style="display:none">
+        <p style="color:var(--muted);font-size:12px;margin-bottom:12px">Click to toggle badges on your profile. Green border = equipped.</p>
+        <div class="shop-grid" id="badges-grid">
+          <div class="shop-card badge-card" data-badge="💎" onclick="toggleBadge(this,'💎')">
+            <div class="preview" style="background:#1a0a33;font-size:52px">💎</div>
+            <div class="sc-body"><div class="sc-name">Nitro Badge</div><div class="sc-price free">FREE</div></div>
+          </div>
+          <div class="shop-card badge-card" data-badge="🏆" onclick="toggleBadge(this,'🏆')">
+            <div class="preview" style="background:#1a1200;font-size:52px">🏆</div>
+            <div class="sc-body"><div class="sc-name">Champion</div><div class="sc-price free">FREE</div></div>
+          </div>
+          <div class="shop-card badge-card" data-badge="🌟" onclick="toggleBadge(this,'🌟')">
+            <div class="preview" style="background:#001a0a;font-size:52px">🌟</div>
+            <div class="sc-body"><div class="sc-name">Early Supporter</div><div class="sc-price free">FREE</div></div>
+          </div>
+          <div class="shop-card badge-card" data-badge="🎮" onclick="toggleBadge(this,'🎮')">
+            <div class="preview" style="background:#0a0a1a;font-size:52px">🎮</div>
+            <div class="sc-body"><div class="sc-name">Pro Gamer</div><div class="sc-price free">FREE</div></div>
+          </div>
+          <div class="shop-card badge-card" data-badge="🤖" onclick="toggleBadge(this,'🤖')">
+            <div class="preview" style="background:#1a1a00;font-size:52px">🤖</div>
+            <div class="sc-body"><div class="sc-name">Bot Developer</div><div class="sc-price free">FREE</div></div>
+          </div>
+          <div class="shop-card badge-card" data-badge="👑" onclick="toggleBadge(this,'👑')">
+            <div class="preview" style="background:#1a0f00;font-size:52px">👑</div>
+            <div class="sc-body"><div class="sc-name">Server King</div><div class="sc-price free">FREE</div></div>
+          </div>
+          <div class="shop-card badge-card" data-badge="🎨" onclick="toggleBadge(this,'🎨')">
+            <div class="preview" style="background:#1a001a;font-size:52px">🎨</div>
+            <div class="sc-body"><div class="sc-name">Artist</div><div class="sc-price free">FREE</div></div>
+          </div>
+          <div class="shop-card badge-card" data-badge="⚡" onclick="toggleBadge(this,'⚡')">
+            <div class="preview" style="background:#0d0d00;font-size:52px">⚡</div>
+            <div class="sc-body"><div class="sc-name">Power User</div><div class="sc-price free">FREE</div></div>
+          </div>
+          <div class="shop-card badge-card" data-badge="🌈" onclick="toggleBadge(this,'🌈')">
+            <div class="preview" style="background:#001a1a;font-size:52px">🌈</div>
+            <div class="sc-body"><div class="sc-name">Rainbow</div><div class="sc-price free">FREE</div></div>
+          </div>
+        </div>
+      </div>
+      <div id="shop-tab-avatars" style="display:none">
+        <div class="shop-grid">
+          <div class="shop-card" onclick="setMyAvatar('https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/PNG_transparency_demonstration_1.png/240px-PNG_transparency_demonstration_1.png')">
+            <div class="preview" style="background:#111"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Dog_Breeds.jpg/320px-Dog_Breeds.jpg" style="width:100%;height:140px;object-fit:cover"></div>
+            <div class="sc-body"><div class="sc-name">Cute Dog</div><div class="sc-price free">FREE</div></div>
+          </div>
+          <div class="shop-card" onclick="setMyAvatar('https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/240px-Cat03.jpg')">
+            <div class="preview" style="padding:0"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/240px-Cat03.jpg" style="width:100%;height:140px;object-fit:cover"></div>
+            <div class="sc-body"><div class="sc-name">Cool Cat</div><div class="sc-price free">FREE</div></div>
+          </div>
+          <div class="shop-card" onclick="setMyAvatar('https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Camponotus_flavomarginatus_ant.jpg/320px-Camponotus_flavomarginatus_ant.jpg')">
+            <div class="preview" style="padding:0"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Puffer_Fish_DSC01257.jpg/320px-Puffer_Fish_DSC01257.jpg" style="width:100%;height:140px;object-fit:cover" onerror="this.style.background='#111'"></div>
+            <div class="sc-body"><div class="sc-name">Puffer Fish</div><div class="sc-price free">FREE</div></div>
+          </div>
+          <div class="shop-card" onclick="setMyAvatar('https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Six_weeks_old_cat_%28aka%29.jpg/240px-Six_weeks_old_cat_%28aka%29.jpg')">
+            <div class="preview" style="padding:0"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Cute_dog.jpg/320px-Cute_dog.jpg" style="width:100%;height:140px;object-fit:cover" onerror="this.style.background='#111'"></div>
+            <div class="sc-body"><div class="sc-name">Space Dog</div><div class="sc-price free">FREE</div></div>
+          </div>
+          <div class="shop-card" onclick="setMyAvatar('https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Huskiesatrest.jpg/320px-Huskiesatrest.jpg')">
+            <div class="preview" style="padding:0"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Huskiesatrest.jpg/320px-Huskiesatrest.jpg" style="width:100%;height:140px;object-fit:cover"></div>
+            <div class="sc-body"><div class="sc-name">Husky Pals</div><div class="sc-price free">FREE</div></div>
+          </div>
+          <div class="shop-card" onclick="document.getElementById('shop-av-input').click()" style="border:2px dashed #4e5058">
+            <div class="preview" style="background:#111;font-size:44px" id="shop-av-preview-icon">📸</div>
+            <div class="sc-body"><div class="sc-name">Upload Your Own</div><div class="sc-price free">FREE — click to browse</div></div>
+            <input type="file" id="shop-av-input" accept="image/*" style="display:none" onchange="handleShopAvatarUpload(event)">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DISCOVER -->
+<div class="modal-bg" id="discover-modal">
+  <div class="modal" style="width:680px">
+    <div class="modal-header">
+      <span class="modal-title">🔭 Discover Servers</span>
+      <button class="modal-close" onclick="closeModal('discover-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input class="form-input" placeholder="Search servers..." style="margin-bottom:16px">
+      <div class="tabs" style="margin-bottom:16px">
+        <button class="tab active" onclick="this.parentElement.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));this.classList.add('active')">Featured</button>
+        <button class="tab" onclick="this.parentElement.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));this.classList.add('active')">Gaming</button>
+        <button class="tab" onclick="this.parentElement.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));this.classList.add('active')">Science</button>
+        <button class="tab" onclick="this.parentElement.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));this.classList.add('active')">Art</button>
+        <button class="tab" onclick="this.parentElement.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));this.classList.add('active')">Music</button>
+      </div>
+      <div class="discover-grid" id="discover-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE SERVER -->
+<div class="modal-bg" id="create-modal">
+  <div class="modal" style="width:460px" id="create-modal-inner">
+    <div class="modal-header">
+      <span class="modal-title" id="create-step-title">Create a Server</span>
+      <button class="modal-close" onclick="closeModal('create-modal')">×</button>
+    </div>
+    <div class="modal-body" id="create-modal-body">
+      <p style="color:var(--muted);font-size:13px;margin-bottom:16px">Your server is where you and your friends hang out. Make yours and start talking.</p>
+      <div class="create-opt" onclick="showCreateForm('gaming')">
+        <div class="co-icon"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Chess_kdt45.svg/200px-Chess_kdt45.svg.png" style="width:100%;height:100%;border-radius:12px;object-fit:contain;background:#5865f2"></div>
+        <div><h3>Gaming Community</h3><p>For games, tournaments and fun</p></div>
+      </div>
+      <div class="create-opt" onclick="showCreateForm('art')">
+        <div class="co-icon" style="background:#eb459e"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/200px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg" style="width:100%;height:100%;border-radius:12px;object-fit:cover"></div>
+        <div><h3>Art & Creativity</h3><p>Share artwork and get inspired</p></div>
+      </div>
+      <div class="create-opt" onclick="showCreateForm('science')">
+        <div class="co-icon" style="background:#23a55a"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Albert_Einstein_Head.jpg/200px-Albert_Einstein_Head.jpg" style="width:100%;height:100%;border-radius:12px;object-fit:cover"></div>
+        <div><h3>Science & Tech</h3><p>Discuss discoveries and inventions</p></div>
+      </div>
+      <div class="create-opt" onclick="showCreateForm('custom')">
+        <div class="co-icon" style="font-size:28px;background:#36393f">+</div>
+        <div><h3>Create My Own</h3><p>Start from scratch</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE SERVER FORM -->
+<div class="modal-bg" id="create-form-modal">
+  <div class="modal" style="width:460px">
+    <div class="modal-header">
+      <span class="modal-title">Customize Your Server</span>
+      <button class="modal-close" onclick="closeModal('create-form-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="text-align:center;margin-bottom:16px">
+        <div id="srv-icon-preview" style="width:80px;height:80px;border-radius:50%;background:var(--accent);margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#fff;cursor:pointer;overflow:hidden;position:relative;transition:filter .2s"
+          onclick="document.getElementById('srv-icon-input').click()"
+          onmouseover="document.getElementById('srv-icon-overlay').style.opacity='1'"
+          onmouseout="document.getElementById('srv-icon-overlay').style.opacity='0'">
+          <img id="srv-icon-img" src="" style="width:100%;height:100%;object-fit:cover;display:none">
+          <span id="srv-icon-letter">?</span>
+          <div id="srv-icon-overlay" style="position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;font-size:22px;opacity:0;transition:opacity .2s;border-radius:50%">📷</div>
+        </div>
+        <input type="file" id="srv-icon-input" accept="image/*" style="display:none" onchange="handleSrvIconUpload(event)">
+        <div style="font-size:12px;color:var(--muted)">Click to upload icon</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Server Name</label>
+        <input class="form-input" id="new-srv-name" placeholder="My Awesome Server" oninput="updateSrvPreview()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea class="form-input" id="new-srv-desc" placeholder="What's this server about?"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select class="form-input" id="new-srv-cat" style="background:#1e1f22;cursor:pointer">
+          <option>Gaming</option><option>Art</option><option>Science</option><option>Music</option><option>Education</option><option>Community</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+        <button class="btn btn-ghost" onclick="closeModal('create-form-modal')">Back</button>
+        <button class="btn btn-primary" onclick="createServer()">Create Server!</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DM -->
+<div class="modal-bg" id="dm-modal">
+  <div class="modal" style="width:480px">
+    <div class="modal-header">
+      <span class="modal-title" id="dm-modal-title">New Message</span>
+      <button class="modal-close" onclick="closeModal('dm-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Find a Friend</label>
+        <input class="form-input" placeholder="Search username..." id="dm-search" oninput="filterDmSearch()">
+      </div>
+      <div id="dm-search-results"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE VIEW -->
+<div class="modal-bg" id="profile-modal">
+  <div class="modal profile-modal" style="position:relative;overflow:visible">
+    <button class="modal-close" style="position:absolute;top:10px;right:14px;font-size:24px;cursor:pointer;z-index:10;color:rgba(255,255,255,.8);background:rgba(0,0,0,.4);border:none;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;line-height:1" onclick="closeModal('profile-modal')">×</button>
+    <div id="profile-banner-img" style="width:100%;height:110px;background:linear-gradient(135deg,var(--accent),var(--pink));border-radius:12px 12px 0 0;overflow:hidden;position:relative">
+      <img id="profile-banner-display" src="" style="width:100%;height:100%;object-fit:cover;display:none">
+    </div>
+    <div style="padding:0 16px;position:relative">
+      <div class="profile-av-wrap" style="position:relative;display:inline-block">
+        <img class="profile-av" id="profile-av-img" src="" style="width:80px;height:80px;border-radius:50%;border:5px solid #232428;object-fit:cover">
+        <div id="profile-av-frame" class="profile-frame"></div>
+      </div>
+    </div>
+    <div class="profile-info">
+      <div class="profile-name" id="profile-name-text">Username</div>
+      <div class="profile-tag" id="profile-tag-text">#0000</div>
+      <div class="profile-bio" id="profile-bio-text" style="color:var(--text);font-size:13px;margin-top:6px;line-height:1.4">No bio set.</div>
+      <div class="profile-badges" id="profile-badges-wrap" style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"></div>
+      <div style="border-top:1px solid #3a3c42;margin-top:12px;padding-top:12px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:4px">Member Since</div>
+        <div style="font-size:13px;color:var(--text)">January 1, 2025</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap" id="profile-actions"></div>
+    </div>
+  </div>
+</div>
+
+<!-- NITRO -->
+<div class="modal-bg" id="nitro-modal">
+  <div class="modal" style="width:560px">
+    <div class="modal-header">
+      <span class="modal-title">💎 FreeCard Nitro</span>
+      <button class="modal-close" onclick="closeModal('nitro-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="nitro-hero">
+        <div style="font-size:40px;margin-bottom:8px">💎</div>
+        <h2>FreeCard Nitro</h2>
+        <p style="opacity:.85;margin:6px 0 12px">Every premium perk. Zero dollars. Forever.</p>
+        <div style="font-size:32px;font-weight:800;margin-bottom:14px">$0.00 <span style="font-size:14px;font-weight:400;opacity:.7">/ month</span></div>
+        <button class="btn btn-primary" style="background:#fff;color:#5865f2;font-size:15px;padding:11px 32px" onclick="toast('Nitro activated! ALL perks unlocked forever 💎🎉');closeModal('nitro-modal')">Claim FREE Nitro</button>
+      </div>
+      <div class="feat-grid">
+        <div class="feat-card"><div class="feat-icon"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/GIF_Genesis_Logo.png/200px-GIF_Genesis_Logo.png" style="width:28px;height:28px;object-fit:contain" onerror="this.textContent='🎞'"></div><div><div class="feat-title">Animated Avatar</div><div class="feat-desc">GIF profile pictures</div></div></div>
+        <div class="feat-card"><div class="feat-icon" style="font-size:20px">📁</div><div><div class="feat-title">500MB Uploads</div><div class="feat-desc">Share huge files free</div></div></div>
+        <div class="feat-card"><div class="feat-icon" style="font-size:20px">😂</div><div><div class="feat-title">Animated Emojis</div><div class="feat-desc">All servers, everywhere</div></div></div>
+        <div class="feat-card"><div class="feat-icon" style="font-size:20px">🎨</div><div><div class="feat-title">Custom Themes</div><div class="feat-desc">Full color control</div></div></div>
+        <div class="feat-card"><div class="feat-icon" style="font-size:20px">🏷</div><div><div class="feat-title">Custom Tag</div><div class="feat-desc">Pick your discriminator</div></div></div>
+        <div class="feat-card"><div class="feat-icon" style="font-size:20px">⚡</div><div><div class="feat-title">Server Boosts</div><div class="feat-desc">2x boosts per month</div></div></div>
+        <div class="feat-card"><div class="feat-icon" style="font-size:20px">🖼</div><div><div class="feat-title">Profile Banner</div><div class="feat-desc">Custom banner image</div></div></div>
+        <div class="feat-card"><div class="feat-icon" style="font-size:20px">🎮</div><div><div class="feat-title">All Games</div><div class="feat-desc">Chess, Orbs, Slots & more</div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICATIONS -->
+<div class="modal-bg" id="notif-modal">
+  <div class="modal" style="width:440px">
+    <div class="modal-header">
+      <span class="modal-title">🔔 Notifications</span>
+      <button class="modal-close" onclick="closeModal('notif-modal')">×</button>
+    </div>
+    <div class="modal-body" id="notif-list"></div>
+  </div>
+</div>
+
+<!-- SETTINGS / EDIT PROFILE -->
+<div class="modal-bg" id="settings-modal">
+  <div class="modal" style="width:680px;max-height:90vh">
+    <div class="modal-header">
+      <span class="modal-title">✏️ Edit Profile</span>
+      <button class="modal-close" onclick="closeModal('settings-modal')">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;gap:20px;padding:0;overflow:hidden;max-height:calc(90vh - 60px)">
+
+      <!-- LEFT: Form -->
+      <div style="flex:1;padding:20px;overflow-y:auto;min-width:0">
+
+        <!-- Avatar upload -->
+        <div class="form-group">
+          <label class="form-label">Profile Picture</label>
+          <div style="display:flex;align-items:center;gap:14px">
+            <div style="position:relative;cursor:pointer" onclick="document.getElementById('edit-av-input').click()">
+              <img id="edit-av-preview" src="" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #4e5058;transition:filter .2s" onmouseover="this.style.filter='brightness(.6)'" onmouseout="this.style.filter=''">
+              <div style="position:absolute;inset:0;border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;background:rgba(0,0,0,.5);font-size:20px" id="edit-av-overlay">📷</div>
+              <input type="file" id="edit-av-input" accept="image/*" style="display:none" onchange="handleEditAvatarUpload(event)">
+            </div>
+            <div>
+              <button class="btn btn-ghost btn-sm" onclick="document.getElementById('edit-av-input').click()">Upload Image</button>
+              <div style="color:var(--muted);font-size:11px;margin-top:4px">PNG, JPG, GIF, WEBP</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Banner upload -->
+        <div class="form-group">
+          <label class="form-label">Profile Banner</label>
+          <div id="edit-banner-zone" onclick="document.getElementById('edit-banner-input').click()"
+            style="border:2px dashed #4e5058;border-radius:8px;overflow:hidden;cursor:pointer;height:80px;position:relative;transition:border-color .2s"
+            onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor=document.getElementById('edit-banner-input').dataset.filled?'var(--green)':'#4e5058'">
+            <img id="edit-banner-preview" src="" style="width:100%;height:100%;object-fit:cover;display:none">
+            <div id="edit-banner-placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:4px">
+              <span style="font-size:22px">🖼️</span>
+              <span style="color:var(--muted);font-size:12px">Click to upload banner</span>
+            </div>
+            <div id="edit-banner-overlay" style="position:absolute;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#fff">📷 Change Banner</div>
+            <input type="file" id="edit-banner-input" accept="image/*" style="display:none" data-filled="" onchange="handleEditBannerUpload(event)">
+          </div>
+          <div style="color:var(--muted);font-size:11px;margin-top:4px">Recommended: 600×200px or wider</div>
+        </div>
+
+        <!-- Display name -->
+        <div class="form-group">
+          <label class="form-label">Display Name</label>
+          <input class="form-input" id="settings-name" placeholder="Your name..." oninput="liveUpdateProfile()">
+        </div>
+
+        <!-- Username/tag -->
+        <div class="form-group">
+          <label class="form-label">Username Tag</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="color:var(--muted);font-size:15px">#</span>
+            <input class="form-input" id="settings-tag" placeholder="0000" maxlength="4" oninput="this.value=this.value.replace(/[^0-9]/g,'');liveUpdateProfile()" style="width:80px">
+          </div>
+        </div>
+
+        <!-- Bio -->
+        <div class="form-group">
+          <label class="form-label">About Me</label>
+          <textarea class="form-input" id="settings-bio" placeholder="Tell people about yourself..." rows="3" oninput="liveUpdateProfile()"></textarea>
+          <div style="text-align:right;font-size:11px;color:var(--muted);margin-top:2px" id="bio-count">0 / 190</div>
+        </div>
+
+        <!-- Accent color -->
+        <div class="form-group">
+          <label class="form-label">Profile Accent Color</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <div class="color-swatch" data-color="#5865f2" style="background:#5865f2" onclick="setAccentColor('#5865f2',this)"></div>
+            <div class="color-swatch" data-color="#eb459e" style="background:#eb459e" onclick="setAccentColor('#eb459e',this)"></div>
+            <div class="color-swatch" data-color="#23a55a" style="background:#23a55a" onclick="setAccentColor('#23a55a',this)"></div>
+            <div class="color-swatch" data-color="#f0b232" style="background:#f0b232" onclick="setAccentColor('#f0b232',this)"></div>
+            <div class="color-swatch" data-color="#ed4245" style="background:#ed4245" onclick="setAccentColor('#ed4245',this)"></div>
+            <div class="color-swatch" data-color="#00b0f4" style="background:#00b0f4" onclick="setAccentColor('#00b0f4',this)"></div>
+            <div class="color-swatch" data-color="#ff7700" style="background:#ff7700" onclick="setAccentColor('#ff7700',this)"></div>
+            <label class="color-swatch" style="background:conic-gradient(red,orange,yellow,green,blue,violet,red);cursor:pointer" title="Custom color">
+              <input type="color" id="custom-color-pick" style="opacity:0;width:0;height:0;position:absolute" onchange="setAccentColor(this.value,null)">
+            </label>
+          </div>
+        </div>
+
+        <!-- Status -->
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-input" id="settings-status" style="background:#1e1f22;cursor:pointer">
+            <option value="online">🟢 Online</option>
+            <option value="idle">🟡 Idle</option>
+            <option value="dnd">🔴 Do Not Disturb</option>
+            <option value="invisible">⚫ Invisible</option>
+          </select>
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;padding-top:8px;border-top:1px solid #3a3c42">
+          <button class="btn btn-ghost" onclick="closeModal('settings-modal')">Cancel</button>
+          <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Live Preview -->
+      <div style="width:240px;background:#111;padding:16px;display:flex;flex-direction:column;gap:12px;flex-shrink:0">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted)">Preview</div>
+        <div style="background:#232428;border-radius:10px;overflow:hidden">
+          <!-- Banner preview -->
+          <div id="preview-banner" style="height:68px;background:linear-gradient(135deg,#5865f2,#eb459e);position:relative;overflow:hidden">
+            <img id="preview-banner-img" src="" style="width:100%;height:100%;object-fit:cover;display:none">
+          </div>
+          <!-- Avatar preview -->
+          <div style="padding:0 12px;margin-top:-24px;position:relative">
+            <div style="position:relative;display:inline-block">
+              <img id="preview-av" src="" style="width:52px;height:52px;border-radius:50%;border:4px solid #232428;object-fit:cover">
+            </div>
+          </div>
+          <!-- Info preview -->
+          <div style="padding:8px 12px 14px">
+            <div id="preview-name" style="font-weight:800;font-size:15px;color:#fff">CoolUser</div>
+            <div id="preview-tag" style="font-size:11px;color:var(--muted)">#0000</div>
+            <div id="preview-bio" style="font-size:12px;color:var(--text);margin-top:6px;line-height:1.4">No bio set.</div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);text-align:center;line-height:1.4">Changes preview live. Hit Save to apply.</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ONBOARDING -->
+<div class="modal-bg open" id="onboard-modal" style="z-index:2000">
+  <div class="modal" style="width:480px">
+    <div class="modal-header" style="background:linear-gradient(135deg,#5865f2,#eb459e);border-radius:12px 12px 0 0">
+      <span class="modal-title" style="color:#fff;font-size:18px">👋 Welcome to FreeCard!</span>
+    </div>
+    <div class="modal-body" id="onboard-body">
+
+      <!-- Step 1: Upload avatar -->
+      <div id="onboard-step1">
+        <p style="color:var(--muted);font-size:12px;margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:.7px">Step 1 of 2</p>
+        <h3 style="color:#fff;font-size:17px;margin-bottom:6px">Upload your profile picture</h3>
+        <p style="color:var(--muted);font-size:13px;margin-bottom:20px">Choose any image from your device.</p>
+
+        <!-- Upload zone -->
+        <div id="av-upload-zone" onclick="document.getElementById('av-file-input').click()"
+          style="border:2px dashed #4e5058;border-radius:12px;padding:32px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:16px">
+          <div id="av-upload-icon" style="font-size:40px;margin-bottom:10px">📸</div>
+          <div style="color:#fff;font-weight:600;font-size:15px;margin-bottom:4px">Click to upload</div>
+          <div style="color:var(--muted);font-size:12px">PNG, JPG, GIF, WEBP — any size</div>
+          <input type="file" id="av-file-input" accept="image/*" style="display:none" onchange="handleAvatarUpload(event)">
+        </div>
+
+        <!-- Preview after upload -->
+        <div id="av-preview-wrap" style="display:none;align-items:center;gap:14px;background:#1e1f22;border-radius:10px;padding:14px;margin-bottom:16px">
+          <div style="position:relative">
+            <img id="av-preview-img" src="" alt="preview" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid var(--accent)">
+            <div style="position:absolute;bottom:-2px;right:-2px;width:20px;height:20px;border-radius:50%;background:var(--green);border:2px solid #1e1f22;display:flex;align-items:center;justify-content:center;font-size:10px">✓</div>
+          </div>
+          <div style="flex:1">
+            <div style="color:#fff;font-weight:700;font-size:14px">Looking great! ✨</div>
+            <div style="color:var(--muted);font-size:12px;margin-top:2px" id="av-filename">your-image.jpg</div>
+            <button style="margin-top:6px;background:none;border:1px solid #4e5058;color:var(--muted);border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;font-family:inherit" onclick="resetAvatar()">Change</button>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end">
+          <button class="btn btn-primary" id="onboard-next1" onclick="onboardStep2()" disabled style="opacity:.4;cursor:not-allowed">Next →</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Upload banner -->
+      <div id="onboard-step2" style="display:none">
+        <p style="color:var(--muted);font-size:12px;margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:.7px">Step 2 of 2</p>
+        <h3 style="color:#fff;font-size:17px;margin-bottom:6px">Upload your profile banner</h3>
+        <p style="color:var(--muted);font-size:13px;margin-bottom:20px">This wide image shows at the top of your profile. Best size: 600×200px or wider.</p>
+
+        <!-- Upload zone -->
+        <div id="banner-upload-zone" onclick="document.getElementById('banner-file-input').click()"
+          style="border:2px dashed #4e5058;border-radius:12px;padding:32px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:16px">
+          <div id="banner-upload-icon" style="font-size:40px;margin-bottom:10px">🖼️</div>
+          <div style="color:#fff;font-weight:600;font-size:15px;margin-bottom:4px">Click to upload</div>
+          <div style="color:var(--muted);font-size:12px">PNG, JPG, GIF, WEBP — any size</div>
+          <input type="file" id="banner-file-input" accept="image/*" style="display:none" onchange="handleBannerUpload(event)">
+        </div>
+
+        <!-- Preview after upload -->
+        <div id="banner-preview-wrap" style="display:none;margin-bottom:16px">
+          <img id="banner-preview-img" src="" alt="banner preview" style="width:100%;height:90px;object-fit:cover;border-radius:8px;border:2px solid var(--accent);display:block">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+            <div style="color:var(--muted);font-size:12px" id="banner-filename">your-banner.jpg</div>
+            <button style="background:none;border:1px solid #4e5058;color:var(--muted);border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;font-family:inherit" onclick="resetBanner()">Change</button>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <button class="btn btn-ghost btn-sm" onclick="onboardStep1()">← Back</button>
+          <button class="btn btn-success" id="onboard-finish" onclick="finishOnboarding()" disabled style="opacity:.4;cursor:not-allowed">Finish Setup 🎉</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== STATE ====================
+const ME = {name:'CoolUser',avatar:'https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/User_icon_2.svg/220px-User_icon_2.svg.png',frame:'gold',badges:['💎','🏆','🌟'],bio:'',tag:'0000',accentColor:'#5865f2'};
+
+const USERS = [
+  {id:'u1',name:'PixelKnight',avatar:'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/240px-Cat03.jpg',status:'online',bio:'Chess grandmaster and cat lover 🐱',badges:['🏆','🎮'],color:'#5865f2'},
+  {id:'u2',name:'NovaStar',avatar:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Huskiesatrest.jpg/320px-Huskiesatrest.jpg',status:'online',bio:'Space enthusiast 🚀',badges:['🌟','💎'],color:'#eb459e'},
+  {id:'u3',name:'GamingLegend',avatar:'https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Cute_dog.jpg/320px-Cute_dog.jpg',status:'idle',bio:'Top 500 player in everything',badges:['🎮','👑'],color:'#23a55a'},
+  {id:'u4',name:'ArtQueen',avatar:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/200px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg',status:'online',bio:'Artist and creative 🎨',badges:['🎨','🌸'],color:'#f0b232'},
+  {id:'u5',name:'CodeWizard',avatar:'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Albert_Einstein_Head.jpg/200px-Albert_Einstein_Head.jpg',status:'dnd',bio:'Building cool things',badges:['🤖','⚡'],color:'#ed4245'},
+];
+
+const SERVERS = [
+  {id:'s1',name:'Gaming HQ',icon:'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Chess_kdt45.svg/200px-Chess_kdt45.svg.png',desc:'All things gaming',color:'#5865f2',channels:['general','gaming-talk','tournaments','off-topic'],members:1240,unread:3},
+  {id:'s2',name:'Science Hub',icon:'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Albert_Einstein_Head.jpg/200px-Albert_Einstein_Head.jpg',desc:'Discuss discoveries',color:'#23a55a',channels:['general','physics','biology','space'],members:890,unread:0},
+  {id:'s3',name:'Art World',icon:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/200px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg',desc:'Share your art',color:'#eb459e',channels:['general','showcase','critique','resources'],members:445,unread:1},
+];
+
+const DISCOVER_SERVERS = [
+  {name:'Chess Masters',desc:'The ultimate chess community with tournaments every week',icon:'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Chess_kdt45.svg/200px-Chess_kdt45.svg.png',banner:'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/ChessSet.jpg/320px-ChessSet.jpg',online:342,members:12400},
+  {name:'Space Explorers',desc:'Astronomy, astrophysics and everything cosmos',icon:'https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Crab_Nebula.jpg/200px-Crab_Nebula.jpg',banner:'https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Crab_Nebula.jpg/320px-Crab_Nebula.jpg',online:891,members:34200},
+  {name:'Meme Kingdom',desc:'Dank memes and viral content daily',icon:'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/240px-Cat03.jpg',banner:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Huskiesatrest.jpg/320px-Huskiesatrest.jpg',online:2100,members:89000},
+  {name:'Da Vinci Art Club',desc:'Renaissance art meets modern creativity',icon:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/200px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg',banner:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/320px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg',online:560,members:15000},
+  {name:'Dog Lovers',desc:'Everything dogs — breeds, tips, photos',icon:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Huskiesatrest.jpg/320px-Huskiesatrest.jpg',banner:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Huskiesatrest.jpg/320px-Huskiesatrest.jpg',online:1240,members:67000},
+  {name:'Science Daily',desc:'Breaking science news and research discussions',icon:'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Albert_Einstein_Head.jpg/200px-Albert_Einstein_Head.jpg',banner:'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Albert_Einstein_Head.jpg/320px-Albert_Einstein_Head.jpg',online:780,members:22000},
+];
+
+const DM_HISTORY = {};
+USERS.forEach(u => DM_HISTORY[u.id] = []);
+
+const SAMPLE_MSGS = [
+  {uid:'u1',text:'Hey everyone! Anyone up for a chess game? 🏆',time:'12:00'},
+  {uid:'u2',text:'I just saw the coolest astronomy picture today — check this out!',img:'https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Crab_Nebula.jpg/320px-Crab_Nebula.jpg',time:'12:01'},
+  {uid:'u3',text:'bro this server is literally the best, everything is FREE',time:'12:02'},
+  {uid:'u4',text:'Working on a new painting, inspired by the Mona Lisa obviously 😂',time:'12:03'},
+  {uid:'u5',text:'Just deployed my new bot — it does everything automatically!',time:'12:04'},
+  {uid:'u1',text:'@everyone The chess tournament starts in 10 minutes!',time:'12:05'},
+];
+
+let currentView = 'dm';
+let currentServer = null;
+let currentChannel = 'general';
+let currentDM = null;
+let messages = [...SAMPLE_MSGS];
+let myServers = [...SERVERS];
+let rightPanelOpen = true;
+let profileSetupDone = false;
+let activeDMs = [];
+let myBanner = '';
+let myAvatarSet = false;
+
+// ==================== INIT ====================
+function init() {
+  renderServerList();
+  setView('dm');
+  renderDiscover();
+  renderNotifications();
+  showWelcome();
+  setTimeout(() => {
+    openModal('onboard-modal');
+    setupDragDrop('av-upload-zone', handleAvatarUpload);
+    setupDragDrop('banner-upload-zone', handleBannerUpload);
+  }, 400);
+}
+
+// ==================== TOAST ====================
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.display = 'block';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.style.display='none', 2800);
+}
+
+// ==================== SERVER LIST ====================
+function renderServerList() {
+  const sl = document.getElementById('server-list');
+  sl.innerHTML = `
+    <div class="srv-icon home ${currentView==='dm'?'active':''}" onclick="setView('dm')" title="Direct Messages">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/User_icon_2.svg/220px-User_icon_2.svg.png" style="width:100%;height:100%;object-fit:cover">
+    </div>
+    <div class="srv-sep"></div>
+  `;
+  myServers.forEach(srv => {
+    const d = document.createElement('div');
+    d.className = `srv-icon ${currentView==='server'&&currentServer&&currentServer.id===srv.id?'active':''}`;
+    d.title = srv.name;
+    d.onclick = () => setView('server', srv);
+    const fl = srv.name ? srv.name[0].toUpperCase() : '?';
+    if (srv.icon) {
+      d.innerHTML = `<img src="${srv.icon}" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`;
+    } else {
+      d.textContent = fl;
+    }
+    if (srv.unread) {
+      const dot = document.createElement('div');
+      dot.className = 'unread-dot';
+      dot.textContent = srv.unread;
+      d.appendChild(dot);
+    }
+    sl.appendChild(d);
+  });
+  sl.innerHTML += `
+    <div class="srv-sep"></div>
+    <div class="srv-icon srv-add" onclick="openModal('create-modal')" title="Add a Server" style="font-size:26px">+</div>
+    <div class="srv-icon srv-discover" onclick="openModal('discover-modal')" title="Discover Servers">🔭</div>
+  `;
+}
+
+// ==================== VIEWS ====================
+function setView(type, data) {
+  currentView = type;
+  currentServer = type==='server' ? data : null;
+  const pl = document.getElementById('panel-list');
+  const ph = document.getElementById('panel-title');
+  const pi = document.getElementById('panel-icon');
+  document.getElementById('right-panel').style.display = 'flex';
+
+  if (type === 'dm') {
+    ph.textContent = 'Direct Messages';
+    pi.textContent = '💬';
+    pl.innerHTML = `
+      <div class="panel-cat">Direct Messages</div>
+      <div class="panel-item" onclick="openDMChat(null)">
+        <div class="pi-icon" style="background:var(--accent);border-radius:4px;font-size:18px">+</div>
+        <span class="pi-name">New Message</span>
+      </div>
+    `;
+    // Only show DMs the user has actually opened
+    activeDMs.forEach(u => {
+      const d = document.createElement('div');
+      const unread = DM_HISTORY[u.id].filter(m => m.uid !== 'me' && !m.read).length;
+      d.className = `panel-item ${currentDM&&currentDM.id===u.id?'active':''}`;
+      d.onclick = () => openDMChat(u);
+      d.innerHTML = `
+        <div class="pi-icon"><img src="${u.avatar}" alt="${u.name}" style="width:100%;height:100%;border-radius:50%;object-fit:cover"></div>
+        <span class="pi-name">${u.name}</span>
+        <div class="pi-online" style="background:${u.status==='online'?'var(--green)':u.status==='idle'?'var(--gold)':u.status==='dnd'?'var(--red)':'#72767d'}"></div>
+        ${unread?`<div class="pi-badge">${unread}</div>`:''}
+      `;
+      pl.appendChild(d);
+    });
+    if (!currentDM) showWelcome();
+  } else if (type === 'server') {
+    if (!profileSetupDone) {
+      toast('Set your profile picture and banner first! 👆');
+      openModal('onboard-modal');
+      currentView = 'dm';
+      currentServer = null;
+      renderServerList();
+      return;
+    }
+    ph.textContent = data.name;
+    pi.innerHTML = `<img src="${data.icon}" style="width:20px;height:20px;border-radius:4px;object-fit:cover" onerror="this.style.display='none'">`;
+    pl.innerHTML = `<div class="panel-cat">Text Channels</div>`;
+    data.channels.forEach(ch => {
+      const d = document.createElement('div');
+      d.className = `panel-item ${currentChannel===ch?'active':''}`;
+      d.onclick = () => { currentChannel=ch; setView('server',data); setChannel(ch, data); };
+      d.innerHTML = `<div class="pi-icon" style="font-size:16px;border-radius:4px;background:transparent">#</div><span class="pi-name">${ch}</span>`;
+      pl.appendChild(d);
+    });
+    pl.innerHTML += `<div class="panel-cat">Voice Channels</div>
+      <div class="panel-item" onclick="toast('Joined voice channel! 🎤')"><div class="pi-icon" style="background:transparent;font-size:16px">🔊</div><span class="pi-name">General Voice</span></div>`;
+    setChannel(currentChannel, data);
+  }
+  renderServerList();
+  renderMembers();
+}
+
+function setChannel(ch, srv) {
+  document.getElementById('ch-title').textContent = ch;
+  document.getElementById('ch-desc').textContent = srv.desc;
+  document.getElementById('ch-icon').src = srv.icon;
+  document.getElementById('msg-input').placeholder = `Message #${ch}`;
+  messages = [...SAMPLE_MSGS];
+  renderMessages();
+}
+
+function showWelcome() {
+  document.getElementById('messages').innerHTML = `
+    <div style="padding:48px 32px;text-align:center;max-width:400px;margin:0 auto">
+      <div style="width:80px;height:80px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 20px">👋</div>
+      <h2 style="color:#fff;margin-bottom:10px;font-size:22px">Welcome to FreeCard!</h2>
+      <p style="color:var(--muted);font-size:14px;line-height:1.6;margin-bottom:20px">Your DMs are empty. Search for friends to start chatting, join servers, or discover communities — everything is FREE!</p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" onclick="openModal('dm-modal')">+ Start a DM</button>
+        <button class="btn btn-ghost btn-sm" onclick="openModal('discover-modal')">🔭 Discover Servers</button>
+      </div>
+    </div>`;
+}
+
+// ==================== DM CHAT ====================
+function openDMChat(user) {
+  if (!user) { openModal('dm-modal'); renderDmSearch(); return; }
+  currentDM = user;
+  currentView = 'dm';
+  // Add to activeDMs if not already there
+  if (!activeDMs.find(u => u.id === user.id)) {
+    activeDMs.push(user);
+  }
+  document.getElementById('ch-title').textContent = user.name;
+  document.getElementById('ch-desc').textContent = user.bio || 'No bio';
+  document.getElementById('ch-icon').src = user.avatar;
+  document.getElementById('msg-input').placeholder = `Message @${user.name}`;
+  document.getElementById('right-panel').style.display = 'none';
+  // Fresh empty history when first opening a DM
+  if (!DM_HISTORY[user.id].length) {
+    DM_HISTORY[user.id] = [];
+  }
+  DM_HISTORY[user.id].forEach(m => m.read = true);
+  messages = DM_HISTORY[user.id].map(m => ({...m, isDM:true, dmpeer:user}));
+  renderMessages();
+  setView('dm');
+  setTimeout(() => {
+    document.getElementById('right-panel').style.display = 'none';
+    document.querySelectorAll('#panel-list .panel-item').forEach(el => el.classList.remove('active'));
+  }, 10);
+}
+
+// ==================== MESSAGES ====================
+function renderMessages() {
+  const container = document.getElementById('messages');
+  container.innerHTML = '';
+  messages.forEach(m => {
+    const user = m.uid==='me' ? {name:ME.name,avatar:ME.avatar,color:'#5865f2',badges:ME.badges} : USERS.find(u=>u.id===m.uid);
+    if (!user) return;
+    const d = document.createElement('div');
+    d.className = 'msg';
+    d.innerHTML = `
+      <img class="av" src="${user.avatar}" alt="${user.name}" onclick="openProfile('${m.uid}')" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/User_icon_2.svg/220px-User_icon_2.svg.png'">
+      <div class="msg-body">
+        <div class="msg-head">
+          <span class="msg-name" style="color:${user.color||'#fff'}" onclick="openProfile('${m.uid}')">${user.name}</span>
+          <span class="msg-time">${m.time}</span>
+        </div>
+        <div class="msg-text">${m.text.replace(/@everyone/g,'<span class="mention">@everyone</span>').replace(/@(\w+)/g,'<span class="mention">@$1</span>')}</div>
+        ${m.img?`<img class="msg-img" src="${m.img}" alt="" onerror="this.style.display='none'" onclick="toast('Image opened!')">` : ''}
+      </div>`;
+    container.appendChild(d);
+  });
+  container.scrollTop = container.scrollHeight;
+}
+
+function sendMsg(e) { if(e.key==='Enter') handleSend(); }
+function handleSend() {
+  const inp = document.getElementById('msg-input');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  const msg = {uid:'me',text,time:'Just now'};
+  if (currentDM) {
+    DM_HISTORY[currentDM.id].push({...msg,read:true});
+    messages.push(msg);
+    renderMessages();
+    // Bot reply after delay
+    setTimeout(() => {
+      const replies = ['Nice!','Haha 😂','True that!','lol','Lets go!','I agree!','Interesting 🤔','Real talk 💯'];
+      const reply = {uid:currentDM.id,text:replies[Math.floor(Math.random()*replies.length)],time:'Just now'};
+      DM_HISTORY[currentDM.id].push(reply);
+      messages.push(reply);
+      renderMessages();
+    }, 1200);
+  } else {
+    messages.push(msg);
+    renderMessages();
+  }
+}
+
+// ==================== MEMBERS ====================
+function renderMembers() {
+  const ml = document.getElementById('members-list');
+  const mc = document.getElementById('member-count');
+  const onlineUsers = USERS.filter(u=>u.status==='online');
+  mc.textContent = onlineUsers.length;
+  ml.innerHTML = '';
+  const labels = {online:'Online',idle:'Idle',dnd:'Do Not Disturb'};
+  ['online','idle','dnd'].forEach(status => {
+    const group = USERS.filter(u=>u.status===status);
+    if (!group.length) return;
+    const cat = document.createElement('div');
+    cat.className = 'rp-head';
+    cat.textContent = `${labels[status]} — ${group.length}`;
+    ml.appendChild(cat);
+    group.forEach(u => {
+      const d = document.createElement('div');
+      d.className = 'member-item';
+      d.onclick = () => openProfile(u.id);
+      const sc = status==='online'?'var(--green)':status==='idle'?'var(--gold)':'var(--red)';
+      d.innerHTML = `
+        <div class="m-av"><img src="${u.avatar}" alt="${u.name}" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/User_icon_2.svg/220px-User_icon_2.svg.png'">
+          <div class="m-status" style="background:${sc};border-color:var(--sidebar)"></div>
+        </div>
+        <div><div class="m-name">${u.name} <span class="m-badge">${u.badges[0]||''}</span></div><div class="m-sub">${status==='idle'?'Idle':status==='dnd'?'Do Not Disturb':'Online'}</div></div>`;
+      ml.appendChild(d);
+    });
+  });
+}
+
+// ==================== PROFILE ====================
+function openProfile(uid) {
+  const user = uid==='me'
+    ? {id:'me', name:ME.name, avatar:ME.avatar, bio:ME.bio||'Just a free Nitro enjoyer 💎', badges:ME.badges, color:ME.accentColor||'#5865f2'}
+    : USERS.find(u=>u.id===uid);
+  if (!user) return;
+
+  // Set avatar
+  document.getElementById('profile-av-img').src = user.avatar;
+
+  // Set banner
+  const bannerDisplay = document.getElementById('profile-banner-display');
+  const bannerWrap = document.getElementById('profile-banner-img');
+  if (uid==='me' && myBanner) {
+    if (myBanner.startsWith('data:') || myBanner.startsWith('http')) {
+      bannerDisplay.src = myBanner;
+      bannerDisplay.style.display = '';
+      bannerWrap.style.background = 'none';
+    } else {
+      bannerDisplay.style.display = 'none';
+      bannerWrap.style.background = myBanner;
+    }
+  } else {
+    bannerDisplay.style.display = 'none';
+    bannerWrap.style.background = user.color
+      ? `linear-gradient(135deg, ${user.color}cc, ${user.color}44)`
+      : 'linear-gradient(135deg,var(--accent),var(--pink))';
+  }
+
+  // Text
+  document.getElementById('profile-name-text').textContent = user.name;
+  document.getElementById('profile-tag-text').textContent = '#' + (ME.tag || '0000');
+  document.getElementById('profile-bio-text').textContent = user.bio || 'No bio set.';
+
+  // Badges
+  const badges = document.getElementById('profile-badges-wrap');
+  badges.innerHTML = (user.badges||[]).map(b=>`<span style="font-size:22px;cursor:pointer" title="${b}">${b}</span>`).join('');
+
+  // Actions
+  const actions = document.getElementById('profile-actions');
+  actions.innerHTML = uid==='me'
+    ? `<button class="btn btn-primary btn-sm" onclick="closeModal('profile-modal');openEditProfile()">✏️ Edit Profile</button>
+       <button class="btn btn-ghost btn-sm" onclick="closeModal('profile-modal');openModal('shop-modal')">🛒 Shop</button>`
+    : `<button class="btn btn-primary btn-sm" onclick="closeModal('profile-modal');openDMChat(USERS.find(u=>u.id==='${uid}'))">💬 Message</button>
+       <button class="btn btn-ghost btn-sm" onclick="toast('Friend request sent! 🤝')">+ Add Friend</button>`;
+
+  // Frame
+  const frame = document.getElementById('profile-av-frame');
+  frame.style.cssText = uid==='me' ? getFrameStyle(ME.frame) : '';
+
+  openModal('profile-modal');
+}
+
+function getFrameStyle(frame) {
+  const styles = {
+    gold: 'border:4px solid #f0b232;box-shadow:0 0 10px #f0b23244',
+    fire: 'border:4px solid #ff4400;box-shadow:0 0 12px #ff440066',
+    ice:  'border:4px solid #00cfff;box-shadow:0 0 10px #00cfff66',
+    nitro:'border:4px solid #5865f2;box-shadow:0 0 10px #5865f266',
+    rainbow:'border:4px solid transparent;background:linear-gradient(#232428,#232428) padding-box,conic-gradient(red,orange,yellow,green,blue,violet,red) border-box',
+  };
+  return styles[frame] || '';
+}
+
+// ==================== EDIT PROFILE ====================
+function openEditProfile() {
+  // Populate form with current values
+  document.getElementById('settings-name').value = ME.name || '';
+  document.getElementById('settings-tag').value = ME.tag || '0000';
+  document.getElementById('settings-bio').value = ME.bio || '';
+  updateBioCount();
+
+  // Set avatar preview
+  document.getElementById('edit-av-preview').src = ME.avatar;
+  document.getElementById('preview-av').src = ME.avatar;
+
+  // Set banner preview
+  const bannerPrev = document.getElementById('edit-banner-preview');
+  const bannerHolder = document.getElementById('edit-banner-placeholder');
+  if (myBanner) {
+    bannerPrev.src = myBanner.startsWith('data:') || myBanner.startsWith('http') ? myBanner : '';
+    bannerPrev.style.display = myBanner.startsWith('data:') || myBanner.startsWith('http') ? '' : 'none';
+    if (!myBanner.startsWith('data:') && !myBanner.startsWith('http')) {
+      document.getElementById('edit-banner-zone').style.background = myBanner;
+    }
+    bannerHolder.style.display = 'none';
+    document.getElementById('edit-banner-overlay').style.display = 'flex';
+    document.getElementById('edit-banner-input').dataset.filled = '1';
+  }
+
+  // Set accent color swatches
+  document.querySelectorAll('.color-swatch').forEach(s => {
+    s.classList.toggle('active', s.dataset.color === (ME.accentColor || '#5865f2'));
+  });
+
+  // Live preview
+  liveUpdateProfile();
+  openModal('settings-modal');
+}
+
+function liveUpdateProfile() {
+  const name = document.getElementById('settings-name').value || 'CoolUser';
+  const tag = document.getElementById('settings-tag').value || '0000';
+  const bio = document.getElementById('settings-bio').value || 'No bio set.';
+  document.getElementById('preview-name').textContent = name;
+  document.getElementById('preview-tag').textContent = '#' + tag;
+  document.getElementById('preview-bio').textContent = bio;
+  updateBioCount();
+}
+
+function updateBioCount() {
+  const bio = document.getElementById('settings-bio');
+  const count = document.getElementById('bio-count');
+  if (bio && count) count.textContent = bio.value.length + ' / 190';
+}
+
+function setAccentColor(color, el) {
+  ME.accentColor = color;
+  document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+  if (el) el.classList.add('active');
+  document.getElementById('preview-name').style.color = color;
+  document.getElementById('preview-banner').style.background = color + '88';
+}
+
+function handleEditAvatarUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  readFileAsDataURL(file).then(dataUrl => {
+    document.getElementById('edit-av-preview').src = dataUrl;
+    document.getElementById('preview-av').src = dataUrl;
+    ME.avatar = dataUrl;
+  });
+}
+
+function handleEditBannerUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  readFileAsDataURL(file).then(dataUrl => {
+    const prev = document.getElementById('edit-banner-preview');
+    prev.src = dataUrl;
+    prev.style.display = '';
+    document.getElementById('edit-banner-placeholder').style.display = 'none';
+    document.getElementById('edit-banner-overlay').style.display = 'flex';
+    document.getElementById('edit-banner-input').dataset.filled = '1';
+    // Live preview
+    const pbImg = document.getElementById('preview-banner-img');
+    pbImg.src = dataUrl;
+    pbImg.style.display = '';
+    myBanner = dataUrl;
+  });
+}
+
+function saveProfile() {
+  ME.name = document.getElementById('settings-name').value.trim() || 'CoolUser';
+  ME.tag  = document.getElementById('settings-tag').value || '0000';
+  ME.bio  = document.getElementById('settings-bio').value.trim();
+  document.getElementById('my-username').textContent = ME.name;
+  document.getElementById('my-av').src = ME.avatar;
+  closeModal('settings-modal');
+  toast('Profile saved! ✅');
+}
+
+// ==================== SHOP ====================
+function applyFrame(type) {
+  ME.frame = type;
+  const f = document.getElementById('my-frame');
+  if (!f) return;
+  f.className = 'u-frame' + (type==='none'?'':' frame-'+type);
+  const msgs = {gold:'Golden frame equipped! ✨',nitro:'Nitro frame equipped! 💎',fire:'Fire frame equipped! 🔥',ice:'Ice frame equipped! ❄️',rainbow:'Rainbow frame equipped! 🌈',none:'Frame removed!'};
+  toast(msgs[type]||'Frame applied!');
+}
+
+function setMyAvatar(url) {
+  ME.avatar = url;
+  document.getElementById('my-av').src = url;
+  toast('Avatar updated!');
+  closeModal('shop-modal');
+}
+
+// ==================== DISCOVER ====================
+function renderDiscover() {
+  const grid = document.getElementById('discover-grid');
+  grid.innerHTML = '';
+  DISCOVER_SERVERS.forEach(s => {
+    const d = document.createElement('div');
+    d.className = 'disc-card';
+    d.innerHTML = `
+      <img class="disc-banner" src="${s.banner}" alt="" onerror="this.style.background='linear-gradient(135deg,#5865f2,#23a55a)'">
+      <div class="disc-body">
+        <img class="disc-icon" src="${s.icon}" alt="${s.name}" onerror="this.style.background='#5865f2'">
+        <div class="disc-name">${s.name}</div>
+        <div class="disc-desc">${s.desc}</div>
+        <div class="disc-stats">
+          <span><div class="online-dot"></div>${s.online.toLocaleString()} online</span>
+          <span><div class="member-dot"></div>${s.members.toLocaleString()} members</span>
+        </div>
+        <button class="btn btn-primary btn-xs" style="margin-top:10px" onclick="joinDiscoverServer('${s.name}')">Join FREE</button>
+      </div>`;
+    grid.appendChild(d);
+  });
+}
+
+function joinDiscoverServer(name) {
+  const newSrv = {id:'d'+Date.now(),name,icon:DISCOVER_SERVERS.find(s=>s.name===name).icon,desc:'Joined from Discover!',color:'#5865f2',channels:['general','chat','media'],members:Math.floor(1000+Math.random()*50000),unread:0};
+  myServers.push(newSrv);
+  renderServerList();
+  toast(`Joined ${name}! Check the server list 🎉`);
+  closeModal('discover-modal');
+}
+
+// ==================== CREATE SERVER ====================
+function showCreateForm(type) {
+  closeModal('create-modal');
+  const templates = {gaming:{name:'My Gaming Server',desc:'A place to game together!'},art:{name:'Art World',desc:'Share and create art!'},science:{name:'Science Hub',desc:'Explore the universe!'},custom:{name:'',desc:''}};
+  const t = templates[type]||templates.custom;
+  document.getElementById('new-srv-name').value = t.name;
+  document.getElementById('new-srv-desc').value = t.desc;
+  // Reset icon
+  srvIconDataUrl = '';
+  document.getElementById('srv-icon-img').style.display = 'none';
+  document.getElementById('srv-icon-img').src = '';
+  document.getElementById('srv-icon-letter').style.display = '';
+  document.getElementById('srv-icon-preview').style.background = 'var(--accent)';
+  document.getElementById('srv-icon-input').value = '';
+  updateSrvPreview();
+  openModal('create-form-modal');
+}
+
+let srvIconDataUrl = '';
+
+function updateSrvPreview() {
+  const name = document.getElementById('new-srv-name').value;
+  if (!srvIconDataUrl) {
+    document.getElementById('srv-icon-letter').textContent = name ? name[0].toUpperCase() : '?';
+  }
+}
+
+function handleSrvIconUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  readFileAsDataURL(file).then(dataUrl => {
+    srvIconDataUrl = dataUrl;
+    const img = document.getElementById('srv-icon-img');
+    const letter = document.getElementById('srv-icon-letter');
+    img.src = dataUrl;
+    img.style.display = '';
+    letter.style.display = 'none';
+    document.getElementById('srv-icon-preview').style.background = 'transparent';
+  });
+}
+
+function createServer() {
+  const name = document.getElementById('new-srv-name').value.trim() || 'My Server';
+  const desc = document.getElementById('new-srv-desc').value.trim() || 'A new server!';
+  const icon = srvIconDataUrl || '';
+  const newSrv = {id:'c'+Date.now(),name,icon,desc,color:'#5865f2',channels:['general','chat','announcements'],members:1,unread:0};
+  myServers.push(newSrv);
+  // Reset icon state for next time
+  srvIconDataUrl = '';
+  document.getElementById('srv-icon-img').style.display = 'none';
+  document.getElementById('srv-icon-img').src = '';
+  document.getElementById('srv-icon-letter').style.display = '';
+  document.getElementById('srv-icon-letter').textContent = '?';
+  document.getElementById('srv-icon-preview').style.background = 'var(--accent)';
+  document.getElementById('srv-icon-input').value = '';
+  renderServerList();
+  closeModal('create-form-modal');
+  toast(`Server "${name}" created! 🎉`);
+  setTimeout(() => setView('server', newSrv), 300);
+}
+
+// ==================== DM SEARCH ====================
+function renderDmSearch() {
+  const container = document.getElementById('dm-search-results');
+  container.innerHTML = '';
+  USERS.forEach(u => {
+    const d = document.createElement('div');
+    d.className = 'panel-item';
+    d.style.padding = '10px';
+    d.onclick = () => { closeModal('dm-modal'); openDMChat(u); };
+    d.innerHTML = `<div class="pi-icon"><img src="${u.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover"></div><span class="pi-name">${u.name}</span><div class="pi-online" style="background:${u.status==='online'?'var(--green)':u.status==='idle'?'var(--gold)':'var(--red)'}"></div>`;
+    container.appendChild(d);
+  });
+}
+
+function filterDmSearch() {
+  const q = document.getElementById('dm-search').value.toLowerCase();
+  document.getElementById('dm-search-results').querySelectorAll('.panel-item').forEach(el => {
+    el.style.display = el.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+// ==================== NOTIFICATIONS ====================
+function renderNotifications() {
+  const list = document.getElementById('notif-list');
+  const notifs = [
+    {uid:'u1',text:'challenged you to a chess match!',time:'2m ago',unread:true},
+    {uid:'u2',text:'sent you a photo of the Crab Nebula',time:'15m ago',unread:true},
+    {uid:'u3',text:'mentioned you in #gaming-talk',time:'1h ago',unread:false},
+    {uid:'u4',text:'posted a new artwork in Art World',time:'2h ago',unread:false},
+    {uid:'u5',text:'joined your server!',time:'3h ago',unread:false},
+  ];
+  list.innerHTML = '';
+  notifs.forEach(n => {
+    const user = USERS.find(u=>u.id===n.uid);
+    const d = document.createElement('div');
+    d.className = 'notif-item' + (n.unread?' unread':'');
+    d.onclick = () => { closeModal('notif-modal'); openDMChat(user); };
+    d.innerHTML = `<img class="notif-av" src="${user.avatar}" alt="${user.name}" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/User_icon_2.svg/220px-User_icon_2.svg.png'">
+      <div class="notif-body"><div class="notif-name">${user.name}</div><div class="notif-text">${n.text}</div><div class="notif-time">${n.time}</div></div>`;
+    list.appendChild(d);
+  });
+}
+
+// ==================== MODALS ====================
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  if (id==='games-modal') { switchTab('games','all',document.querySelector('#games-modal .tab')); }
+  if (id==='shop-modal')  { switchTab('shop','frames',document.querySelector('#shop-modal .tab')); setTimeout(syncBadgeGrid, 50); }
+  if (id==='dm-modal') renderDmSearch();
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-bg').forEach(m => m.addEventListener('click', e => { if(e.target===m && m.id !== 'onboard-modal') m.classList.remove('open'); }));
+
+// ==================== TABS ====================
+function switchTab(group, tabId, btn) {
+  // Deactivate all tabs in this modal
+  document.querySelectorAll(`#${group}-modal .tab`).forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  // Hide ALL tab panes in this modal (both .game-tab class and id-based panes)
+  document.querySelectorAll(`#${group}-modal [id^="${group}-tab-"]`).forEach(t => t.style.display = 'none');
+  document.querySelectorAll(`#${group}-modal .game-tab`).forEach(t => t.style.display = 'none');
+  // Show target pane
+  const el = document.getElementById(`${group}-tab-${tabId}`);
+  if (el) el.style.display = '';
+  // Game inits
+  if (tabId==='chess') { initChess(); renderChess(); }
+  if (tabId==='orbs')  { initOrbs();  renderOrbs();  }
+  if (tabId==='wordle'){ initWordle(); renderWordle(); }
+}
+
+// ==================== RIGHT PANEL ====================
+function toggleRightPanel() {
+  rightPanelOpen = !rightPanelOpen;
+  document.getElementById('right-panel').style.display = rightPanelOpen?'flex':'none';
+}
+
+// ==================== FILTER ====================
+function filterPanel() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  document.querySelectorAll('#panel-list .panel-item').forEach(el => {
+    el.style.display = el.textContent.toLowerCase().includes(q)||!q ? '' : 'none';
+  });
+}
+
+// ==================== CHESS ====================
+const PIECES = {bK:'♚',bQ:'♛',bR:'♜',bB:'♝',bN:'♞',bP:'♟',wK:'♔',wQ:'♕',wR:'♖',wB:'♗',wN:'♘',wP:'♙'};
+let board=[], chessSelected=null, chessTurn='w';
+function initChess(){
+  const back=['R','N','B','Q','K','B','N','R'];
+  board=Array(8).fill(null).map(()=>Array(8).fill(null));
+  for(let c=0;c<8;c++){board[0][c]={p:'b'+back[c],color:'b'};board[1][c]={p:'bP',color:'b'};board[6][c]={p:'wP',color:'w'};board[7][c]={p:'w'+back[c],color:'w'};}
+  chessSelected=null;chessTurn='w';
+}
+function renderChess(){
+  const el=document.getElementById('chess-board');if(!el)return;el.innerHTML='';
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+    const cell=document.createElement('div');cell.className='c-cell '+((r+c)%2===0?'light':'dark');
+    if(chessSelected&&chessSelected[0]===r&&chessSelected[1]===c)cell.classList.add('sel');
+    cell.textContent=board[r][c]?PIECES[board[r][c].p]:'';cell.onclick=()=>chessClick(r,c);el.appendChild(cell);
+  }
+  const turnEl=document.getElementById('chess-turn');if(turnEl)turnEl.textContent=(chessTurn==='w'?'White':'Black')+"'s Turn";
+}
+function chessClick(r,c){
+  if(chessSelected){const[sr,sc]=chessSelected;if(sr===r&&sc===c){chessSelected=null;renderChess();return;}
+    if(board[r][c]&&board[r][c].color===chessTurn){chessSelected=[r,c];renderChess();return;}
+    if(!board[r][c]||(board[r][c]&&board[r][c].color!==chessTurn)){
+      board[r][c]=board[sr][sc];board[sr][sc]=null;chessSelected=null;chessTurn=chessTurn==='w'?'b':'w';
+    }
+  }else{if(board[r][c]&&board[r][c].color===chessTurn)chessSelected=[r,c];}
+  renderChess();
+}
+
+// ==================== ORBS ====================
+const ORB_COLORS=['🔴','🟠','🟡','🟢','🔵','🟣'];
+let orbBoard=[],orbSel=null,orbScore=0;
+function initOrbs(){orbBoard=Array(8).fill(null).map(()=>Array(8).fill(null).map(()=>ORB_COLORS[Math.floor(Math.random()*6)]));orbSel=null;}
+function renderOrbs(){
+  const el=document.getElementById('orbs-board');if(!el)return;el.innerHTML='';
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+    const cell=document.createElement('div');cell.className='o-cell'+(orbSel&&orbSel[0]===r&&orbSel[1]===c?' sel':'');
+    cell.textContent=orbBoard[r][c];cell.onclick=()=>orbClick(r,c);el.appendChild(cell);
+  }
+  const sc=document.getElementById('orbs-score');if(sc)sc.textContent='Score: '+orbScore;
+}
+function orbClick(r,c){
+  if(orbSel){const[sr,sc]=orbSel;const tmp=orbBoard[r][c];orbBoard[r][c]=orbBoard[sr][sc];orbBoard[sr][sc]=tmp;orbSel=null;checkOrbs();}
+  else orbSel=[r,c];renderOrbs();
+}
+function checkOrbs(){
+  let matched=false;
+  for(let r=0;r<8;r++)for(let c=0;c<6;c++)if(orbBoard[r][c]&&orbBoard[r][c]===orbBoard[r][c+1]&&orbBoard[r][c]===orbBoard[r][c+2]){orbBoard[r][c]=orbBoard[r][c+1]=orbBoard[r][c+2]=ORB_COLORS[Math.floor(Math.random()*6)];matched=true;orbScore+=10;}
+  for(let r=0;r<6;r++)for(let c=0;c<8;c++)if(orbBoard[r][c]&&orbBoard[r][c]===orbBoard[r+1][c]&&orbBoard[r][c]===orbBoard[r+2][c]){orbBoard[r][c]=orbBoard[r+1][c]=orbBoard[r+2][c]=ORB_COLORS[Math.floor(Math.random()*6)];matched=true;orbScore+=15;}
+  if(matched)renderOrbs();
+}
+
+// ==================== WORDLE ====================
+const WORDS=['CHESS','GAMES','NITRO','GUILD','PIXEL','QUEST','SWORD','MAGIC','PARTY','BRAVE','FLAME','STORM'];
+let wordleWord='',wordleRow=0,wordleGrid=[];
+function initWordle(){wordleWord=WORDS[Math.floor(Math.random()*WORDS.length)];wordleRow=0;wordleGrid=Array(6).fill(null).map(()=>Array(5).fill({l:'',s:''}));}
+function renderWordle(){
+  const el=document.getElementById('wordle-grid');if(!el)return;el.innerHTML='';
+  const inp=document.getElementById('wordle-input');const cur=inp?inp.value.toUpperCase():'';
+  for(let r=0;r<6;r++)for(let c=0;c<5;c++){
+    const cell=document.createElement('div');cell.className='w-cell'+(wordleGrid[r][c].s?' '+wordleGrid[r][c].s:'');
+    cell.textContent=r===wordleRow&&c<cur.length?cur[c]:wordleGrid[r][c].l;el.appendChild(cell);
+  }
+}
+function wordleSubmit(){
+  const inp=document.getElementById('wordle-input');if(!inp)return;
+  const g=inp.value.toUpperCase().padEnd(5).slice(0,5);if(g.trim().length<5){toast('Type a 5-letter word!');return;}
+  const result=[];
+  for(let i=0;i<5;i++){if(g[i]===wordleWord[i])result.push({l:g[i],s:'correct'});else if(wordleWord.includes(g[i]))result.push({l:g[i],s:'present'});else result.push({l:g[i],s:'absent'});}
+  wordleGrid[wordleRow]=result;wordleRow++;inp.value='';renderWordle();
+  if(g===wordleWord){toast('🎉 You got it! The word was '+wordleWord);}
+  else if(wordleRow>=6){toast('Word was: '+wordleWord+'. Try again!');}
+}
+
+// ==================== SLOTS ====================
+const SLOT_SYMS=['🍒','🍋','🍊','⭐','💎','🎰','7️⃣'];
+function spinSlots(){
+  const reels=document.querySelectorAll('.slot-reel');const res=document.getElementById('slot-result');if(!reels.length)return;
+  let results=[];reels.forEach(r=>{r.style.transform='scale(0.7)';setTimeout(()=>{const s=SLOT_SYMS[Math.floor(Math.random()*7)];r.textContent=s;results.push(s);r.style.transform='scale(1)';},300);});
+  setTimeout(()=>{
+    if(results[0]===results[1]&&results[1]===results[2]){
+      if(results[0]==='💎')res.textContent='💎 JACKPOT! +10,000 coins!';
+      else if(results[0]==='7️⃣')res.textContent='🎰 TRIPLE 7! +5,000 coins!';
+      else res.textContent='🎉 Three of a kind! +500 coins!';
+    }else if(results[0]===results[1]||results[1]===results[2]||results[0]===results[2]){res.textContent='Two matching! +50 coins 😊';}
+    else res.textContent='No match — try again! 🎲';
+  },400);
+}
+
+
+// ==================== ONBOARDING ====================
+let onboardAvatar = '';
+let onboardBanner = '';
+
+function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => resolve(e.target.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function handleAvatarUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  readFileAsDataURL(file).then(dataUrl => {
+    onboardAvatar = dataUrl;
+    // Show preview
+    document.getElementById('av-preview-img').src = dataUrl;
+    document.getElementById('av-filename').textContent = file.name;
+    document.getElementById('av-preview-wrap').style.display = 'flex';
+    // Update upload zone to show uploaded state
+    const zone = document.getElementById('av-upload-zone');
+    zone.style.borderColor = 'var(--green)';
+    zone.style.background = '#1a3a1a';
+    document.getElementById('av-upload-icon').textContent = '✅';
+    // Enable next button
+    const btn = document.getElementById('onboard-next1');
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.style.cursor = 'pointer';
+  });
+}
+
+function resetAvatar() {
+  onboardAvatar = '';
+  document.getElementById('av-file-input').value = '';
+  document.getElementById('av-preview-wrap').style.display = 'none';
+  const zone = document.getElementById('av-upload-zone');
+  zone.style.borderColor = '#4e5058';
+  zone.style.background = '';
+  document.getElementById('av-upload-icon').textContent = '📸';
+  const btn = document.getElementById('onboard-next1');
+  btn.disabled = true;
+  btn.style.opacity = '.4';
+  btn.style.cursor = 'not-allowed';
+}
+
+function handleBannerUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  readFileAsDataURL(file).then(dataUrl => {
+    onboardBanner = dataUrl;
+    // Show preview
+    document.getElementById('banner-preview-img').src = dataUrl;
+    document.getElementById('banner-filename').textContent = file.name;
+    document.getElementById('banner-preview-wrap').style.display = '';
+    // Update upload zone
+    const zone = document.getElementById('banner-upload-zone');
+    zone.style.borderColor = 'var(--green)';
+    zone.style.background = '#1a3a1a';
+    document.getElementById('banner-upload-icon').textContent = '✅';
+    // Enable finish button
+    const btn = document.getElementById('onboard-finish');
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.style.cursor = 'pointer';
+  });
+}
+
+function resetBanner() {
+  onboardBanner = '';
+  document.getElementById('banner-file-input').value = '';
+  document.getElementById('banner-preview-wrap').style.display = 'none';
+  const zone = document.getElementById('banner-upload-zone');
+  zone.style.borderColor = '#4e5058';
+  zone.style.background = '';
+  document.getElementById('banner-upload-icon').textContent = '🖼️';
+  const btn = document.getElementById('onboard-finish');
+  btn.disabled = true;
+  btn.style.opacity = '.4';
+  btn.style.cursor = 'not-allowed';
+}
+
+function onboardStep1() {
+  document.getElementById('onboard-step1').style.display = '';
+  document.getElementById('onboard-step2').style.display = 'none';
+}
+
+function onboardStep2() {
+  if (!onboardAvatar) return;
+  document.getElementById('onboard-step1').style.display = 'none';
+  document.getElementById('onboard-step2').style.display = '';
+}
+
+function finishOnboarding() {
+  if (!onboardAvatar || !onboardBanner) return;
+  ME.avatar = onboardAvatar;
+  document.getElementById('my-av').src = onboardAvatar;
+  myAvatarSet = true;
+  myBanner = onboardBanner;
+  profileSetupDone = true;
+  closeModal('onboard-modal');
+  toast('Profile set up! Welcome to FreeCard 🎉');
+  renderServerList();
+  showWelcome();
+}
+
+// ==================== SHOP ACTIONS ====================
+
+function applyBanner(url, name) {
+  myBanner = url;
+  // Update bottom-left user panel if it has a banner area (none visible there, but store it)
+  toast('Banner "' + name + '" applied! View it on your profile. 🖼️');
+  // Visually mark selected in grid
+  document.querySelectorAll('#shop-tab-banners .shop-card').forEach(c => c.style.outline = '');
+  event.currentTarget.style.outline = '2px solid var(--green)';
+}
+
+function applyBannerGradient(gradient, name) {
+  myBanner = gradient;
+  toast('Banner "' + name + '" applied! 🎨');
+  document.querySelectorAll('#shop-tab-banners .shop-card').forEach(c => c.style.outline = '');
+  event.currentTarget.style.outline = '2px solid var(--green)';
+}
+
+function toggleBadge(el, badge) {
+  const idx = ME.badges.indexOf(badge);
+  if (idx === -1) {
+    ME.badges.push(badge);
+    el.classList.add('equipped');
+    el.querySelector('.sc-price').textContent = '✓ Equipped';
+    toast(badge + ' badge equipped!');
+  } else {
+    ME.badges.splice(idx, 1);
+    el.classList.remove('equipped');
+    el.querySelector('.sc-price').textContent = 'FREE';
+    toast(badge + ' badge removed.');
+  }
+  // Sync badge grid state
+  syncBadgeGrid();
+}
+
+function syncBadgeGrid() {
+  document.querySelectorAll('.badge-card').forEach(card => {
+    const b = card.dataset.badge;
+    const has = ME.badges.includes(b);
+    card.classList.toggle('equipped', has);
+    const price = card.querySelector('.sc-price');
+    if (price) price.textContent = has ? '✓ Equipped' : 'FREE';
+  });
+}
+
+let activeEffect = '';
+function applyEffect(el, effectId, emoji, bg) {
+  if (activeEffect === effectId) { removeEffect(); return; }
+  activeEffect = effectId;
+  // Remove previous active
+  document.querySelectorAll('.effect-card').forEach(c => c.classList.remove('active-effect'));
+  el.classList.add('active-effect');
+  // Show on avatar in user panel
+  let indicator = document.getElementById('my-effect-indicator');
+  if (!indicator) {
+    indicator = document.createElement('span');
+    indicator.id = 'my-effect-indicator';
+    document.getElementById('my-av-wrap').appendChild(indicator);
+  }
+  indicator.textContent = emoji;
+  // Show active bar
+  const bar = document.getElementById('active-effect-bar');
+  if (bar) { bar.style.display = 'flex'; document.getElementById('active-effect-name').textContent = el.querySelector('.sc-name').textContent; }
+  toast(emoji + ' ' + el.querySelector('.sc-name').textContent + ' applied!');
+}
+
+function removeEffect() {
+  activeEffect = '';
+  document.querySelectorAll('.effect-card').forEach(c => c.classList.remove('active-effect'));
+  const indicator = document.getElementById('my-effect-indicator');
+  if (indicator) indicator.remove();
+  const bar = document.getElementById('active-effect-bar');
+  if (bar) bar.style.display = 'none';
+  toast('Effect removed.');
+}
+
+// Sync badge grid every time shop opens
+const _origOpenModal = openModal;
+
+// ==================== SHOP UPLOAD ====================
+function handleShopAvatarUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  readFileAsDataURL(file).then(dataUrl => {
+    setMyAvatar(dataUrl);
+    document.getElementById('shop-av-preview-icon').innerHTML = `<img src="${dataUrl}" style="width:100%;height:140px;object-fit:cover">`;
+    toast('Custom avatar uploaded and applied! ✨');
+  });
+}
+
+// ==================== DRAG & DROP UPLOAD ZONES ====================
+function setupDragDrop(zoneId, handler) {
+  const zone = document.getElementById(zoneId);
+  if (!zone) return;
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--accent)'; zone.style.background = '#1a1a3a'; });
+  zone.addEventListener('dragleave', () => { zone.style.borderColor = '#4e5058'; zone.style.background = ''; });
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.style.borderColor = '#4e5058';
+    zone.style.background = '';
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      handler({ target: { files: [file] } });
+    }
+  });
+}
+
+// ==================== START ====================
+init();
+</script>
+</body>
+</html>

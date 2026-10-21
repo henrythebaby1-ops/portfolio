@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Doom Vault</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one-screen app — top bar with the Update button, file rail on the left,
+   live preview in the middle, version timeline on the right. Stacks on phones. */
+:root{
+  --bg:#f3f5f6; --panel:#ffffff; --sunk:#e9edef; --line:#d6dde1;
+  --fg:#14191c; --muted:#5d6a71; --accent:#0d7f86; --accent-ink:#ffffff; --accent-soft:#d6eeef;
+  --good:#1f8a4c; --warn:#b26b00; --bad:#c23b3b;
+  --f-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --r:10px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d1113; --panel:#141a1d; --sunk:#0a0d0f; --line:#263136;
+  --fg:#e4ecef; --muted:#8b9aa1; --accent:#3ccfd4; --accent-ink:#04191a; --accent-soft:#123638;
+  --good:#4cc77f; --warn:#f0a63a; --bad:#ff6b6b; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0d1113; --panel:#141a1d; --sunk:#0a0d0f; --line:#263136;
+  --fg:#e4ecef; --muted:#8b9aa1; --accent:#3ccfd4; --accent-ink:#04191a; --accent-soft:#123638;
+  --good:#4cc77f; --warn:#f0a63a; --bad:#ff6b6b; color-scheme:dark }
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 var(--f-body);display:flex;flex-direction:column;overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+
+/* top bar */
+.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 20px;padding-top:calc(12px + env(safe-area-inset-top,0px));border-bottom:1px solid var(--line);background:var(--panel)}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto;min-width:0}
+.brand h1{font:700 22px/1 var(--f-display);letter-spacing:-.02em;margin:0}
+.brand span{font:500 11px var(--f-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--panel);padding:8px 14px;border-radius:999px;font-weight:500;transition:background .15s,border-color .15s}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600;padding:9px 18px}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.small{padding:5px 10px;font-size:12px}
+.btn svg{width:16px;height:16px;flex:none}
+.spin svg{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toggle{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);cursor:pointer;user-select:none}
+.toggle input{appearance:none;width:34px;height:20px;border-radius:999px;background:var(--sunk);border:1px solid var(--line);position:relative;cursor:pointer;margin:0;transition:background .15s}
+.toggle input::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--muted);transition:transform .15s,background .15s}
+.toggle input:checked{background:var(--accent-soft);border-color:var(--accent)}
+.toggle input:checked::after{transform:translateX(14px);background:var(--accent)}
+.status{font:12px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* main grid */
+.app{flex:1;display:grid;grid-template-columns:250px minmax(0,1fr) 320px;min-height:0}
+.rail,.history{background:var(--panel);overflow:auto;min-height:0}
+.rail{border-right:1px solid var(--line)}
+.history{border-left:1px solid var(--line)}
+.sec-h{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:16px 16px 8px;font:600 11px var(--f-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+
+.files{list-style:none;margin:0;padding:0 8px 12px;display:grid;gap:2px}
+.file{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:9px 10px;border-radius:8px;cursor:pointer;border:1px solid transparent}
+.file:hover{background:var(--sunk)}
+.file.on{background:var(--accent-soft);border-color:var(--accent)}
+.file .ext{font:500 10px var(--f-mono);text-transform:uppercase;width:34px;text-align:center;padding:3px 0;border-radius:5px;background:var(--sunk);color:var(--muted)}
+.file.on .ext{background:var(--panel);color:var(--accent)}
+.file .nm{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file .sub{font:11px var(--f-mono);color:var(--muted)}
+.file .cnt{font:500 11px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.file.gone .nm{text-decoration:line-through;color:var(--muted)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--good);display:inline-block;margin-left:6px;vertical-align:middle}
+
+.stage{display:flex;flex-direction:column;min-width:0;min-height:0}
+.stage-h{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 18px;border-bottom:1px solid var(--line)}
+.stage-h h2{font:700 18px/1.2 var(--f-display);margin:0;letter-spacing:-.01em;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pill{font:500 11px var(--f-mono);padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.pill.live{color:var(--good);border-color:var(--good)}
+.pill.old{color:var(--warn);border-color:var(--warn)}
+.tabs{display:flex;gap:2px;margin-left:auto;background:var(--sunk);padding:3px;border-radius:999px}
+.tabs button{border:0;background:transparent;padding:5px 12px;border-radius:999px;font-size:12px;font-weight:500;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--panel);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.view{flex:1;min-height:0;position:relative;background:var(--sunk)}
+.view iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff}
+.view pre{position:absolute;inset:0;margin:0;overflow:auto;padding:16px 18px;font:12.5px/1.6 var(--f-mono);white-space:pre;tab-size:2}
+.view .img{position:absolute;inset:0;display:grid;place-items:center;padding:20px}
+.view .img img{max-width:100%;max-height:100%;object-fit:contain}
+
+/* timeline */
+.versions{list-style:none;margin:0;padding:4px 16px 20px;position:relative}
+.versions::before{content:"";position:absolute;left:27px;top:12px;bottom:28px;width:2px;background:var(--line)}
+.ver{position:relative;display:grid;grid-template-columns:24px 1fr;gap:12px;padding:10px 0}
+.ver .node{width:24px;height:24px;border-radius:50%;background:var(--panel);border:2px solid var(--line);display:grid;place-items:center;font:500 10px var(--f-mono);color:var(--muted);z-index:1;font-variant-numeric:tabular-nums}
+.ver.cur .node{border-color:var(--accent);color:var(--accent)}
+.ver.sel .node{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.ver .card{min-width:0;padding:10px 12px;border-radius:var(--r);border:1px solid var(--line);background:var(--bg);cursor:pointer}
+.ver.sel .card{border-color:var(--accent)}
+.ver .when{font-weight:600}
+.ver .meta{font:11px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums;display:flex;gap:10px;flex-wrap:wrap;margin-top:2px}
+.add{color:var(--good)} .del{color:var(--bad)}
+.ver .acts{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.ver .acts .x{margin-left:auto;border:0;background:transparent;color:var(--muted);font-size:12px;padding:4px 6px}
+.ver .acts .x:hover{color:var(--bad)}
+.ver .acts .x.armed{color:var(--bad);font-weight:600}
+
+/* empty / connect */
+.empty{position:absolute;inset:0;display:grid;place-items:center;padding:24px;overflow:auto}
+.connect{max-width:520px;display:grid;gap:18px}
+.connect h2{font:700 clamp(26px,4vw,38px)/1.05 var(--f-display);letter-spacing:-.025em;margin:0;text-wrap:balance}
+.connect p{margin:0;color:var(--muted);max-width:60ch}
+.connect .row{display:flex;gap:10px;flex-wrap:wrap}
+.steps{margin:0;padding:0;list-style:none;display:grid;gap:8px;counter-reset:s}
+.steps li{display:grid;grid-template-columns:26px 1fr;gap:10px;align-items:start;color:var(--muted)}
+.steps li::before{counter-increment:s;content:counter(s);font:600 11px/22px var(--f-mono);text-align:center;border-radius:50%;border:1px solid var(--line);color:var(--fg)}
+.steps b{color:var(--fg);font-weight:600}
+.note{font:12px var(--f-mono);color:var(--warn)}
+.muted-empty{padding:8px 16px;color:var(--muted);font-size:13px}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:500;font-size:13px;transition:opacity .2s,transform .2s;pointer-events:none;z-index:9;max-width:calc(100vw - 32px)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:980px){
+  body{overflow:auto}
+  .app{grid-template-columns:1fr;grid-template-rows:auto 70vh auto}
+  .rail{border-right:0;border-bottom:1px solid var(--line);max-height:220px}
+  .history{border-left:0;border-top:1px solid var(--line);overflow:visible}
+  .top{padding-inline:16px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><h1>Doom Vault</h1><span id="source">no source connected</span></div>
+  <span class="status" id="status"></span>
+  <label class="toggle" for="auto"><input type="checkbox" id="auto"> Auto-check</label>
+  <button class="btn" id="connectBtn" title="Pick files or a folder to track">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+    Connect
+  </button>
+  <button class="btn primary" id="updateBtn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+    Update files
+  </button>
+</header>
+
+<div class="app">
+  <aside class="rail">
+    <div class="sec-h"><span>Tracked files</span><span id="fileCount"></span></div>
+    <ul class="files" id="files"></ul>
+  </aside>
+
+  <section class="stage">
+    <div class="stage-h" id="stageHead" hidden>
+      <h2 id="curName"></h2>
+      <span class="pill" id="curPill"></span>
+      <div class="tabs" role="tablist">
+        <button role="tab" id="tabPreview" aria-selected="true">Preview</button>
+        <button role="tab" id="tabSource" aria-selected="false">Source</button>
+      </div>
+    </div>
+    <div class="view" id="view">
+      <div class="empty" id="empty">
+        <div class="connect">
+          <h2>Keep every version of your files.</h2>
+          <p>Connect a file or a folder once. Each time you press <b>Update files</b>, Doom Vault reads the latest copy from disk, shows it here, and saves the previous one to the history so you can download it later.</p>
+          <ol class="steps">
+            <li><span><b>Connect</b> a file such as <code>room.html</code>, or the whole folder.</span></li>
+            <li><span>Edit and save the file in any editor.</span></li>
+            <li><span>Press <b>Update files</b>. Changed files get a new version in the timeline.</span></li>
+          </ol>
+          <div class="row">
+            <button class="btn primary" id="pickFiles">Connect files</button>
+            <button class="btn" id="pickDir">Connect a folder</button>
+          </div>
+          <p class="note" id="apiNote" hidden>This browser can't re-read files on its own. Use Chrome, Edge, Arc or Brave for one-click updates. Here, Update files asks you to pick the files again.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="history">
+    <div class="sec-h"><span>Version history</span><button class="btn small" id="dlAll" hidden>Download all</button></div>
+    <ol class="versions" id="versions"></ol>
+    <p class="muted-empty" id="noVersions">Versions appear here after the first update.</p>
+  </aside>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="fallbackInput" multiple hidden>
+
+<script>
+/* ---------- storage (IndexedDB: connected sources + version blobs) ---------- */
+const DB_NAME = 'doom-vault', FSA = 'showOpenFilePicker' in window;
+let db;
+function openDB(){
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(DB_NAME, 1);
+    r.onupgradeneeded = () => {
+      const d = r.result;
+      d.createObjectStore('sources', { keyPath: 'id' });
+      const v = d.createObjectStore('versions', { keyPath: 'vid', autoIncrement: true });
+      v.createIndex('key', 'key');
+    };
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  });
+}
+function tx(store, mode, fn){
+  return new Promise((res, rej) => {
+    const t = db.transaction(store, mode), s = t.objectStore(store);
+    const out = fn(s); t.oncomplete = () => res(out && 'result' in out ? out.result : out); t.onerror = () => rej(t.error);
+  });
+}
+const allSources = () => tx('sources', 'readonly', s => s.getAll());
+const putSource  = src => tx('sources', 'readwrite', s => s.put(src));
+const allVersions = () => tx('versions', 'readonly', s => s.getAll());
+const putVersion = v => tx('versions', 'readwrite', s => s.add(v));
+const delVersion = vid => tx('versions', 'readwrite', s => s.delete(vid));
+
+/* ---------- state ---------- */
+const state = { sources: [], files: new Map(), selected: null, selVid: null, tab: 'preview', busy: false };
+// files: key -> { key, name, path, handle?, versions:[...], gone:false }
+
+const $ = id => document.getElementById(id);
+const fmtSize = n => n < 1024 ? n + ' B' : n < 1048576 ? (n/1024).toFixed(1) + ' KB' : (n/1048576).toFixed(1) + ' MB';
+const fmtTime = ts => new Date(ts).toLocaleString([], { month:'short', day:'numeric', hour:'numeric', minute:'2-digit', second:'2-digit' });
+const ago = ts => { const s = (Date.now()-ts)/1000; if (s<60) return 'just now'; if (s<3600) return Math.floor(s/60)+' min ago'; if (s<86400) return Math.floor(s/3600)+' h ago'; return Math.floor(s/86400)+' d ago'; };
+const extOf = n => (n.match(/\.([^.]+)$/)||[,'—'])[1].slice(0,4);
+const isText = (name, type) => /^text\/|json|javascript|xml|svg/.test(type) || /\.(html?|css|js|mjs|ts|json|md|txt|py|csv|xml|svg|yml|yaml)$/i.test(name);
+const isImg = (name, type) => /^image\//.test(type) || /\.(png|jpe?g|gif|webp|avif|svg)$/i.test(name);
+const isHtml = name => /\.html?$/i.test(name);
+
+function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2600); }
+
+async function hashBlob(blob){
+  const buf = await blob.arrayBuffer();
+  if (crypto.subtle) {
+    const h = await crypto.subtle.digest('SHA-256', buf);
+    return [...new Uint8Array(h)].map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+  let h = 2166136261; const u = new Uint8Array(buf);           // FNV fallback
+  for (let i = 0; i < u.length; i++) { h ^= u[i]; h = Math.imul(h, 16777619); }
+  return (h >>> 0).toString(16) + ':' + u.length;
+}
+
+/* line diff summary: counts lines added / removed (multiset compare) */
+function lineDelta(oldText, newText){
+  const count = t => { const m = new Map(); for (const l of t.split('\n')) m.set(l, (m.get(l)||0)+1); return m; };
+  const a = count(oldText), b = count(newText); let add = 0, del = 0;
+  for (const [l, n] of b) add += Math.max(0, n - (a.get(l)||0));
+  for (const [l, n] of a) del += Math.max(0, n - (b.get(l)||0));
+  return { add, del };
+}
+
+/* ---------- connecting ---------- */
+async function connectFiles(){
+  if (!FSA) return $('fallbackInput').click();
+  let handles;
+  try { handles = await showOpenFilePicker({ multiple: true }); } catch { return; }
+  for (const h of handles) {
+    const src = { id: 'f:' + h.name + ':' + Date.now(), kind: 'file', name: h.name, handle: h };
+    await putSource(src); state.sources.push(src);
+  }
+  await updateAll(true);
+}
+async function connectDir(){
+  if (!('showDirectoryPicker' in window)) { $('fallbackInput').setAttribute('webkitdirectory',''); $('fallbackInput').click(); return; }
+  let h; try { h = await showDirectoryPicker(); } catch { return; }
+  const src = { id: 'd:' + h.name + ':' + Date.now(), kind: 'dir', name: h.name, handle: h };
+  await putSource(src); state.sources.push(src);
+  await updateAll(true);
+}
+
+async function ensurePermission(handle, ask){
+  if (!handle.queryPermission) return true;
+  if (await handle.queryPermission({ mode: 'read' }) === 'granted') return true;
+  if (!ask) return false;
+  try { return await handle.requestPermission({ mode: 'read' }) === 'granted'; } catch { return false; }
+}
+
+const SKIP = /(^|\/)(\.|node_modules\/|__pycache__\/)|vault\.html$/;
+async function* walk(dir, prefix = '', depth = 0){
+  for await (const [name, h] of dir.entries()) {
+    const path = prefix + name;
+    if (SKIP.test(path + (h.kind === 'directory' ? '/' : ''))) continue;
+    if (h.kind === 'file') yield { path, handle: h };
+    else if (depth < 3) yield* walk(h, path + '/', depth + 1);
+  }
+}
+
+/* ---------- the update pass ---------- */
+async function snapshot(key, name, path, file){
+  const entry = state.files.get(key) || { key, name, path, versions: [] };
+  entry.gone = false; state.files.set(key, entry);
+  const last = entry.versions[entry.versions.length - 1];
+  if (last && last.lastModified === file.lastModified && last.size === file.size) return null;
+  const hash = await hashBlob(file);
+  if (last && last.hash === hash) return null;
+  let delta = null;
+  if (last && isText(name, file.type) && file.size < 5e6) delta = lineDelta(await last.blob.text(), await file.text());
+  const v = { key, name, path, ts: Date.now(), lastModified: file.lastModified, size: file.size, type: file.type, hash, delta,
+              blob: new Blob([await file.arrayBuffer()], { type: file.type }) };
+  v.vid = await putVersion(v);
+  entry.versions.push(v);
+  return v;
+}
+
+async function updateAll(fromGesture){
+  if (state.busy) return;
+  if (!FSA && !state.sources.length) { if (fromGesture) $('fallbackInput').click(); return; }
+  if (!FSA) { $('fallbackInput').click(); return; }
+  if (!state.sources.length) { toast('Connect a file or folder first.'); return; }
+  state.busy = true; $('updateBtn').classList.add('spin');
+  const changed = [], seen = new Set(); let denied = 0;
+  try {
+    for (const src of state.sources) {
+      if (!(await ensurePermission(src.handle, fromGesture))) { denied++; continue; }
+      if (src.kind === 'file') {
+        const key = src.id; seen.add(key);
+        try { const v = await snapshot(key, src.name, src.name, await src.handle.getFile()); if (v) changed.push(v); }
+        catch { const e = state.files.get(key); if (e) e.gone = true; }
+      } else {
+        for await (const { path, handle } of walk(src.handle)) {
+          const key = src.id + '/' + path; seen.add(key);
+          const v = await snapshot(key, path.split('/').pop(), src.name + '/' + path, await handle.getFile()); if (v) changed.push(v);
+        }
+      }
+    }
+    for (const [key, e] of state.files) if (!seen.has(key) && state.sources.some(s => key.startsWith(s.id))) e.gone = true;
+  } finally { state.busy = false; $('updateBtn').classList.remove('spin'); }
+
+  const now = Date.now(); localStorageSet('lastCheck', now);
+  $('status').textContent = 'checked ' + new Date(now).toLocaleTimeString([], {hour:'numeric',minute:'2-digit',second:'2-digit'});
+  if (denied && fromGesture) toast('Access needed — press Update files again and allow reading.');
+  else if (!changed.length) { if (fromGesture) toast('Everything is up to date.'); }
+  else {
+    const first = changed.filter(v => state.files.get(v.key).versions.length > 1);
+    toast(first.length === 1 ? `${first[0].name} updated to v${state.files.get(first[0].key).versions.length}`
+        : first.length ? `${first.length} files updated` : `Tracking ${changed.length} file${changed.length>1?'s':''}`);
+    if (state.selected && changed.some(v => v.key === state.selected)) state.selVid = null;
+  }
+  if (!state.selected || !state.files.has(state.selected)) state.selected = [...state.files.keys()][0] || null;
+  render();
+}
+
+/* fallback for browsers without the File System Access API */
+$('fallbackInput').addEventListener('change', async e => {
+  const files = [...e.target.files]; e.target.value = ''; e.target.removeAttribute('webkitdirectory');
+  const changed = [];
+  for (const f of files) {
+    const path = f.webkitRelativePath || f.name;
+    if (SKIP.test(path)) continue;
+    const v = await snapshot('m:' + path, f.name, path, f); if (v) changed.push(v);
+  }
+  toast(changed.length ? `${changed.length} new version${changed.length>1?'s':''} saved` : 'No changes found.');
+  if (!state.selected) state.selected = [...state.files.keys()][0] || null;
+  state.selVid = null; render();
+});
+
+/* ---------- rendering ---------- */
+let blobUrl = null;
+function render(){
+  const files = [...state.files.values()].sort((a,b) => a.path.localeCompare(b.path));
+  $('fileCount').textContent = files.length || '';
+  $('source').textContent = state.sources.length ? state.sources.map(s => s.kind === 'dir' ? s.name + '/' : s.name).join(' · ') : files.length ? 'manual uploads' : 'no source connected';
+
+  const ul = $('files'); ul.innerHTML = '';
+  for (const f of files) {
+    const last = f.versions[f.versions.length-1];
+    const li = document.createElement('li');
+    li.className = 'file' + (f.key === state.selected ? ' on' : '') + (f.gone ? ' gone' : '');
+    li.tabIndex = 0;
+    li.innerHTML = `<span class="ext"></span><div style="min-width:0"><div class="nm"></div><div class="sub"></div></div><span class="cnt"></span>`;
+    li.querySelector('.ext').textContent = extOf(f.name);
+    li.querySelector('.nm').textContent = f.path.includes('/') ? f.path.split('/').slice(1).join('/') : f.name;
+    li.querySelector('.sub').textContent = f.gone ? 'missing on disk' : last ? 'changed ' + ago(last.lastModified) : '';
+    li.querySelector('.cnt').textContent = 'v' + f.versions.length;
+    const pick = () => { state.selected = f.key; state.selVid = null; render(); };
+    li.onclick = pick; li.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } };
+    ul.appendChild(li);
+  }
+
+  const f = state.files.get(state.selected);
+  $('empty').hidden = !!f; $('stageHead').hidden = !f;
+  $('dlAll').hidden = !f || f.versions.length < 2;
+  $('noVersions').hidden = !!(f && f.versions.length);
+  const vl = $('versions'); vl.innerHTML = '';
+  for (const old of $('view').querySelectorAll('iframe,pre,.img')) old.remove();
+  if (!f) return;
+
+  const latest = f.versions[f.versions.length-1];
+  const shown = f.versions.find(v => v.vid === state.selVid) || latest;
+  const n = f.versions.indexOf(shown) + 1;
+  $('curName').textContent = f.path;
+  $('curPill').textContent = shown === latest ? `v${n} · current` : `v${n} · older version`;
+  $('curPill').className = 'pill ' + (shown === latest ? 'live' : 'old');
+
+  [...f.versions].reverse().forEach((v, i) => {
+    const num = f.versions.length - i;
+    const li = document.createElement('li');
+    li.className = 'ver' + (v === latest ? ' cur' : '') + (v === shown ? ' sel' : '');
+    const d = v.delta ? `<span class="add">+${v.delta.add}</span><span class="del">−${v.delta.del}</span>` : num === 1 ? '<span>first copy</span>' : '';
+    li.innerHTML = `<span class="node">${num}</span>
+      <div class="card" tabindex="0">
+        <div class="when">${fmtTime(v.lastModified)}${v === latest ? '<span class="dot" title="current"></span>' : ''}</div>
+        <div class="meta"><span>${fmtSize(v.size)}</span>${d}<span title="${v.hash}">#${v.hash.slice(0,7)}</span></div>
+        <div class="acts">
+          <button class="btn small dl">Download</button>
+          ${v === latest ? '' : '<button class="x">Delete</button>'}
+        </div>
+      </div>`;
+    const card = li.querySelector('.card');
+    const view = () => { state.selVid = v.vid; render(); };
+    card.onclick = e => { if (!e.target.closest('button')) view(); };
+    card.onkeydown = e => { if (e.key === 'Enter' && e.target === card) view(); };
+    li.querySelector('.dl').onclick = () => download(v, num);
+    const x = li.querySelector('.x');
+    if (x) x.onclick = async () => {
+      if (!x.classList.contains('armed')) { x.classList.add('armed'); x.textContent = 'Confirm delete'; setTimeout(() => { x.classList.remove('armed'); x.textContent = 'Delete'; }, 3000); return; }
+      await delVersion(v.vid); f.versions.splice(f.versions.indexOf(v), 1);
+      if (state.selVid === v.vid) state.selVid = null; toast(`Deleted v${num} of ${f.name}`); render();
+    };
+    vl.appendChild(li);
+  });
+
+  // preview
+  if (blobUrl) URL.revokeObjectURL(blobUrl); blobUrl = null;
+  const viewEl = $('view');
+  $('tabPreview').setAttribute('aria-selected', state.tab === 'preview');
+  $('tabSource').setAttribute('aria-selected', state.tab === 'source');
+  const txt = isText(shown.name, shown.type);
+  $('tabSource').hidden = !txt;
+  const mode = !txt ? 'preview' : state.tab;
+  if (mode === 'preview' && isHtml(shown.name)) {
+    const fr = document.createElement('iframe');
+    fr.setAttribute('sandbox', 'allow-scripts allow-forms allow-modals allow-pointer-lock');
+    fr.title = 'Preview of ' + shown.name;
+    shown.blob.text().then(t => fr.srcdoc = t);
+    viewEl.appendChild(fr);
+  } else if (mode === 'preview' && isImg(shown.name, shown.type)) {
+    blobUrl = URL.createObjectURL(shown.blob);
+    const d = document.createElement('div'); d.className = 'img'; d.innerHTML = '<img alt="">'; d.firstChild.src = blobUrl; viewEl.appendChild(d);
+  } else if (txt) {
+    const pre = document.createElement('pre'); shown.blob.text().then(t => pre.textContent = t); viewEl.appendChild(pre);
+  } else {
+    const pre = document.createElement('pre'); pre.textContent = `No preview for this file type.\n${fmtSize(shown.size)} — use Download to open it.`; viewEl.appendChild(pre);
+  }
+}
+
+function download(v, num){
+  const stamp = new Date(v.lastModified).toISOString().slice(0,16).replace(/[:T]/g, '-');
+  const dot = v.name.lastIndexOf('.');
+  const fname = dot > 0 ? `${v.name.slice(0,dot)}.v${num}.${stamp}${v.name.slice(dot)}` : `${v.name}.v${num}.${stamp}`;
+  const url = URL.createObjectURL(v.blob);
+  const a = Object.assign(document.createElement('a'), { href: url, download: fname });
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+function localStorageSet(k, v){ try { localStorage.setItem('dv:' + k, JSON.stringify(v)); } catch {} }
+function localStorageGet(k){ try { return JSON.parse(localStorage.getItem('dv:' + k)); } catch { return null; } }
+
+/* ---------- wiring ---------- */
+$('updateBtn').onclick = () => updateAll(true);
+$('connectBtn').onclick = connectFiles;
+$('pickFiles').onclick = connectFiles;
+$('pickDir').onclick = connectDir;
+$('tabPreview').onclick = () => { state.tab = 'preview'; localStorageSet('tab','preview'); render(); };
+$('tabSource').onclick = () => { state.tab = 'source'; localStorageSet('tab','source'); render(); };
+$('dlAll').onclick = () => { const f = state.files.get(state.selected); f.versions.forEach((v,i) => setTimeout(() => download(v, i+1), i*350)); };
+
+let autoTimer = null;
+$('auto').onchange = e => {
+  localStorageSet('auto', e.target.checked);
+  clearInterval(autoTimer);
+  if (e.target.checked) autoTimer = setInterval(() => { if (!document.hidden) updateAll(false); }, 4000);
+};
+
+(async function boot(){
+  if (!FSA) { $('apiNote').hidden = false; $('auto').closest('label').hidden = true; }
+  state.tab = localStorageGet('tab') || 'preview';
+  try { db = await openDB(); } catch { toast('Browser storage is blocked, so history will not be kept.'); return render(); }
+  state.sources = await allSources();
+  for (const v of (await allVersions()).sort((a,b) => a.vid - b.vid)) {
+    const e = state.files.get(v.key) || { key: v.key, name: v.name, path: v.path, versions: [] };
+    e.versions.push(v); state.files.set(v.key, e);
+  }
+  state.selected = [...state.files.keys()][0] || null;
+  render();
+  // silent refresh if permission is still granted from earlier
+  if (FSA && state.sources.length) {
+    const ok = await Promise.all(state.sources.map(s => s.handle.queryPermission ? s.handle.queryPermission({mode:'read'}) : 'granted'));
+    if (ok.every(p => p === 'granted')) updateAll(false);
+    else $('status').textContent = 'press Update files to reconnect';
+  }
+  if (FSA && localStorageGet('auto')) { $('auto').checked = true; $('auto').onchange({ target: $('auto') }); }
+})();
+</script>
+</body>
+</html>

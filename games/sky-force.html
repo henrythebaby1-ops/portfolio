@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sky Force: Prototype v5</title>
+<style>
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: #05070d;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Courier New', monospace;
+    overflow: hidden;
+  }
+  #wrap { position: relative; width: 480px; height: 640px; }
+  canvas {
+    background: linear-gradient(#0a1128, #050810);
+    display: block;
+    box-shadow: 0 0 40px rgba(0,180,255,0.25);
+    border: 2px solid #1c3a5e;
+  }
+  #hud {
+    position: absolute;
+    top: 8px; left: 10px;
+    color: #d6f0ff;
+    font-size: 14px;
+    text-shadow: 0 0 4px #00c3ff;
+    pointer-events: none;
+    line-height: 1.5;
+    display: none;
+  }
+  #bombs {
+    position: absolute;
+    top: 8px; right: 10px;
+    color: #ffdd66;
+    font-size: 12px;
+    text-shadow: 0 0 4px #ff9900;
+    text-align: right;
+    display: none;
+    line-height: 1.4;
+  }
+  #bossbar-wrap {
+    position: absolute;
+    top: 8px; left: 50%; transform: translateX(-50%);
+    width: 220px;
+    display: none;
+    text-align: center;
+  }
+  #bossbar-name { color: #ff9fd6; font-size: 11px; text-shadow: 0 0 4px #ff2e9a; margin-bottom: 2px; }
+  #bossbar-track { width: 100%; height: 8px; background: #1a0a24; border: 1px solid #ff2e9a; border-radius: 3px; overflow: hidden; }
+  #bossbar-fill { height: 100%; background: linear-gradient(90deg,#ff2e9a,#ff9fd6); width: 100%; }
+
+  #laserbar-wrap { margin-top: 6px; width: 90px; margin-left: auto; display: none; }
+  #laserbar-label { font-size: 9px; color: #9fe8ff; text-align: right; margin-bottom: 1px; }
+  #laserbar-track { width: 100%; height: 6px; background: #0a1a26; border: 1px solid #3fd0ff; border-radius: 3px; overflow: hidden; }
+  #laserbar-fill { height: 100%; background: linear-gradient(90deg,#3fd0ff,#c9fbff); width: 0%; }
+  #laserbar-track.overheat #laserbar-fill { background: linear-gradient(90deg,#ff5555,#ffb3b3); }
+
+  /* Overlay screens (menu / level select / shop) */
+  .screen {
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 20%, #10203c, #050810 75%);
+    color: #d6f0ff;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 22px;
+    box-sizing: border-box;
+    z-index: 8;
+    overflow-y: auto;
+  }
+  .screen.active { display: flex; }
+  .screen h1 { font-size: 26px; letter-spacing: 3px; text-shadow: 0 0 10px #00c3ff; margin: 6px 0 4px; }
+  .screen h2 { font-size: 16px; letter-spacing: 2px; color: #9fdcff; margin: 4px 0 14px; text-align:center; }
+  .screen .credits { color: #ffe27a; font-size: 13px; margin-bottom: 10px; text-shadow: 0 0 4px #ff9900; }
+
+  .menu-btn {
+    width: 100%; max-width: 320px;
+    margin: 6px 0; padding: 10px;
+    background: rgba(10,30,60,0.7);
+    border: 1px solid #3fd0ff; color: #d6f0ff;
+    font-family: inherit; font-size: 14px;
+    border-radius: 5px; cursor: pointer; text-align:left;
+  }
+  .menu-btn:hover { background: rgba(63,208,255,0.25); box-shadow: 0 0 10px #3fd0ff; }
+  .menu-btn small { display:block; opacity:0.7; font-size: 10px; margin-top: 2px; }
+  .menu-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  #levelGrid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px; width: 100%; max-width: 380px; margin-bottom: 12px;
+  }
+  .level-card {
+    padding: 10px; border-radius: 6px; cursor: pointer;
+    border: 1px solid #3fd0ff; background: rgba(10,30,60,0.6);
+    font-size: 12px; text-align: left;
+  }
+  .level-card.space { border-color: #3fd0ff; }
+  .level-card.land { border-color: #7fe07f; }
+  .level-card.locked { opacity: 0.35; cursor: not-allowed; }
+  .level-card b { display:block; font-size: 13px; margin-bottom: 3px; }
+  .level-card .tag { font-size: 10px; opacity: 0.75; }
+  .level-card.cleared::after { content: " ✓ CLEARED"; color: #7fffb0; font-size: 10px; }
+
+  .shop-row {
+    width: 100%; max-width: 360px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(10,30,60,0.55); border: 1px solid #2c4f78;
+    border-radius: 5px; padding: 8px 10px; margin-bottom: 7px; font-size: 12px;
+  }
+  .shop-row .info b { display:block; font-size: 13px; color: #d6f0ff; }
+  .shop-row .info span { opacity: 0.7; font-size: 10px; }
+  .shop-row .dots { margin-top:3px; }
+  .dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#1c3a5e; margin-right:3px; }
+  .dot.filled { background: #3fd0ff; box-shadow: 0 0 4px #3fd0ff; }
+  .buy-btn {
+    background: #123a5c; border: 1px solid #3fd0ff; color: #d6f0ff;
+    font-family: inherit; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px;
+  }
+  .buy-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  #back-btn { margin-top: 8px; }
+
+  #levelBanner {
+    position: absolute;
+    top: 40%; left: 50%; transform: translate(-50%,-50%);
+    color: #fff; text-align: center; text-shadow: 0 0 12px #00c3ff;
+    z-index: 6; display: none; pointer-events: none;
+  }
+  #levelBanner h2 { font-size: 20px; letter-spacing: 2px; margin: 0; }
+  #levelBanner p { font-size: 12px; opacity: 0.8; }
+
+  #chatlog {
+    position: absolute; left: 10px; bottom: 10px; width: 300px;
+    display: flex; flex-direction: column; gap: 3px;
+    pointer-events: none; z-index: 4;
+  }
+  .chat-line {
+    background: rgba(5, 15, 30, 0.65); border-left: 3px solid #3fd0ff;
+    color: #d6f0ff; font-size: 12px; padding: 4px 8px; border-radius: 2px;
+    opacity: 0; animation: fadeInOut 4.5s ease forwards; text-shadow: 0 0 3px #00c3ff;
+  }
+  .chat-line b { color: #ffd166; }
+  @keyframes fadeInOut { 0%{opacity:0;transform:translateY(6px);} 10%{opacity:1;transform:translateY(0);} 80%{opacity:1;} 100%{opacity:0;} }
+
+  #dialogOverlay {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.35);
+    display: none; align-items: flex-end; justify-content: center; z-index: 10;
+  }
+  #dialogBox {
+    width: calc(100% - 40px); margin: 0 20px 20px;
+    background: linear-gradient(#0e1e38, #0a1428);
+    border: 2px solid #3fd0ff; border-radius: 6px;
+    box-shadow: 0 0 24px rgba(63,208,255,0.35);
+    display: flex; padding: 12px; gap: 12px; animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp { from{transform:translateY(20px);opacity:0;} to{transform:translateY(0);opacity:1;} }
+  #dialogPortrait { width: 56px; height: 56px; border-radius: 6px; border: 2px solid #3fd0ff; background: #061224; flex-shrink: 0; }
+  #dialogPortrait img { width: 100%; height: 100%; }
+  #dialogText-wrap { flex: 1; display: flex; flex-direction: column; }
+  #dialogName { color: #ffd166; font-size: 13px; font-weight: bold; margin-bottom: 4px; text-shadow: 0 0 4px #ff9900; }
+  #dialogText { color: #e6f4ff; font-size: 13px; line-height: 1.4; min-height: 36px; }
+  #dialogHint { align-self: flex-end; color: #6fb8e0; font-size: 10px; margin-top: 6px; opacity: 0.8; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" width="480" height="640"></canvas>
+
+  <div id="hud">SCORE: <span id="score">0</span><br>HULL: <span id="health">100</span>/<span id="maxHealth">100</span><br><span id="rescueLine" style="display:none;">RESCUED: <span id="rescueCount">0</span></span></div>
+  <div id="bombs">BOMBS: <span id="bombCount">3</span><br><span id="modeLabel"></span>
+    <div id="laserbar-wrap"><div id="laserbar-label">LASER</div><div id="laserbar-track"><div id="laserbar-fill"></div></div></div>
+    <div id="bombregen-wrap" style="margin-top:6px;width:90px;margin-left:auto;display:none;">
+      <div style="font-size:9px;color:#ffdd66;text-align:right;margin-bottom:1px;">NEXT BOMB</div>
+      <div style="width:100%;height:6px;background:#2a1a06;border:1px solid #ffdd66;border-radius:3px;overflow:hidden;">
+        <div id="bombregen-fill" style="height:100%;background:linear-gradient(90deg,#ffb84d,#ffe27a);width:0%;"></div>
+      </div>
+    </div>
+  </div>
+  <div id="bossbar-wrap"><div id="bossbar-name">BOSS</div><div id="bossbar-track"><div id="bossbar-fill"></div></div></div>
+  <div id="levelBanner"><h2 id="levelBannerTitle"></h2><p id="levelBannerSub"></p></div>
+  <div id="chatlog"></div>
+
+  <!-- MAIN MENU -->
+  <div id="screen-main" class="screen active">
+    <h1>SKY FORCE</h1>
+    <h2>10-mission campaign — space &amp; land</h2>
+    <div class="credits">CREDITS: <span id="creditsMain">0</span></div>
+    <button class="menu-btn" id="btnCampaign">CAMPAIGN <small>10 missions across space &amp; land — pick any unlocked one</small></button>
+    <button class="menu-btn" id="btnSurvival">SURVIVAL <small>endless waves, escalating difficulty, chase a high score</small></button>
+    <button class="menu-btn" id="btnBombRush">BOMB RUSH <small>bombs regenerate fast — huge waves, chain your bombs for bonus points</small></button>
+    <button class="menu-btn" id="btnBossRush">BOSS RUSH <small>fight all 10 bosses back-to-back</small></button>
+    <button class="menu-btn" id="btnShop">SHOP <small>spend credits on permanent ship upgrades</small></button>
+    <p style="font-size:11px;opacity:0.7;margin-top:12px;">Arrow/WASD move · Space fire · X bomb · hold Z for laser (unlock in Shop)</p>
+    <p style="font-size:10px;opacity:0.5;">(progress &amp; credits reset if you reload the page)</p>
+  </div>
+
+  <!-- LEVEL SELECT -->
+  <div id="screen-levels" class="screen">
+    <h1 style="font-size:20px;">SELECT MISSION</h1>
+    <div id="levelGrid"></div>
+    <button class="menu-btn" id="back-btn-levels">◀ BACK</button>
+  </div>
+
+  <!-- SHOP -->
+  <div id="screen-shop" class="screen">
+    <h1 style="font-size:20px;">SHIP UPGRADES</h1>
+    <div class="credits">CREDITS: <span id="creditsShop">0</span></div>
+    <div id="shopRows" style="width:100%;display:flex;flex-direction:column;align-items:center;"></div>
+    <button class="menu-btn" id="back-btn-shop">◀ BACK</button>
+  </div>
+
+  <!-- END OF RUN -->
+  <div id="screen-end" class="screen">
+    <h1 id="endTitle">MISSION COMPLETE</h1>
+    <p id="endSubtitle" style="font-size:13px;opacity:0.85;"></p>
+    <p style="font-size:13px;margin-top:10px;">Score: <span id="endScore">0</span></p>
+    <p id="endRescueLine" style="font-size:13px;display:none;">Pilots rescued: <span id="endRescued">0</span></p>
+    <p style="font-size:13px;">Credits earned: <span id="endCredits">0</span></p>
+    <button class="menu-btn" id="btnEndContinue" style="margin-top:16px;">CONTINUE ▶</button>
+  </div>
+
+  <div id="dialogOverlay">
+    <div id="dialogBox">
+      <div id="dialogPortrait"><img id="dialogPortraitImg" src="" alt=""></div>
+      <div id="dialogText-wrap">
+        <div id="dialogName">???</div>
+        <div id="dialogText"></div>
+        <div id="dialogHint">press SPACE / ENTER to continue</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+let keys = {};
+let gameOver = false;
+let frame = 0;
+let score = 0;
+let bombs = 3;
+let paused = true;
+let mode = null;      // 'campaign' | 'survival' | 'bossrush'
+let running = false;
+
+const scoreEl = document.getElementById('score');
+const healthEl = document.getElementById('health');
+const maxHealthEl = document.getElementById('maxHealth');
+const bombEl = document.getElementById('bombCount');
+const modeLabelEl = document.getElementById('modeLabel');
+const hudEl = document.getElementById('hud');
+const bombsHudEl = document.getElementById('bombs');
+const chatlogEl = document.getElementById('chatlog');
+const levelBanner = document.getElementById('levelBanner');
+const levelBannerTitle = document.getElementById('levelBannerTitle');
+const levelBannerSub = document.getElementById('levelBannerSub');
+const bossBarWrap = document.getElementById('bossbar-wrap');
+const bossBarFill = document.getElementById('bossbar-fill');
+const bossBarName = document.getElementById('bossbar-name');
+
+// ---------- Screen management ----------
+const screens = {
+  main: document.getElementById('screen-main'),
+  levels: document.getElementById('screen-levels'),
+  shop: document.getElementById('screen-shop'),
+  end: document.getElementById('screen-end')
+};
+function showScreen(name) {
+  Object.values(screens).forEach(s => s.classList.remove('active'));
+  if (name) screens[name].classList.add('active');
+  const inGame = !name;
+  hudEl.style.display = inGame ? 'block' : 'none';
+  bombsHudEl.style.display = inGame ? 'block' : 'none';
+}
+
+// ---------- Persistent (in-memory) progression ----------
+let credits = 0;
+let unlockedLevel = 0;   // index of highest unlocked campaign level
+let clearedLevels = [];  // indices cleared
+let upgrades = { fireRate: 0, hull: 0, bombs: 0, damage: 0, speed: 0, laser: 0 };
+const UPGRADE_MAX = 3;
+const UPGRADE_DEFS = {
+  fireRate: { name: 'Fire Rate', desc: 'Shoot faster', costs: [60, 120, 200] },
+  hull:     { name: 'Hull Plating', desc: '+20 max hull per level', costs: [50, 110, 190] },
+  bombs:    { name: 'Bomb Bay', desc: '+1 starting bomb', costs: [70, 140, 220] },
+  damage:   { name: 'Cannon Damage', desc: '+1 damage per shot', costs: [80, 150, 240] },
+  speed:    { name: 'Thrusters', desc: 'Move faster', costs: [50, 100, 170] },
+  laser:    { name: 'Laser Cannon', desc: 'Hold Z for a continuous beam — stronger & cooler each level', costs: [150, 220, 300] }
+};
+
+function refreshCreditsDisplay() {
+  document.getElementById('creditsMain').textContent = credits;
+  document.getElementById('creditsShop').textContent = credits;
+}
+
+function renderShop() {
+  const rows = document.getElementById('shopRows');
+  rows.innerHTML = '';
+  Object.keys(UPGRADE_DEFS).forEach(key => {
+    const def = UPGRADE_DEFS[key];
+    const lvl = upgrades[key];
+    const maxed = lvl >= UPGRADE_MAX;
+    const cost = maxed ? null : def.costs[lvl];
+    const row = document.createElement('div');
+    row.className = 'shop-row';
+    let dots = '';
+    for (let i = 0; i < UPGRADE_MAX; i++) dots += `<span class="dot${i < lvl ? ' filled' : ''}"></span>`;
+    row.innerHTML = `
+      <div class="info">
+        <b>${def.name}</b>
+        <span>${def.desc}</span>
+        <div class="dots">${dots}</div>
+      </div>
+      <button class="buy-btn" ${maxed || credits < cost ? 'disabled' : ''}>${maxed ? 'MAXED' : 'BUY ' + cost}</button>
+    `;
+    row.querySelector('button').addEventListener('click', () => {
+      if (maxed || credits < cost) return;
+      credits -= cost;
+      upgrades[key]++;
+      refreshCreditsDisplay();
+      renderShop();
+    });
+    rows.appendChild(row);
+  });
+}
+
+document.getElementById('btnShop').addEventListener('click', () => { renderShop(); refreshCreditsDisplay(); showScreen('shop'); });
+document.getElementById('back-btn-shop').addEventListener('click', () => showScreen('main'));
+document.getElementById('back-btn-levels').addEventListener('click', () => showScreen('main'));
+
+document.getElementById('btnSurvival').addEventListener('click', () => { mode = 'survival'; launchRun(); });
+document.getElementById('btnBombRush').addEventListener('click', () => { mode = 'bombrush'; launchRun(); });
+document.getElementById('btnBossRush').addEventListener('click', () => { mode = 'bossrush'; launchRun(); });
+document.getElementById('btnCampaign').addEventListener('click', () => { renderLevelGrid(); showScreen('levels'); });
+document.getElementById('btnEndContinue').addEventListener('click', () => { showScreen('main'); refreshCreditsDisplay(); });
+
+function renderLevelGrid() {
+  const grid = document.getElementById('levelGrid');
+  grid.innerHTML = '';
+  CAMPAIGN_LEVELS.forEach((lvl, i) => {
+    const locked = i > unlockedLevel;
+    const cleared = clearedLevels.includes(i);
+    const card = document.createElement('div');
+    card.className = `level-card ${lvl.type} ${locked ? 'locked' : ''} ${cleared ? 'cleared' : ''}`;
+    card.innerHTML = `<b>${i + 1}. ${lvl.name}</b><span class="tag">${lvl.type.toUpperCase()} · Boss: ${BOSS_DEFS[lvl.boss].name}</span>`;
+    if (!locked) card.addEventListener('click', () => { mode = 'campaign'; currentLevel = i; launchRun(); });
+    grid.appendChild(card);
+  });
+}
+
+// ---------- Dialog box system ----------
+const dialogOverlay = document.getElementById('dialogOverlay');
+const dialogName = document.getElementById('dialogName');
+const dialogText = document.getElementById('dialogText');
+const dialogPortraitImg = document.getElementById('dialogPortraitImg');
+let dialogQueue = [];
+let dialogActive = false;
+let typewriterTimer = null;
+let onQueueEmpty = null;
+
+function svgToDataUri(svg) { return 'data:image/svg+xml;base64,' + btoa(svg); }
+
+const portraits = {
+  COMMAND: svgToDataUri(`<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56"><rect width="56" height="56" fill="#0a2140"/><circle cx="28" cy="22" r="12" fill="#e0b088"/><rect x="10" y="36" width="36" height="20" fill="#2a4d7a"/><rect x="6" y="10" width="44" height="8" fill="#1c3a5e"/></svg>`),
+  WING:    svgToDataUri(`<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56"><rect width="56" height="56" fill="#1a0a24"/><circle cx="28" cy="24" r="12" fill="#c98a5a"/><rect x="10" y="38" width="36" height="18" fill="#7a2a8a"/><circle cx="22" cy="22" r="3" fill="#111"/><circle cx="34" cy="22" r="3" fill="#111"/></svg>`),
+  RADAR:   svgToDataUri(`<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56"><rect width="56" height="56" fill="#031a12"/><circle cx="28" cy="28" r="20" fill="none" stroke="#2fffb0" stroke-width="2"/><circle cx="28" cy="28" r="3" fill="#2fffb0"/><line x1="28" y1="28" x2="44" y2="14" stroke="#2fffb0" stroke-width="2"/></svg>`),
+  UNKNOWN: svgToDataUri(`<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56"><rect width="56" height="56" fill="#2a0505"/><circle cx="28" cy="28" r="18" fill="#4a0a0a"/><text x="28" y="35" font-size="24" fill="#ff5555" text-anchor="middle" font-family="monospace">?</text></svg>`)
+};
+
+function queueDialog(who, text) { dialogQueue.push({ who, text }); if (!dialogActive) showNextDialog(); }
+function showNextDialog() {
+  if (dialogQueue.length === 0) {
+    dialogActive = false; dialogOverlay.style.display = 'none'; paused = false;
+    if (onQueueEmpty) { const cb = onQueueEmpty; onQueueEmpty = null; cb(); }
+    return;
+  }
+  dialogActive = true; paused = true; dialogOverlay.style.display = 'flex';
+  const { who, text } = dialogQueue.shift();
+  dialogName.textContent = who;
+  dialogPortraitImg.src = portraits[who] || portraits.UNKNOWN;
+  typewriteText(text);
+}
+function typewriteText(full) {
+  clearInterval(typewriterTimer);
+  dialogText.textContent = '';
+  let i = 0;
+  typewriterTimer = setInterval(() => { dialogText.textContent += full[i]; i++; if (i >= full.length) clearInterval(typewriterTimer); }, 18);
+  dialogText.dataset.full = full;
+}
+function advanceDialog() {
+  if (!dialogActive) return;
+  if (typewriterTimer) {
+    const full = dialogText.dataset.full || '';
+    if (dialogText.textContent.length < full.length) { clearInterval(typewriterTimer); dialogText.textContent = full; return; }
+  }
+  showNextDialog();
+}
+function radio(who, text) {
+  const line = document.createElement('div');
+  line.className = 'chat-line';
+  line.innerHTML = `<b>${who}:</b> ${text}`;
+  chatlogEl.appendChild(line);
+  setTimeout(() => line.remove(), 4600);
+  while (chatlogEl.children.length > 4) chatlogEl.removeChild(chatlogEl.firstChild);
+}
+function showBanner(title, sub, duration = 1800) {
+  levelBannerTitle.textContent = title; levelBannerSub.textContent = sub;
+  levelBanner.style.display = 'block';
+  setTimeout(() => { levelBanner.style.display = 'none'; }, duration);
+}
+
+window.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (dialogActive) { if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); advanceDialog(); } return; }
+  if (e.code === 'Space' || e.code === 'KeyX') e.preventDefault();
+});
+window.addEventListener('keyup', e => keys[e.code] = false);
+
+// ---------- Sprites (SVG data-uri images, shaded) ----------
+function svgToImage(svg) { const img = new Image(); img.src = svgToDataUri(svg); return img; }
+
+const playerSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="-32 -32 64 64">
+  <ellipse cx="0" cy="19" rx="6" ry="11" fill="#3fd0ff" opacity="0.85"/>
+  <ellipse cx="0" cy="17" rx="3" ry="7" fill="#eaffff" opacity="0.9"/>
+  <polygon points="0,-24 8,-4 20,10 6,4 0,16 -6,4 -20,10 -8,-4" fill="#8fb8d8"/>
+  <polygon points="0,-24 16,16 0,9 -16,16" fill="#dff1ff"/>
+  <polygon points="0,-24 7,7 -7,7" fill="#0b5ea8"/>
+  <circle cx="0" cy="-3" r="4" fill="#7be8ff"/>
+  <circle cx="0" cy="-3" r="1.6" fill="#ffffff"/>
+</svg>`;
+const droneSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="-16 -16 32 32">
+  <polygon points="0,12 12,-10 -12,-10" fill="#ff5566"/>
+  <polygon points="0,12 7,-6 -7,-6" fill="#ff8899"/>
+  <rect x="-3" y="-6" width="6" height="6" fill="#7a0f1a"/>
+</svg>`;
+const interceptorSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="-15 -15 30 30">
+  <polygon points="0,14 6,-4 14,-14 2,-6 0,-2 -2,-6 -14,-14 -6,-4" fill="#ffd23f"/>
+  <circle cx="0" cy="-2" r="2.5" fill="#7a5c00"/>
+</svg>`;
+const gunshipSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="32" viewBox="-22 -16 44 32">
+  <ellipse cx="0" cy="0" rx="17" ry="12" fill="#ffb84d"/>
+  <ellipse cx="-3" cy="-3" rx="10" ry="6" fill="#ffd9a0"/>
+  <rect x="-14" y="-3" width="28" height="6" fill="#a15c00"/>
+</svg>`;
+const cruiserSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="90" height="60" viewBox="-45 -30 90 60">
+  <rect x="-35" y="-23" width="70" height="46" rx="4" fill="#c060ff"/>
+  <rect x="-35" y="-23" width="70" height="10" fill="#5a1e8a"/>
+  <rect x="-28" y="-8" width="56" height="16" fill="#a878e8"/>
+  <rect x="-6" y="-6" width="12" height="12" fill="#f0c0ff"/>
+</svg>`;
+const carrierSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="130" height="70" viewBox="-65 -35 130 70">
+  <rect x="-55" y="-26" width="110" height="52" rx="8" fill="#ff8a3d"/>
+  <rect x="-55" y="-26" width="110" height="12" fill="#8a3d0a"/>
+  <rect x="-48" y="-10" width="96" height="20" fill="#ffb37a"/>
+  <circle cx="-30" cy="0" r="7" fill="#2a0f00"/><circle cx="0" cy="0" r="7" fill="#2a0f00"/><circle cx="30" cy="0" r="7" fill="#2a0f00"/>
+</svg>`;
+const flagshipSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="90" viewBox="-80 -45 160 90">
+  <polygon points="0,-40 70,30 0,10 -70,30" fill="#ff2e6d"/>
+  <polygon points="0,-40 25,10 -25,10" fill="#7a0a2a"/>
+  <polygon points="0,-32 15,4 -15,4" fill="#ff85a8"/>
+  <circle cx="0" cy="0" r="10" fill="#ffe27a"/><circle cx="0" cy="0" r="4" fill="#fff4cc"/>
+</svg>`;
+// Land fodder
+const tankSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="-17 -17 34 34">
+  <rect x="-14" y="-6" width="28" height="16" rx="3" fill="#5a6b3e"/>
+  <rect x="-10" y="-12" width="14" height="8" rx="2" fill="#78895a"/>
+  <rect x="0" y="-11" width="14" height="4" fill="#2e3a20"/>
+  <circle cx="-9" cy="10" r="4" fill="#222"/><circle cx="0" cy="10" r="4" fill="#222"/><circle cx="9" cy="10" r="4" fill="#222"/>
+</svg>`;
+const turretSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="-15 -15 30 30">
+  <circle cx="0" cy="2" r="12" fill="#6b5a3e"/>
+  <circle cx="0" cy="2" r="12" fill="none" stroke="#8a795a" stroke-width="2"/>
+  <rect x="-2.5" y="-14" width="5" height="16" fill="#3a2e1a"/>
+  <circle cx="0" cy="2" r="4" fill="#241c10"/>
+</svg>`;
+const buggySVG = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="-14 -14 28 28">
+  <rect x="-11" y="-7" width="22" height="14" rx="4" fill="#c96a2e"/>
+  <rect x="-7" y="-10" width="14" height="7" rx="2" fill="#e89a5c"/>
+  <circle cx="-8" cy="9" r="3.5" fill="#111"/><circle cx="8" cy="9" r="3.5" fill="#111"/>
+</svg>`;
+const walkerSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="90" viewBox="-60 -45 120 90">
+  <rect x="-40" y="-10" width="80" height="34" rx="6" fill="#7a8a4e"/>
+  <rect x="-30" y="-30" width="60" height="24" rx="6" fill="#94a868"/>
+  <circle cx="0" cy="-18" r="9" fill="#ffd23f"/>
+  <rect x="-45" y="24" width="10" height="20" fill="#3e4a28"/>
+  <rect x="35" y="24" width="10" height="20" fill="#3e4a28"/>
+  <rect x="-10" y="30" width="20" height="16" fill="#2e3820"/>
+</svg>`;
+const fortressSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="150" height="90" viewBox="-75 -45 150 90">
+  <rect x="-65" y="-30" width="130" height="60" rx="6" fill="#5c4a3e"/>
+  <rect x="-65" y="-30" width="130" height="14" fill="#3a2c22"/>
+  <rect x="-50" y="-6" width="18" height="20" fill="#241c14"/>
+  <rect x="-9" y="-6" width="18" height="20" fill="#241c14"/>
+  <rect x="32" y="-6" width="18" height="20" fill="#241c14"/>
+  <circle cx="0" cy="-38" r="10" fill="#ff5555"/>
+</svg>`;
+const strandedSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="-20 -20 40 40">
+  <ellipse cx="2" cy="10" rx="16" ry="5" fill="#000000" opacity="0.25"/>
+  <polygon points="-2,-14 10,4 -2,-2 -14,4" fill="#9fb8cc" transform="rotate(18)"/>
+  <polygon points="-2,-14 10,4 -2,-2 -14,4" fill="#c9dcec" opacity="0.5"/>
+  <line x1="-10" y1="8" x2="6" y2="-10" stroke="#5a6b7a" stroke-width="2"/>
+  <circle cx="0" cy="0" r="3" fill="#3fd0ff"/>
+</svg>`;
+const frigateSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="90" height="60" viewBox="-45 -30 90 60">
+  <polygon points="0,-24 38,10 0,22 -38,10" fill="#2f6b6b"/>
+  <polygon points="0,-24 20,8 0,14 -20,8" fill="#4fa3a3"/>
+  <circle cx="0" cy="0" r="6" fill="#9fffee"/>
+</svg>`;
+const convoySVG = `<svg xmlns="http://www.w3.org/2000/svg" width="110" height="60" viewBox="-55 -30 110 60">
+  <rect x="-50" y="-14" width="100" height="30" rx="6" fill="#6b5a3e"/>
+  <rect x="-50" y="-14" width="100" height="10" fill="#453a28"/>
+  <circle cx="-30" cy="14" r="6" fill="#222"/><circle cx="0" cy="14" r="6" fill="#222"/><circle cx="30" cy="14" r="6" fill="#222"/>
+  <rect x="-8" y="-24" width="16" height="14" fill="#8a795a"/>
+</svg>`;
+const dreadnoughtSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="150" height="85" viewBox="-75 -42 150 85">
+  <polygon points="0,-35 60,-10 60,25 0,40 -60,25 -60,-10" fill="#5533aa"/>
+  <polygon points="0,-25 40,-6 40,18 0,28 -40,18 -40,-6" fill="#8866dd"/>
+  <circle cx="0" cy="6" r="10" fill="#d9c9ff"/>
+</svg>`;
+const bunkerSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="150" height="85" viewBox="-75 -42 150 85">
+  <rect x="-65" y="-28" width="130" height="58" rx="10" fill="#3a3a3a"/>
+  <rect x="-65" y="-28" width="130" height="14" fill="#222222"/>
+  <rect x="-45" y="-4" width="20" height="22" fill="#151515"/>
+  <rect x="-10" y="-4" width="20" height="22" fill="#151515"/>
+  <rect x="25" y="-4" width="20" height="22" fill="#151515"/>
+  <circle cx="0" cy="-36" r="11" fill="#ff8800"/>
+</svg>`;
+const mothershipSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="170" height="100" viewBox="-85 -50 170 100">
+  <ellipse cx="0" cy="0" rx="80" ry="38" fill="#26123a"/>
+  <ellipse cx="0" cy="-4" rx="60" ry="26" fill="#4a2470"/>
+  <ellipse cx="0" cy="-4" rx="30" ry="14" fill="#8f4fd6"/>
+  <circle cx="0" cy="-4" r="9" fill="#ffe27a"/>
+</svg>`;
+
+const sprites = {
+  player: svgToImage(playerSVG), drone: svgToImage(droneSVG), interceptor: svgToImage(interceptorSVG),
+  gunship: svgToImage(gunshipSVG), cruiser: svgToImage(cruiserSVG), carrier: svgToImage(carrierSVG), flagship: svgToImage(flagshipSVG),
+  tank: svgToImage(tankSVG), turret: svgToImage(turretSVG), buggy: svgToImage(buggySVG),
+  walker: svgToImage(walkerSVG), fortress: svgToImage(fortressSVG), stranded: svgToImage(strandedSVG),
+  frigate: svgToImage(frigateSVG), convoy: svgToImage(convoySVG), dreadnought: svgToImage(dreadnoughtSVG),
+  bunker: svgToImage(bunkerSVG), mothership: svgToImage(mothershipSVG)
+};
+const spriteAspect = {
+  drone:[32,32], interceptor:[30,30], gunship:[44,32], cruiser:[90,60], carrier:[130,70], flagship:[160,90],
+  tank:[34,34], turret:[30,30], buggy:[28,28], walker:[120,90], fortress:[150,90], stranded:[40,40],
+  frigate:[90,60], convoy:[110,60], dreadnought:[150,85], bunker:[150,85], mothership:[170,100]
+};
+const spriteSize = { drone:30, interceptor:28, gunship:44, cruiser:90, carrier:130, flagship:160, tank:32, turret:28, buggy:26, walker:120, fortress:150, stranded:34,
+  frigate:90, convoy:110, dreadnought:150, bunker:150, mothership:170 };
+
+// ---------- Backgrounds ----------
+let stars = [];
+for (let i = 0; i < 90; i++) stars.push({ x: Math.random()*W, y: Math.random()*H, speed: 1+Math.random()*3, size: Math.random()*2+0.5 });
+function updateStars() { for (const s of stars){ s.y+=s.speed; if(s.y>H){s.y=0;s.x=Math.random()*W;} } }
+function drawSpaceBG() {
+  ctx.fillStyle = '#050810'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#ffffff';
+  for (const s of stars){ ctx.globalAlpha=0.4+s.speed/5; ctx.fillRect(s.x,s.y,s.size,s.size);}
+  ctx.globalAlpha=1;
+}
+
+let terrain = [];
+function initTerrain() {
+  terrain = [];
+  for (let i = 0; i < 26; i++) {
+    terrain.push({ x: Math.random()*W, y: Math.random()*H, r: 8+Math.random()*18, tone: Math.random() });
+  }
+}
+function drawLandBG() {
+  const g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0, '#2c4a24'); g.addColorStop(1, '#1c3016');
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+  // road
+  ctx.fillStyle = '#4a4238';
+  ctx.fillRect(W/2-40, 0, 80, H);
+  ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 3; ctx.setLineDash([16,14]);
+  ctx.beginPath(); ctx.moveTo(W/2, 0); ctx.lineTo(W/2, H); ctx.stroke(); ctx.setLineDash([]);
+  // terrain blobs
+  for (const t of terrain) {
+    ctx.fillStyle = t.tone > 0.5 ? '#3a5a2e' : '#5c4a36';
+    ctx.beginPath(); ctx.ellipse(t.x, t.y, t.r, t.r*0.6, 0, 0, Math.PI*2); ctx.fill();
+  }
+}
+function updateTerrain(speed) {
+  for (const t of terrain) { t.y += speed; if (t.y > H+20) { t.y = -20; t.x = Math.random()*W; } }
+}
+
+// ---------- Player ----------
+const player = { x: W/2, y: H-100, w:34, h:34, speed:4.5, health:100, maxHealth:100, cooldown:0, invuln:0, damage:1 };
+function applyUpgradesToPlayer() {
+  player.maxHealth = 100 + upgrades.hull*20;
+  player.health = player.maxHealth;
+  player.speed = 4.5 + upgrades.speed*0.5;
+  player.damage = 1 + upgrades.damage;
+  bombs = 3 + upgrades.bombs;
+}
+function fireCooldownFrames() { return rapidTimer > 0 ? Math.max(2, Math.floor((9 - upgrades.fireRate*2) / 2)) : Math.max(3, 9 - upgrades.fireRate*2); }
+
+// ---------- Laser ----------
+let laserHeat = 0;
+let laserOverheated = false;
+let laserActive = false;
+const laserBarWrap = document.getElementById('laserbar-wrap');
+const laserBarFill = document.getElementById('laserbar-fill');
+const laserBarTrack = document.getElementById('laserbar-track');
+const bombRegenWrap = document.getElementById('bombregen-wrap');
+const bombRegenFill = document.getElementById('bombregen-fill');
+
+function laserDamagePerFrame() { return 0.18 + upgrades.laser * 0.12; }
+function laserHeatUpRate() { return Math.max(1.1, 2 - upgrades.laser * 0.3); }
+function laserHeatDownRate() { return 1.4 + upgrades.laser * 0.4; }
+function laserWidth() { return 8 + upgrades.laser * 3; }
+
+function updateLaser() {
+  if (upgrades.laser <= 0) { laserBarWrap.style.display = 'none'; return; }
+  laserBarWrap.style.display = 'block';
+
+  const wantsFire = keys['KeyZ'] && !laserOverheated;
+  laserActive = wantsFire;
+
+  if (laserActive) {
+    laserHeat = Math.min(100, laserHeat + laserHeatUpRate());
+    if (laserHeat >= 100) laserOverheated = true;
+
+    const beamW = laserWidth();
+    const dmg = laserDamagePerFrame();
+    for (const e of enemies) {
+      if (Math.abs(e.x - player.x) < (beamW + e.w) / 2 && e.y < player.y) {
+        e.hp -= dmg;
+      }
+    }
+    if (boss && Math.abs(boss.x - player.x) < (beamW + boss.w) / 2 && boss.y < player.y) {
+      boss.hp -= dmg;
+    }
+  } else {
+    laserHeat = Math.max(0, laserHeat - laserHeatDownRate());
+    if (laserOverheated && laserHeat <= 25) laserOverheated = false;
+  }
+
+  laserBarFill.style.width = laserHeat + '%';
+  laserBarTrack.classList.toggle('overheat', laserOverheated);
+}
+
+function drawLaser() {
+  if (!laserActive) return;
+  const beamW = laserWidth();
+  const grad = ctx.createLinearGradient(0, 0, 0, player.y);
+  grad.addColorStop(0, 'rgba(159,232,255,0.05)');
+  grad.addColorStop(1, 'rgba(159,232,255,0.9)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(player.x - beamW/2, 0, beamW, player.y - 10);
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.fillRect(player.x - beamW/6, 0, beamW/3, player.y - 10);
+}
+
+function drawPlayer() {
+  ctx.save();
+  if (player.invuln > 0 && Math.floor(frame/4)%2===0) ctx.globalAlpha = 0.4;
+  ctx.drawImage(sprites.player, player.x-32, player.y-32, 64, 64);
+  ctx.restore();
+}
+
+let playerBullets = [];
+let enemyBullets = [];
+function firePlayerBullet() {
+  playerBullets.push({ x: player.x-10, y: player.y-10, vy:-9, w:3, h:10 });
+  playerBullets.push({ x: player.x+10, y: player.y-10, vy:-9, w:3, h:10 });
+}
+
+// ---------- Enemies & Bosses ----------
+let enemies = [];
+let boss = null;
+let spawnTimer = 0;
+
+const SPACE_FODDER = ['drone','drone','gunship','interceptor'];
+const LAND_FODDER = ['tank','tank','buggy','turret'];
+
+function spawnFodder(envType, difficultyBonus = 0) {
+  const pool = envType === 'land' ? LAND_FODDER : SPACE_FODDER;
+  const kind = pool[Math.floor(Math.random()*pool.length)];
+  const base = { x: Math.random()*(W-50)+25, y:-24, sway: Math.random()*1000, fireTimer: Math.random()*70 };
+  if (kind === 'drone') enemies.push({ ...base, kind, w:24, h:24, vy:1.8+Math.random()+difficultyBonus*0.3, hp:2 });
+  else if (kind === 'interceptor') enemies.push({ ...base, kind, w:22, h:22, vy:4+Math.random()*1.5+difficultyBonus*0.3, hp:1, fireTimer: 999 });
+  else if (kind === 'gunship') enemies.push({ ...base, kind, w:34, h:30, vy:1.1+difficultyBonus*0.15, hp:5 });
+  else if (kind === 'tank') enemies.push({ ...base, kind, w:30, h:30, vy:1+difficultyBonus*0.1, hp:6 });
+  else if (kind === 'buggy') enemies.push({ ...base, kind, w:24, h:24, vy:1.6+difficultyBonus*0.2, hp:3 });
+  else if (kind === 'turret') enemies.push({ ...base, kind, w:26, h:26, vy:0.5, hp:4, fireTimer: 30 });
+}
+
+function drawEnemySprite(kind, x, y) {
+  const [ow, oh] = spriteAspect[kind]; const s = spriteSize[kind]; const ratio = oh/ow;
+  ctx.drawImage(sprites[kind], x - s/2, y - (s*ratio)/2, s, s*ratio);
+}
+function drawEnemy(e) { drawEnemySprite(e.kind, e.x, e.y); }
+
+function enemyFire(e) {
+  if (e.kind === 'drone' || e.kind === 'tank') {
+    enemyBullets.push({ x:e.x, y:e.y+10, vx:0, vy:4, w:4, h:8, color: e.kind==='tank' ? '#c9d98a':'#ff6688' });
+  } else if (e.kind === 'gunship' || e.kind === 'turret') {
+    const angle = Math.atan2(player.y-e.y, player.x-e.x);
+    enemyBullets.push({ x:e.x, y:e.y+6, vx:Math.cos(angle)*3.5, vy:Math.sin(angle)*3.5, w:5, h:5, color: e.kind==='turret' ? '#ffaa55':'#ffcc66' });
+  } else if (e.kind === 'buggy') {
+    for (let a=-1; a<=1; a++) enemyBullets.push({ x:e.x+a*10, y:e.y+10, vx:a*1.5, vy:3.5, w:4, h:8, color:'#ffcf8a' });
+  } else if (e.kind === 'cruiser') {
+    for (let a=-1; a<=1; a++) enemyBullets.push({ x:e.x+a*18, y:e.y+20, vx:a*1.2, vy:4, w:5, h:10, color:'#e08cff' });
+  }
+}
+
+const BOSS_DEFS = {
+  cruiser:  { kind:'cruiser',  hp:70,  w:70,  h:46, name:'INTERCEPTOR CRUISER', pattern:'spread', env:'space' },
+  walker:   { kind:'walker',   hp:110, w:110, h:80, name:'GROUND WALKER',       pattern:'stomp',  env:'land'  },
+  carrier:  { kind:'carrier',  hp:170, w:110, h:56, name:'HEAVY CARRIER',       pattern:'drones+spread', env:'space' },
+  fortress: { kind:'fortress', hp:220, w:140, h:80, name:'BORDER FORTRESS',     pattern:'triple', env:'land'  },
+  flagship: { kind:'flagship', hp:300, w:140, h:80, name:'ENEMY FLAGSHIP',      pattern:'laser+spread', env:'space' },
+  frigate:     { kind:'frigate',     hp:230, w:90,  h:60, name:'STEALTH FRIGATE',   pattern:'spread',        env:'space' },
+  convoy:      { kind:'convoy',      hp:260, w:110, h:60, name:'SIEGE CONVOY',      pattern:'stomp',         env:'land'  },
+  dreadnought: { kind:'dreadnought', hp:330, w:150, h:85, name:'VOID DREADNOUGHT',  pattern:'laser+spread',  env:'space' },
+  bunker:      { kind:'bunker',      hp:380, w:150, h:85, name:'BUNKER COMPLEX',    pattern:'triple',        env:'land'  },
+  mothership:  { kind:'mothership',  hp:480, w:170, h:100,name:'THE MOTHERSHIP',    pattern:'mothership',    env:'space' }
+};
+
+function spawnBoss(defKey) {
+  const def = BOSS_DEFS[defKey];
+  boss = { kind: def.kind, x: W/2, y: -100, targetY: def.env==='land' ? 130 : 100,
+    w: def.w, h: def.h, hp: def.hp, maxHp: def.hp, name: def.name, pattern: def.pattern,
+    fireTimer: 60, dir: 1, entering: true };
+  bossBarWrap.style.display = 'block';
+  bossBarName.textContent = def.name;
+  bossBarFill.style.width = '100%';
+}
+
+function bossFire() {
+  if (boss.pattern === 'spread') {
+    for (let a=-2; a<=2; a++) enemyBullets.push({ x:boss.x+a*14, y:boss.y+boss.h/3, vx:a*0.9, vy:4, w:6, h:12, color:'#e08cff' });
+  } else if (boss.pattern === 'drones+spread') {
+    for (let a=-2; a<=2; a++) enemyBullets.push({ x:boss.x+a*16, y:boss.y+boss.h/3, vx:a*1.1, vy:4.2, w:6, h:12, color:'#ffb84d' });
+    if (Math.random() < 0.35) enemies.push({ kind:'drone', x: boss.x + (Math.random()*80-40), y: boss.y+20, w:24, h:24, vy:2.2, hp:2, fireTimer:80, sway:Math.random()*1000 });
+  } else if (boss.pattern === 'laser+spread') {
+    for (let a=-3; a<=3; a++) enemyBullets.push({ x:boss.x+a*15, y:boss.y+boss.h/3, vx:a*1.3, vy:4.5, w:6, h:14, color:'#ff5599' });
+    const angle = Math.atan2(player.y-boss.y, player.x-boss.x);
+    enemyBullets.push({ x:boss.x, y:boss.y+10, vx:Math.cos(angle)*6, vy:Math.sin(angle)*6, w:8, h:8, color:'#ffe27a' });
+  } else if (boss.pattern === 'stomp') {
+    for (let a=-2; a<=2; a++) enemyBullets.push({ x:boss.x+a*20, y:boss.y+30, vx:a*1.4, vy:3.8, w:7, h:12, color:'#c9d98a' });
+    if (Math.random() < 0.3) enemies.push({ kind:'tank', x: boss.x + (Math.random()*100-50), y: boss.y+30, w:30, h:30, vy:1.6, hp:6, fireTimer:60, sway:0 });
+  } else if (boss.pattern === 'triple') {
+    [-40,0,40].forEach(off => enemyBullets.push({ x:boss.x+off, y:boss.y+30, vx:0, vy:4.2, w:6, h:12, color:'#ff8a6a' }));
+    if (Math.random() < 0.25) {
+      for (let a=0; a<8; a++) { const ang=(a/8)*Math.PI*2; enemyBullets.push({ x:boss.x, y:boss.y, vx:Math.cos(ang)*3, vy:Math.sin(ang)*3, w:6, h:6, color:'#ff5555' }); }
+    }
+  } else if (boss.pattern === 'mothership') {
+    for (let a=0; a<12; a++) { const ang=(a/12)*Math.PI*2; enemyBullets.push({ x:boss.x, y:boss.y, vx:Math.cos(ang)*2.6, vy:Math.sin(ang)*2.6, w:7, h:7, color:'#c9a0ff' }); }
+    const angle = Math.atan2(player.y-boss.y, player.x-boss.x);
+    enemyBullets.push({ x:boss.x, y:boss.y, vx:Math.cos(angle)*6.5, vy:Math.sin(angle)*6.5, w:9, h:9, color:'#ffe27a' });
+    if (Math.random() < 0.3) enemies.push({ kind:'interceptor', x: boss.x + (Math.random()*100-50), y: boss.y+30, w:22, h:22, vy:4, hp:1, fireTimer:999, sway:Math.random()*1000 });
+  }
+}
+
+function updateBoss() {
+  if (!boss) return;
+  if (boss.entering) { boss.y += 1.5; if (boss.y >= boss.targetY) { boss.y = boss.targetY; boss.entering = false; } return; }
+  if (boss.kind !== 'fortress') { boss.x += boss.dir*1.4; if (boss.x < 70 || boss.x > W-70) boss.dir *= -1; }
+  boss.fireTimer--;
+  if (boss.fireTimer <= 0) { bossFire(); boss.fireTimer = 55; }
+  bossBarFill.style.width = Math.max(0, (boss.hp/boss.maxHp)*100) + '%';
+}
+
+// ---------- Explosions ----------
+let particles = [];
+function explode(x,y,color,count=14) {
+  for (let i=0;i<count;i++){ const a=Math.random()*Math.PI*2, sp=Math.random()*4+1; particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:30+Math.random()*15,color}); }
+}
+function updateParticles(){ particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.life--;}); particles=particles.filter(p=>p.life>0); }
+function drawParticles(){ particles.forEach(p=>{ ctx.globalAlpha=Math.max(p.life/40,0); ctx.fillStyle=p.color; ctx.fillRect(p.x-2,p.y-2,4,4); }); ctx.globalAlpha=1; }
+
+function hit(ax,ay,aw,ah,bx,by,bw,bh){ return Math.abs(ax-bx)<(aw+bw)/2 && Math.abs(ay-by)<(ah+bh)/2; }
+
+// ---------- Rescue ships (land levels only) ----------
+let rescueShips = [];
+let rescueSpawnTimer = 0;
+let rescuedCount = 0;
+let missedCount = 0;
+const rescueLineEl = document.getElementById('rescueLine');
+const rescueCountEl = document.getElementById('rescueCount');
+
+function spawnRescueShip() {
+  rescueShips.push({ x: Math.random()*(W-70)+35, y: -30, w: 30, h: 30, saved: false });
+  radio('RADAR', "Distress beacon on the ground — downed pilot down there, fly over them to bring them home.");
+}
+
+function updateRescueShips(scrollSpeed) {
+  rescueShips.forEach(r => { r.y += scrollSpeed; });
+  rescueShips.forEach(r => {
+    if (!r.saved && hit(r.x, r.y, r.w, r.h, player.x, player.y, player.w, player.h)) {
+      r.saved = true;
+      rescuedCount++;
+      score += 100;
+      rescueCountEl.textContent = rescuedCount;
+      explode(r.x, r.y, '#7fffb0', 16);
+      radio('WING', "Got them! Pilot recovered, heading home safe.");
+    }
+  });
+  rescueShips.forEach(r => {
+    if (!r.saved && r.y >= H + 30 && !r.countedMiss) {
+      r.countedMiss = true;
+      missedCount++;
+      radio('COMMAND', "Contact lost on that beacon — better luck on the next flyby.");
+    }
+  });
+  rescueShips = rescueShips.filter(r => r.y < H + 40);
+}
+
+function drawRescueShips() {
+  rescueShips.forEach(r => {
+    if (r.saved) return;
+    const pulse = 0.5 + 0.5 * Math.sin(frame * 0.15);
+    ctx.save();
+    ctx.globalAlpha = 0.5 + pulse * 0.5;
+    ctx.fillStyle = '#7fffb0';
+    ctx.beginPath();
+    ctx.arc(r.x, r.y - 18, 3 + pulse * 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    drawEnemySprite('stranded', r.x, r.y);
+  });
+}
+
+// ---------- Power-ups ----------
+let powerups = [];
+let rapidTimer = 0;
+const POWERUP_TYPES = {
+  health: { color: '#7fffb0', letter: 'H' },
+  bomb:   { color: '#ffdd66', letter: 'B' },
+  shield: { color: '#7fd0ff', letter: 'S' },
+  rapid:  { color: '#ff9fd6', letter: 'R' }
+};
+function maybeDropPowerup(x, y) {
+  if (Math.random() < 0.08) {
+    const keys2 = Object.keys(POWERUP_TYPES);
+    const type = keys2[Math.floor(Math.random()*keys2.length)];
+    powerups.push({ x, y, vy: 1.8, type });
+  }
+}
+function updatePowerups() {
+  powerups.forEach(p => p.y += p.vy);
+  powerups.forEach(p => {
+    if (!p.collected && hit(p.x, p.y, 22, 22, player.x, player.y, player.w, player.h)) {
+      p.collected = true;
+      applyPowerup(p.type);
+    }
+  });
+  powerups = powerups.filter(p => !p.collected && p.y < H + 30);
+}
+function applyPowerup(type) {
+  if (type === 'health') {
+    player.health = Math.min(player.maxHealth, player.health + 25);
+    healthEl.textContent = Math.floor(player.health);
+    radio('WING', 'Repair kit collected — hull patched up.');
+  } else if (type === 'bomb') {
+    bombs = Math.min(bombCap(), bombs + 1);
+    bombEl.textContent = bombs;
+    radio('WING', 'Extra bomb secured.');
+  } else if (type === 'shield') {
+    player.invuln = Math.max(player.invuln, 180);
+    radio('WING', 'Shield online — three seconds of cover.');
+  } else if (type === 'rapid') {
+    rapidTimer = 480;
+    radio('WING', 'Weapons overcharged — firing faster!');
+  }
+}
+function drawPowerups() {
+  powerups.forEach(p => {
+    const def = POWERUP_TYPES[p.type];
+    ctx.save();
+    ctx.globalAlpha = 0.55 + 0.35 * Math.sin(frame * 0.2 + p.x);
+    ctx.fillStyle = def.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 11, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+    ctx.fillStyle = '#061224';
+    ctx.font = 'bold 12px monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(def.letter, p.x, p.y + 1);
+  });
+}
+
+function useBomb() {
+  if (bombs <= 0) return;
+  bombs--; bombEl.textContent = bombs;
+  radio('WING', 'Bomb away — brace!');
+  let hitCount = enemies.length;
+  enemies.forEach(e => { explode(e.x,e.y,'#ffffff',10); score+=20; });
+  enemies = [];
+  enemyBullets = [];
+  if (boss) { boss.hp -= 15; explode(boss.x, boss.y, '#ffffff', 20); }
+  player.invuln = 60;
+  if (mode === 'bombrush' && hitCount >= 4) {
+    const bonus = hitCount * 25;
+    score += bonus;
+    radio('WING', `Chain bomb! +${bonus} for ${hitCount} kills!`);
+  }
+}
+
+let lastMilestone = 0;
+function checkMilestones() {
+  if (score - lastMilestone >= 500) { lastMilestone = score; radio('COMMAND', `Nice work, pilot — ${score} points and counting.`); }
+}
+
+// ---------- Campaign levels ----------
+const CAMPAIGN_LEVELS = [
+  { name:'Outer Patrol', type:'space', quota: 14, boss:'cruiser',
+    intro: [['COMMAND',"Wing, you're clear for launch. Sky Force, good hunting out there."],['WING',"Copy that, Command. Engines hot, weapons armed."]],
+    bossIntro: [['RADAR',"Large contact climbing on scope. This one's armored."],['UNKNOWN',"...your squadron ends here, pilot."],['WING',"Not today. Focus fire on the core!"]],
+    bossDown: [['WING','Cruiser down! One sector clear.']] },
+  { name:'Wasteland Outskirts', type:'land', quota: 16, boss:'walker',
+    intro: [['COMMAND',"Dropping to low altitude. Ground forces are dug in ahead."],['RADAR',"Watch for turrets — they'll track you the moment you're in range."]],
+    bossIntro: [['RADAR',"Massive walker unit ahead, flattening everything in its path."],['WING',"Copy. Aim for the cockpit."]],
+    bossDown: [['WING','Walker down. That thing shook the whole valley.']] },
+  { name:'Supply Lines', type:'space', quota: 20, boss:'carrier',
+    intro: [['COMMAND',"Good work back there. Sector traffic is heavier up here — stay sharp."],['RADAR',"Picking up a carrier-class hull deeper in the sector."]],
+    bossIntro: [['RADAR',"That's the carrier. It'll keep launching drones — don't let it overwhelm you."],['WING',"Copy. Taking point."]],
+    bossDown: [['COMMAND','Carrier destroyed. Command is proud of you, Sky Force.']] },
+  { name:'Fortress Approach', type:'land', quota: 22, boss:'fortress',
+    intro: [['COMMAND',"Border fortress dead ahead. It won't move, but it hits hard from range."],['WING',"Then we close the distance and don't let up."]],
+    bossIntro: [['RADAR',"Triple cannon array active. Watch for the radial burst."],['WING',"Copy, weaving in."]],
+    bossDown: [['COMMAND','Fortress silenced. The approach is clear.']] },
+  { name:'The Flagship', type:'space', quota: 26, boss:'flagship',
+    intro: [['COMMAND',"This is it, pilot. Their flagship is holding position at the edge of the sector."],['UNKNOWN',"You've come far. It changes nothing."]],
+    bossIntro: [['RADAR',"Flagship weapons are hot. This will not be easy."],['WING',"Then let's make it quick. With me, Sky Force!"]],
+    bossDown: [['COMMAND',"Flagship down! Sky Force, you did it. Command out — and thank you."]] },
+  { name:'Deep Space Ambush', type:'space', quota: 28, boss:'frigate',
+    intro: [['RADAR',"New contact — reads as a stealth frigate, hiding in the debris field."],['WING',"Copy. Eyes open, this one likes to sneak."]],
+    bossIntro: [['RADAR',"It's decloaked! Weapons hot!"],['UNKNOWN',"You'll never see the next one coming."]],
+    bossDown: [['WING','Frigate down. Nothing stays hidden from Sky Force.']] },
+  { name:'Siege Line', type:'land', quota: 30, boss:'convoy',
+    intro: [['COMMAND',"Ground command reports a siege convoy rolling toward the border."],['RADAR',"Multiple hulls, moving together. Break the formation."]],
+    bossIntro: [['RADAR',"Convoy's in range. It's slow but it hits from every angle."],['WING',"Then let's give it somewhere to go — down."]],
+    bossDown: [['COMMAND','Convoy neutralized. The line holds.']] },
+  { name:'The Void Line', type:'space', quota: 34, boss:'dreadnought',
+    intro: [['UNKNOWN',"You think their flagship was our finest? You've seen nothing."],['COMMAND',"Ignore the theatrics, pilot. Stay focused."]],
+    bossIntro: [['RADAR',"Dreadnought-class. Massive hull, massive firepower."],['WING',"Massive just means more places to hit."]],
+    bossDown: [['WING','Dreadnought down! Command, tell me that was their biggest.']] },
+  { name:'The Last Bunker', type:'land', quota: 38, boss:'bunker',
+    intro: [['COMMAND',"Deep bunker complex ahead — dug in, heavily armored, and not going anywhere."],['RADAR',"It won't chase you. It doesn't have to."]],
+    bossIntro: [['RADAR',"All guns active. Keep moving, don't give it a fixed target."],['WING',"Copy. Weaving in now."]],
+    bossDown: [['COMMAND','Bunker silenced. That was their last dug-in position.']] },
+  { name:'The Mothership', type:'space', quota: 44, boss:'mothership',
+    intro: [['COMMAND',"This is the one, pilot. Their mothership. End this, and it's over."],['UNKNOWN',"Then let it end. I've been waiting for a real fight."],['WING',"With you all the way, Sky Force."]],
+    bossIntro: [['RADAR',"Full weapons bloom detected. Everything it has, all at once."],['WING',"Then let's give it everything we've got back."]],
+    bossDown: [['COMMAND',"...it's down. It's actually down. Sky Force, you just ended a war. Come home, pilot."]] }
+];
+
+let currentLevel = 0;
+let levelKills = 0;
+let levelPhase = 'wave';
+let bossRushIndex = 0;
+const BOSS_RUSH_ORDER = ['cruiser','walker','carrier','fortress','flagship','frigate','convoy','dreadnought','bunker','mothership'];
+let currentEnv = 'space';
+let bombRegenTimer = 0;
+let burstTimer = 0;
+function bombCap() { return mode === 'bombrush' ? 6 + upgrades.bombs : 3 + upgrades.bombs; }
+function bombRegenInterval() { return Math.max(150, 300 - upgrades.bombs*25); }
+
+function launchRun() {
+  score = 0; frame = 0; gameOver = false; enemies = []; enemyBullets = []; playerBullets = []; particles = [];
+  boss = null; lastMilestone = 0; lowHealthWarned = false; levelKills = 0;
+  player.x = W/2; player.y = H-100; player.invuln = 0; player.cooldown = 0;
+  laserHeat = 0; laserOverheated = false; laserActive = false;
+  rescueShips = []; rescueSpawnTimer = 300; rescuedCount = 0; missedCount = 0;
+  rescueCountEl.textContent = 0;
+  powerups = []; rapidTimer = 0;
+  applyUpgradesToPlayer();
+  if (mode === 'bombrush') bombs = bombCap();
+  scoreEl.textContent = 0; healthEl.textContent = player.health; maxHealthEl.textContent = player.maxHealth;
+  bombEl.textContent = bombs; modeLabelEl.textContent = mode.toUpperCase();
+  bombRegenWrap.style.display = mode === 'bombrush' ? 'block' : 'none';
+  bossBarWrap.style.display = 'none';
+  initTerrain();
+  showScreen(null);
+  paused = false; running = true;
+
+  if (mode === 'campaign') { levelPhase = 'wave'; startClassicLevel(); }
+  else if (mode === 'survival') {
+    currentEnv = 'space'; levelPhase = 'wave';
+    showBanner('SURVIVAL MODE', 'Endless waves — how long can you last?');
+    queueDialog('COMMAND', "No extraction on this one, pilot. Hold the line as long as you can.");
+  } else if (mode === 'bombrush') {
+    currentEnv = 'space'; levelPhase = 'wave'; burstTimer = 90; bombRegenTimer = bombRegenInterval();
+    showBanner('BOMB RUSH', 'Bombs regen fast — clear the wave, chain your blasts!');
+    queueDialog('COMMAND', "We're feeding you extra ordnance, pilot. Let the bombs fly!");
+  } else if (mode === 'bossrush') {
+    bossRushIndex = 0; levelPhase = 'boss';
+    currentEnv = BOSS_DEFS[BOSS_RUSH_ORDER[0]].env;
+    showBanner('BOSS RUSH', 'Boss 1 of ' + BOSS_RUSH_ORDER.length);
+    queueDialog('COMMAND', "Skipping the fodder — you're going straight for their capital ships.");
+    onQueueEmpty = () => spawnBoss(BOSS_RUSH_ORDER[bossRushIndex]);
+  }
+}
+
+function startClassicLevel() {
+  const lvl = CAMPAIGN_LEVELS[currentLevel];
+  currentEnv = lvl.type;
+  levelKills = 0; levelPhase = 'wave';
+  enemies = []; enemyBullets = []; boss = null;
+  bossBarWrap.style.display = 'none';
+  showBanner(`MISSION ${currentLevel+1}: ${lvl.name.toUpperCase()}`, `Defeat ${lvl.quota} enemies to summon the boss`);
+  lvl.intro.forEach(([who,text]) => queueDialog(who, text));
+}
+
+function onFodderKilled() {
+  levelKills++;
+  if (mode === 'campaign' && levelPhase === 'wave') {
+    const lvl = CAMPAIGN_LEVELS[currentLevel];
+    if (levelKills >= lvl.quota) {
+      levelPhase = 'boss'; enemies = []; enemyBullets = [];
+      lvl.bossIntro.forEach(([who,text]) => queueDialog(who, text));
+      onQueueEmpty = () => spawnBoss(lvl.boss);
+    }
+  }
+}
+
+function onBossDefeated() {
+  bossBarWrap.style.display = 'none';
+  score += 500;
+  explode(boss.x, boss.y, '#ffffff', 40);
+  powerups.push({ x: boss.x, y: boss.y, vy: 1.5, type: 'health' });
+  boss = null;
+
+  if (mode === 'campaign') {
+    const lvl = CAMPAIGN_LEVELS[currentLevel];
+    if (!clearedLevels.includes(currentLevel)) clearedLevels.push(currentLevel);
+    if (currentLevel === unlockedLevel && unlockedLevel < CAMPAIGN_LEVELS.length-1) unlockedLevel++;
+    lvl.bossDown.forEach(([who,text]) => queueDialog(who, text));
+    if (currentLevel < CAMPAIGN_LEVELS.length-1) {
+      onQueueEmpty = () => { currentLevel++; startClassicLevel(); };
+    } else {
+      onQueueEmpty = () => endRun(true, 'Campaign complete! Every sector is secure.');
+    }
+  } else if (mode === 'bossrush') {
+    bossRushIndex++;
+    if (bossRushIndex >= BOSS_RUSH_ORDER.length) {
+      queueDialog('COMMAND', "All capital ships down. Outstanding flying, Sky Force.");
+      onQueueEmpty = () => endRun(true, 'Boss Rush complete!');
+    } else {
+      currentEnv = BOSS_DEFS[BOSS_RUSH_ORDER[bossRushIndex]].env;
+      showBanner('BOSS DOWN', `Boss ${bossRushIndex+1} of ${BOSS_RUSH_ORDER.length}`);
+      onQueueEmpty = () => spawnBoss(BOSS_RUSH_ORDER[bossRushIndex]);
+    }
+  }
+}
+
+function endRun(victory, subtitle) {
+  running = false; gameOver = true; paused = true;
+  const earned = Math.floor(score / 10);
+  credits += earned;
+  document.getElementById('endTitle').textContent = victory ? 'MISSION COMPLETE' : 'SHIP LOST';
+  document.getElementById('endSubtitle').textContent = subtitle || '';
+  document.getElementById('endScore').textContent = score;
+  document.getElementById('endCredits').textContent = earned;
+  const rescueLine = document.getElementById('endRescueLine');
+  if (rescuedCount > 0 || missedCount > 0) {
+    rescueLine.style.display = 'block';
+    document.getElementById('endRescued').textContent = `${rescuedCount} saved${missedCount > 0 ? ', ' + missedCount + ' lost' : ''}`;
+  } else {
+    rescueLine.style.display = 'none';
+  }
+  showScreen('end');
+}
+
+// ---------- Main loop ----------
+function update() {
+  if (!running || gameOver || paused) return;
+  frame++;
+
+  let mvx=0, mvy=0;
+  if (keys['ArrowLeft']||keys['KeyA']) mvx-=1;
+  if (keys['ArrowRight']||keys['KeyD']) mvx+=1;
+  if (keys['ArrowUp']||keys['KeyW']) mvy-=1;
+  if (keys['ArrowDown']||keys['KeyS']) mvy+=1;
+  const mag = Math.hypot(mvx,mvy) || 1;
+  player.x += (mvx/mag)*player.speed;
+  player.y += (mvy/mag)*player.speed;
+  player.x = Math.max(18, Math.min(W-18, player.x));
+  player.y = Math.max(18, Math.min(H-18, player.y));
+
+  if (keys['Space'] && player.cooldown<=0) { firePlayerBullet(); player.cooldown = fireCooldownFrames(); }
+  if (player.cooldown>0) player.cooldown--;
+  if (player.invuln>0) player.invuln--;
+  if (keys['KeyX']) { useBomb(); keys['KeyX']=false; }
+
+  if (levelPhase === 'wave') {
+    if (mode === 'bombrush') {
+      burstTimer--;
+      if (burstTimer <= 0) {
+        const burstSize = 5 + Math.floor(Math.min(score/400, 5));
+        for (let i = 0; i < burstSize; i++) spawnFodder('space', Math.min(score/300, 6));
+        burstTimer = 130 + Math.random()*60;
+        radio('RADAR', 'Big group inbound — bomb it before it closes in!');
+      }
+      bombRegenTimer--;
+      if (bombRegenTimer <= 0) {
+        if (bombs < bombCap()) { bombs++; bombEl.textContent = bombs; }
+        bombRegenTimer = bombRegenInterval();
+      }
+      bombRegenFill.style.width = Math.max(0, 100 - (bombRegenTimer / bombRegenInterval()) * 100) + '%';
+    } else {
+      spawnTimer--;
+      if (spawnTimer <= 0) {
+        const diffBonus = mode==='survival' ? Math.min(score/300, 6) : 0;
+        spawnFodder(currentEnv, diffBonus);
+        spawnTimer = Math.max(16, 55 - Math.floor(score/150));
+      }
+    }
+    if (currentEnv === 'land') {
+      rescueSpawnTimer--;
+      if (rescueSpawnTimer <= 0) {
+        spawnRescueShip();
+        rescueSpawnTimer = 420 + Math.random() * 280;
+      }
+    }
+  }
+
+  playerBullets.forEach(b=>b.y+=b.vy);
+  playerBullets = playerBullets.filter(b=>b.y>-20);
+  enemyBullets.forEach(b=>{b.x+=b.vx;b.y+=b.vy;});
+  enemyBullets = enemyBullets.filter(b=>b.y<H+20 && b.x>-20 && b.x<W+20);
+
+  enemies.forEach(e => {
+    e.y += e.vy;
+    if (e.kind!=='cruiser') e.x += Math.sin((frame+e.sway)*0.03) * (e.kind==='buggy' ? 2.6 : 1.2);
+    e.fireTimer--;
+    if (e.fireTimer<=0 && e.y>0) {
+      enemyFire(e);
+      e.fireTimer = e.kind==='cruiser'?45:(e.kind==='gunship'?70:(e.kind==='turret'?50:(e.kind==='buggy'?65:90)));
+    }
+  });
+
+  updateBoss();
+  updateTerrain(currentEnv === 'land' ? 1.4 : 0);
+  if (currentEnv === 'land') { updateRescueShips(1.4); rescueLineEl.style.display = 'inline'; }
+  else { rescueLineEl.style.display = 'none'; }
+  if (currentEnv === 'space') updateStars();
+
+  for (const b of playerBullets) {
+    for (const e of enemies) {
+      if (hit(b.x,b.y,b.w,b.h,e.x,e.y,e.w,e.h)) { e.hp -= player.damage; b.hit=true; explode(b.x,b.y,'#88ffee',4); }
+    }
+    if (boss && hit(b.x,b.y,b.w,b.h,boss.x,boss.y,boss.w,boss.h)) { boss.hp -= player.damage; b.hit=true; explode(b.x,b.y,'#88ffee',3); }
+  }
+  playerBullets = playerBullets.filter(b=>!b.hit);
+
+  enemies.forEach(e => {
+    if (e.hp<=0) {
+      const pts = { drone:20, interceptor:15, gunship:60, tank:35, buggy:25, turret:30 }[e.kind] || 20;
+      score += pts;
+      explode(e.x,e.y, '#ffaa55', 14);
+      maybeDropPowerup(e.x, e.y);
+      e.dead = true;
+      onFodderKilled();
+    }
+  });
+  enemies = enemies.filter(e => !e.dead && e.y < H+60);
+
+  if (boss && boss.hp <= 0) onBossDefeated();
+
+  if (player.invuln<=0) {
+    for (const b of enemyBullets) if (hit(b.x,b.y,b.w,b.h,player.x,player.y,player.w,player.h)) { b.hit=true; damagePlayer(10); }
+    for (const e of enemies) if (hit(e.x,e.y,e.w,e.h,player.x,player.y,player.w,player.h)) { e.hp=0; damagePlayer(25); }
+    if (boss && hit(boss.x,boss.y,boss.w,boss.h,player.x,player.y,player.w,player.h)) damagePlayer(30);
+  }
+  enemyBullets = enemyBullets.filter(b=>!b.hit);
+
+  updateLaser();
+  updatePowerups();
+  if (rapidTimer > 0) rapidTimer--;
+  updateParticles();
+  checkMilestones();
+  scoreEl.textContent = score;
+}
+
+let lowHealthWarned = false;
+function damagePlayer(amount) {
+  player.health -= amount;
+  player.invuln = 60;
+  explode(player.x, player.y, '#ff4444', 10);
+  healthEl.textContent = Math.max(player.health, 0);
+  if (player.health<=player.maxHealth*0.4 && !lowHealthWarned) {
+    lowHealthWarned = true;
+    queueDialog('COMMAND', "Hull integrity critical! Pull back and regroup if you need to, pilot.");
+  }
+  if (player.health<=0 && !gameOver) {
+    explode(player.x, player.y, '#ffffff', 40);
+    queueDialog('COMMAND', mode==='survival' ? `You held out for ${score} points. Rest easy, Sky Force.` : "We've lost telemetry... rest easy, Sky Force. You held the line.");
+    onQueueEmpty = () => endRun(false, 'Your ship went down in the field.');
+  }
+}
+
+function draw() {
+  ctx.clearRect(0,0,W,H);
+  if (currentEnv === 'land') drawLandBG(); else drawSpaceBG();
+  if (currentEnv === 'land') drawRescueShips();
+  enemyBullets.forEach(b => { ctx.fillStyle=b.color; ctx.fillRect(b.x-b.w/2,b.y-b.h/2,b.w,b.h); });
+  enemies.forEach(drawEnemy);
+  if (boss) drawEnemySprite(boss.kind, boss.x, boss.y);
+  playerBullets.forEach(b => { ctx.fillStyle='#9fffea'; ctx.fillRect(b.x-b.w/2,b.y-b.h/2,b.w,b.h); });
+  drawPowerups();
+  drawLaser();
+  if (running && !gameOver) drawPlayer();
+  drawParticles();
+}
+
+function loop() {
+  if (running) { update(); draw(); }
+  else { ctx.clearRect(0,0,W,H); drawSpaceBG(); }
+  requestAnimationFrame(loop);
+}
+refreshCreditsDisplay();
+loop();
+</script>
+</body>
+</html>

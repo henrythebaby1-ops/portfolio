@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stacks — Library Search</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#20261f;
+    --paper:#f4efe3;
+    --paper-dim:#eae2ce;
+    --moss:#33472f;
+    --moss-deep:#212e1e;
+    --brass:#a9803f;
+    --brass-light:#cfa968;
+    --card:#fffdf7;
+    --line:#d9cfb4;
+    --available:#3d6b3f;
+    --waitlist:#a05a2c;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Inter',sans-serif;background:var(--paper);color:var(--ink);}
+  h1,h2,h3,.serif{font-family:'Fraunces',serif;}
+
+  .app{display:grid;grid-template-columns:380px 1fr;min-height:100vh;}
+
+  /* ---- LEFT: AI PANEL ---- */
+  .ai-panel{
+    background:var(--moss-deep);
+    color:var(--paper);
+    display:flex;
+    flex-direction:column;
+    padding:28px 26px 20px;
+    position:relative;
+    overflow:hidden;
+  }
+  .ai-panel::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image:
+      radial-gradient(circle at 20% 15%, rgba(207,169,104,0.10), transparent 40%),
+      repeating-linear-gradient(180deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 34px);
+    pointer-events:none;
+  }
+  .ai-header{position:relative; margin-bottom:18px;}
+  .ai-mark{
+    display:inline-flex; align-items:center; gap:8px;
+    font-size:12.5px; letter-spacing:0.02em; color:var(--brass-light);
+    margin-bottom:10px;
+  }
+  .ai-mark svg{width:14px;height:14px;}
+  .ai-header h1{font-size:26px;font-weight:500;margin:0 0 6px;line-height:1.15;}
+  .ai-header p{font-size:13.5px;color:#c9d1c4;margin:0;line-height:1.5;max-width:30ch;}
+
+  .ai-thread{
+    position:relative;
+    flex:1;
+    overflow-y:auto;
+    margin:18px -6px 14px;
+    padding:0 6px;
+    display:flex; flex-direction:column; gap:14px;
+  }
+  .msg{max-width:92%;font-size:14px;line-height:1.5;}
+  .msg.user{align-self:flex-end;background:rgba(207,169,104,0.16);border:1px solid rgba(207,169,104,0.3);padding:10px 13px;border-radius:12px 12px 3px 12px;}
+  .msg.ai{align-self:flex-start;color:#eef0e6;}
+  .msg.ai .bubble{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);padding:11px 14px;border-radius:3px 12px 12px 12px;}
+  .msg.ai .label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--brass-light);margin-bottom:5px;display:block;}
+  .msg.system{color:#9aa596;font-size:13px;font-style:italic;}
+
+  .rec-list{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+  .rec-chip{
+    display:flex;justify-content:space-between;align-items:center;
+    background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
+    border-radius:8px;padding:9px 11px;cursor:pointer;transition:background .15s ease, transform .15s ease;
+  }
+  .rec-chip:hover{background:rgba(207,169,104,0.14);transform:translateX(2px);}
+  .rec-chip .t{font-size:13.5px;font-weight:600;color:#fff;}
+  .rec-chip .a{font-size:12px;color:#b9c2b2;}
+  .rec-chip .arrow{color:var(--brass-light);font-size:15px;}
+
+  .prompt-row{position:relative;display:flex;gap:8px;}
+  .prompt-row input{
+    flex:1;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.16);
+    color:#fff;border-radius:10px;padding:13px 14px;font-size:14px;font-family:inherit;outline:none;
+  }
+  .prompt-row input::placeholder{color:#8d9787;}
+  .prompt-row input:focus{border-color:var(--brass-light);}
+  .prompt-row button{
+    background:var(--brass);color:#1c1408;border:none;border-radius:10px;
+    padding:0 18px;font-weight:600;font-size:14px;cursor:pointer;transition:background .15s ease;
+  }
+  .prompt-row button:hover{background:var(--brass-light);}
+  .prompt-row button:disabled{opacity:.5;cursor:default;}
+  .suggestions{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;position:relative;}
+  .suggestions button{
+    background:transparent;border:1px solid rgba(255,255,255,0.18);color:#cfd6c9;
+    font-size:11.5px;padding:6px 10px;border-radius:100px;cursor:pointer;font-family:inherit;
+  }
+  .suggestions button:hover{border-color:var(--brass-light);color:#fff;}
+
+  .key-note{position:relative;margin-top:14px;font-size:11px;color:#8d9787;line-height:1.5;}
+  .key-note code{background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px;color:#dfe6d8;}
+
+  /* ---- RIGHT: SEARCH ---- */
+  .main{padding:36px 48px 60px;max-width:1180px;}
+  .main-top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:26px;gap:20px;flex-wrap:wrap;}
+  .main-top h2{font-size:28px;margin:0 0 6px;font-weight:500;}
+  .main-top p{margin:0;color:#5b5a4c;font-size:14px;}
+  .searchbar{
+    display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);
+    border-radius:10px;padding:12px 16px;min-width:280px;
+  }
+  .searchbar input{border:none;outline:none;background:transparent;font-size:14px;flex:1;font-family:inherit;color:var(--ink);}
+  .searchbar svg{width:16px;height:16px;color:#8a8672;}
+
+  .result-note{
+    display:flex;align-items:center;gap:8px;background:#efe6c9;border:1px solid var(--brass-light);
+    color:#5c451d;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:22px;
+  }
+  .result-note svg{width:15px;height:15px;flex-shrink:0;}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:20px;}
+  .book{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;
+    display:flex;flex-direction:column;transition:box-shadow .15s ease, transform .15s ease;
+  }
+  .book:hover{box-shadow:0 8px 20px rgba(33,46,30,0.09);transform:translateY(-2px);}
+  .cover{
+    height:150px;display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;font-size:15px;text-align:center;padding:14px;color:#fff;line-height:1.3;
+    position:relative;
+  }
+  .cover .spine{position:absolute;left:0;top:0;bottom:0;width:8px;background:rgba(0,0,0,0.18);}
+  .book-body{padding:14px 15px 16px;display:flex;flex-direction:column;gap:8px;flex:1;}
+  .book-body h3{font-size:15.5px;margin:0;font-weight:600;line-height:1.3;}
+  .book-body .author{font-size:12.5px;color:#736f5c;margin:0;}
+  .badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;}
+  .badge{font-size:10.5px;padding:3px 8px;border-radius:100px;font-weight:600;letter-spacing:.02em;}
+  .badge.available{background:#e2ecdf;color:var(--available);}
+  .badge.waitlist{background:#f3e3d3;color:var(--waitlist);}
+  .badge.ebook{background:#dce7ee;color:#2b5d78;display:flex;align-items:center;gap:4px;}
+  .branches{font-size:12px;color:#5b5a4c;margin-top:auto;padding-top:6px;border-top:1px solid var(--line);}
+  .branches b{color:var(--ink);}
+  .ebook-link{
+    margin-top:2px;font-size:12.5px;color:#2b5d78;font-weight:600;text-decoration:none;
+    display:inline-flex;align-items:center;gap:4px;
+  }
+  .ebook-link:hover{text-decoration:underline;}
+
+  @media (max-width:820px){
+    .app{grid-template-columns:1fr;}
+    .ai-panel{min-height:480px;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- AI PANEL -->
+  <aside class="ai-panel">
+    <div class="ai-header">
+      <span class="ai-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
+        Ask the stacks
+      </span>
+      <h1>Find your next read</h1>
+      <p>Describe what you're in the mood for — I'll suggest books and link you straight to live availability at Santa Clara County Library.</p>
+    </div>
+
+    <div class="ai-thread" id="thread">
+      <div class="msg system">Try: "Give me books like Pete the Cat" or "something funny for a 6 year old who likes animals"</div>
+    </div>
+
+    <div>
+      <div class="suggestions" id="suggestions">
+        <button data-q="Give me books like Pete the Cat that are available at Cupertino Library">Like Pete the Cat @ Cupertino</button>
+        <button data-q="A cozy mystery for adults">Cozy mystery</button>
+        <button data-q="Graphic novels for middle schoolers">Graphic novels, MS</button>
+      </div>
+      <div class="prompt-row" style="margin-top:12px;">
+        <input id="promptInput" type="text" placeholder="Ask for a recommendation..." />
+        <button id="askBtn">Ask</button>
+      </div>
+      <p class="key-note">Powered by OpenRouter + live links into the <a href="https://sccl.bibliocommons.com" target="_blank" style="color:#dfe6d8;">SCCLD catalog</a>. Set your key: <code>ENTERAPIKEYHERE = "..."</code></p>
+    </div>
+  </aside>
+
+  <!-- MAIN CATALOG -->
+  <main class="main">
+    <div class="main-top">
+      <div>
+        <h2>Catalog</h2>
+        <p id="resultCount">Showing the full collection</p>
+      </div>
+      <div class="searchbar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+        <input id="catalogSearch" placeholder="Search titles or authors directly...">
+      </div>
+    </div>
+
+    <div id="aiNote" style="display:none;" class="result-note">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
+      <span id="aiNoteText"></span>
+    </div>
+
+    <div class="grid" id="grid"></div>
+  </main>
+</div>
+
+<script>
+/* ---------------- CONFIG ---------------- */
+// OpenRouter — unlike NVIDIA/Eden, OpenRouter's API supports direct
+// browser-side calls (CORS-friendly), so no local proxy server is needed.
+// This file works completely standalone — just open it in a browser.
+// Get your own key at https://openrouter.ai/keys
+const ENTERAPIKEYHERE = ""; // add your own OpenRouter key here (never commit it)
+const OPENROUTER_MODEL = "openai/gpt-4o-mini"; // any OpenRouter model slug works
+
+// Santa Clara County Library's catalog (sccl.bibliocommons.com) has no
+// public API, and per-branch availability loads through BiblioCommons'
+// internal endpoints, not the page HTML — so it can't be reliably scraped.
+// Instead, every recommendation links straight into SCCLD's real, live
+// search results, so availability shown is always accurate and current.
+const SCCLD_BRANCHES = {
+  "campbell": "ca", "cupertino": "cu", "gilroy": "gi", "los altos": "la",
+  "milpitas": "mi", "morgan hill": "mh", "saratoga": "sa", "woodland": "wo"
+};
+function detectBranch(query){
+  const q = query.toLowerCase();
+  for(const name in SCCLD_BRANCHES){
+    if(q.includes(name)) return name.replace(/\b\w/g, c => c.toUpperCase());
+  }
+  return null;
+}
+function scckdSearchUrl(title){
+  return `https://sccl.bibliocommons.com/v2/search?query=${encodeURIComponent(title)}&searchType=smart`;
+}
+
+/* ---------------- MOCK CATALOG ---------------- */
+const CATALOG = [
+  { title:"Pete the Cat: I Love My White Shoes", author:"Eric Litwin", tags:["picture book","funny","animals","early reader"], color:"#3d6b3f",
+    branches:[{name:"Main Library",status:"available"},{name:"Eastside Branch",status:"waitlist"}], ebook:true, ebookUrl:"#" },
+  { title:"Llama Llama Red Pajama", author:"Anna Dewdney", tags:["picture book","funny","animals","bedtime"], color:"#a05a2c",
+    branches:[{name:"Main Library",status:"available"}], ebook:true, ebookUrl:"#" },
+  { title:"Mercy Watson to the Rescue", author:"Kate DiCamillo", tags:["early reader","funny","animals"], color:"#7a5c3e",
+    branches:[{name:"Eastside Branch",status:"available"},{name:"Hillcrest Branch",status:"available"}], ebook:false },
+  { title:"The Wonderful Things You Will Be", author:"Emily Winfield Martin", tags:["picture book","gentle","family"], color:"#2b5d78",
+    branches:[{name:"Main Library",status:"waitlist"}], ebook:true, ebookUrl:"#" },
+  { title:"Dog Man", author:"Dav Pilkey", tags:["graphic novel","funny","animals","middle school"], color:"#a9803f",
+    branches:[{name:"Main Library",status:"available"},{name:"Hillcrest Branch",status:"waitlist"}], ebook:true, ebookUrl:"#" },
+  { title:"New Kid", author:"Jerry Craft", tags:["graphic novel","middle school","realistic"], color:"#33472f",
+    branches:[{name:"Eastside Branch",status:"available"}], ebook:true, ebookUrl:"#" },
+  { title:"The Thursday Murder Club", author:"Richard Osman", tags:["cozy mystery","adult","funny"], color:"#5c451d",
+    branches:[{name:"Main Library",status:"available"},{name:"Hillcrest Branch",status:"available"}], ebook:true, ebookUrl:"#" },
+  { title:"Arsenic and Adobo", author:"Mia P. Manansala", tags:["cozy mystery","adult","food"], color:"#a05a2c",
+    branches:[{name:"Eastside Branch",status:"waitlist"}], ebook:true, ebookUrl:"#" },
+  { title:"Finding Nouf", author:"Zoë Ferraris", tags:["mystery","adult"], color:"#2f3a2d",
+    branches:[{name:"Main Library",status:"available"}], ebook:false },
+  { title:"Big Nate", author:"Lincoln Peirce", tags:["graphic novel","funny","middle school"], color:"#7a5c3e",
+    branches:[{name:"Hillcrest Branch",status:"available"}], ebook:true, ebookUrl:"#" },
+  { title:"The One and Only Ivan", author:"Katherine Applegate", tags:["animals","middle school","gentle"], color:"#3d6b3f",
+    branches:[{name:"Main Library",status:"available"},{name:"Eastside Branch",status:"available"}], ebook:true, ebookUrl:"#" },
+  { title:"Good Night, Gorilla", author:"Peggy Rathmann", tags:["picture book","animals","bedtime","funny"], color:"#2b5d78",
+    branches:[{name:"Hillcrest Branch",status:"available"}], ebook:false },
+];
+
+/* ---------------- STATE ---------------- */
+let activeFilter = null; // list of titles to highlight/filter after an AI answer
+
+/* ---------------- RENDER CATALOG ---------------- */
+const grid = document.getElementById('grid');
+const resultCount = document.getElementById('resultCount');
+
+function renderGrid(list){
+  grid.innerHTML = "";
+  list.forEach(book => {
+    const el = document.createElement('div');
+    el.className = 'book';
+    const branchHtml = book.branches.map(b =>
+      `<span>${b.name} · <span style="color:${b.status==='available'?'var(--available)':'var(--waitlist)'};font-weight:600;">${b.status==='available'?'Available':'Waitlist'}</span></span>`
+    ).join('<br>');
+    el.innerHTML = `
+      <div class="cover" style="background:${book.color};"><div class="spine"></div>${book.title}</div>
+      <div class="book-body">
+        <h3>${book.title}</h3>
+        <p class="author">${book.author}</p>
+        <div class="badges">
+          ${book.branches.some(b=>b.status==='available') ? '<span class="badge available">In stock nearby</span>' : '<span class="badge waitlist">Waitlist only</span>'}
+          ${book.ebook ? '<span class="badge ebook">📖 E-book</span>' : ''}
+        </div>
+        <div class="branches">${branchHtml}</div>
+        ${book.ebook ? `<a class="ebook-link" href="${book.ebookUrl}">Borrow e-book now →</a>` : ''}
+      </div>`;
+    grid.appendChild(el);
+  });
+  resultCount.textContent = list === CATALOG ? "Showing the full collection" : `Showing ${list.length} of ${CATALOG.length} titles`;
+}
+renderGrid(CATALOG);
+
+/* ---------------- DIRECT CATALOG SEARCH ---------------- */
+document.getElementById('catalogSearch').addEventListener('input', e => {
+  const q = e.target.value.toLowerCase();
+  document.getElementById('aiNote').style.display = 'none';
+  if(!q){ renderGrid(CATALOG); return; }
+  renderGrid(CATALOG.filter(b => b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q)));
+});
+
+/* ---------------- AI PANEL LOGIC ---------------- */
+const thread = document.getElementById('thread');
+const promptInput = document.getElementById('promptInput');
+const askBtn = document.getElementById('askBtn');
+
+function addMsg(role, html){
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.innerHTML = html;
+  thread.appendChild(div);
+  thread.scrollTop = thread.scrollHeight;
+  return div;
+}
+
+document.querySelectorAll('.suggestions button').forEach(btn=>{
+  btn.addEventListener('click', () => { promptInput.value = btn.dataset.q; askBtn.click(); });
+});
+
+askBtn.addEventListener('click', handleAsk);
+promptInput.addEventListener('keydown', e => { if(e.key === 'Enter') handleAsk(); });
+
+async function handleAsk(){
+  const query = promptInput.value.trim();
+  if(!query) return;
+  addMsg('user', query);
+  promptInput.value = '';
+  askBtn.disabled = true;
+
+  const branch = detectBranch(query);
+  const thinking = addMsg('ai', `<span class="label">Stacks AI</span><div class="bubble">Searching${branch ? ' — checking ' + branch + ' Library' : ''}…</div>`);
+
+  let books;
+  let summary;
+
+  try{
+    if(ENTERAPIKEYHERE){
+      const result = await askOpenRouter(query);
+      books = result.books;
+      summary = result.summary;
+    } else {
+      // Local fallback matching so the prototype works with no key.
+      const result = localRecommend(query);
+      books = result.books;
+      summary = result.summary;
+    }
+  } catch(err){
+    thinking.remove();
+    addMsg('ai', `<span class="label">Stacks AI</span><div class="bubble">Something went wrong reaching OpenRouter (${err.message}). Showing local matches instead.</div>`);
+    const fallback = localRecommend(query);
+    books = fallback.books; summary = fallback.summary;
+  }
+
+  thinking.remove();
+  askBtn.disabled = false;
+  renderAiResponse(summary, books, branch);
+}
+
+function renderAiResponse(summary, books, branch){
+  const bubble = addMsg('ai', `<span class="label">Stacks AI</span><div class="bubble">${summary}</div>`);
+  if(books.length){
+    const list = document.createElement('div');
+    list.className = 'rec-list';
+    books.forEach(book => {
+      const chip = document.createElement('div');
+      chip.className = 'rec-chip';
+      chip.innerHTML = `<div><div class="t">${book.title}</div><div class="a">${book.author || ''}</div></div><div class="arrow">↗</div>`;
+      chip.title = "Check live availability on the SCCLD catalog";
+      chip.addEventListener('click', () => window.open(scckdSearchUrl(book.title), '_blank', 'noopener'));
+      list.appendChild(chip);
+    });
+    bubble.appendChild(list);
+  }
+  const note = document.getElementById('aiNote');
+  const noteText = document.getElementById('aiNoteText');
+  if(books.length){
+    noteText.textContent = branch
+      ? `Tap a title to open Santa Clara County Library's real catalog search — use the location filter for ${branch} Library to confirm it's there.`
+      : `Tap a title to open Santa Clara County Library's real catalog search and see live availability.`;
+    note.style.display = 'flex';
+  } else {
+    note.style.display = 'none';
+  }
+}
+
+/* Simple curated fallback used when no API key is set — still links out
+   to the real SCCLD catalog so availability is always accurate. */
+function localRecommend(query){
+  const q = query.toLowerCase();
+  const seed = [
+    { title:"Pete the Cat: I Love My White Shoes", author:"Eric Litwin", tags:["funny","animals","picture book"] },
+    { title:"Llama Llama Red Pajama", author:"Anna Dewdney", tags:["funny","animals","bedtime","picture book"] },
+    { title:"Mercy Watson to the Rescue", author:"Kate DiCamillo", tags:["funny","animals","early reader"] },
+    { title:"Dog Man", author:"Dav Pilkey", tags:["funny","animals","graphic novel","middle school"] },
+    { title:"The One and Only Ivan", author:"Katherine Applegate", tags:["animals","gentle","middle school"] },
+    { title:"Good Night, Gorilla", author:"Peggy Rathmann", tags:["animals","bedtime","picture book"] },
+    { title:"The Thursday Murder Club", author:"Richard Osman", tags:["mystery","cozy","adult"] },
+    { title:"New Kid", author:"Jerry Craft", tags:["graphic novel","middle school"] }
+  ];
+  const scored = seed.map(book => {
+    let score = 0;
+    book.tags.forEach(tag => { if(q.includes(tag)) score += 2; });
+    return {book, score};
+  }).filter(s=>s.score>0).sort((a,b)=>b.score-a.score);
+
+  const books = scored.length ? scored.slice(0,4).map(s=>s.book) : seed.slice(0,3);
+  const summary = scored.length
+    ? `Here are a few picks based on "${query}" — connect an OpenRouter key for smarter, open-ended matches.`
+    : `I couldn't find a close local match — connect an OpenRouter key for real matches. Here are some popular titles in the meantime.`;
+  return { books, summary };
+}
+
+/* Live call directly to OpenRouter — works from the browser since
+   OpenRouter's API supports CORS (unlike NVIDIA's and Eden's endpoints).
+   Recommendations are open-ended (any real book), since availability is
+   checked via a live link to SCCLD rather than a local mock catalog. */
+async function askOpenRouter(query){
+  const systemPrompt = `You are a library recommendation assistant for a public library. Suggest up to 4 real, existing books that best match the user's request (similar books, similar vibe/genre/audience). Respond with ONLY a raw JSON object and nothing else — no greeting, no commentary, no markdown fences, no persona. Format exactly: {"summary": "<one short, friendly sentence about the picks>", "books": [{"title": "Exact Title", "author": "Author Name"}]}.`;
+
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${ENTERAPIKEYHERE}`,
+      "HTTP-Referer": window.location.href,
+      "X-Title": "Stacks Library Search Prototype"
+    },
+    body: JSON.stringify({
+      model: OPENROUTER_MODEL,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: query }
+      ],
+      max_tokens: 1024,
+      temperature: 0.5
+    })
+  });
+  if(!res.ok){
+    const errBody = await res.text().catch(() => "");
+    throw new Error(`OpenRouter request failed (${res.status}) ${errBody.slice(0,120)}`);
+  }
+  const data = await res.json();
+  const text = data.choices?.[0]?.message?.content || "{}";
+  console.log("OpenRouter raw response:", data);
+  const parsed = extractJson(text);
+  return { books: parsed.books || [], summary: parsed.summary || query };
+}
+
+/* Pulls the first {...} JSON object out of a response, even if the model
+   wrapped it in commentary, an intro sentence, or markdown fences. */
+function extractJson(text){
+  const clean = text.replace(/```json|```/g, "").trim();
+  try{ return JSON.parse(clean); } catch(e){ /* fall through */ }
+  const match = clean.match(/\{[\s\S]*\}/);
+  if(match){
+    try{ return JSON.parse(match[0]); } catch(e){ /* fall through */ }
+  }
+  throw new Error(`Model didn't return parseable JSON — raw reply: "${clean.slice(0,120)}"`);
+}
+</script>
+</body>
+</html>

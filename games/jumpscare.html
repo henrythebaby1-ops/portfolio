@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>this is a jumpscare</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cutive+Mono&display=swap" rel="stylesheet">
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #000;
+    height: 100%;
+    overflow: hidden;
+    cursor: default;
+  }
+  * {
+    font-family: 'Cutive Mono', monospace;
+    box-sizing: border-box;
+  }
+  #stage {
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 8vw;
+  }
+  .slot {
+    max-width: 700px;
+  }
+  .heading {
+    color: #eee;
+    font-size: 24px;
+    opacity: 0;
+    animation: fadeIn 1.6s ease forwards;
+  }
+  .line {
+    font-size: 20px;
+    line-height: 1.9;
+    color: #ccc;
+    opacity: 0;
+    animation: fadeIn 1.6s ease forwards;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  #outro {
+    display: none;
+    height: 100vh;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+    padding: 0 8vw;
+    opacity: 0;
+    animation: fadeIn 2s ease forwards;
+  }
+  #outro p {
+    color: #999;
+    font-size: 18px;
+    margin: 0 0 1.6em 0;
+  }
+  #outro a {
+    display: block;
+    color: #ddd;
+    font-size: 18px;
+    text-decoration: none;
+    border: 1px solid #444;
+    padding: 14px 24px;
+    margin-bottom: 14px;
+    transition: background 0.3s, color 0.3s;
+    width: 320px;
+  }
+  #outro a:hover {
+    background: #ddd;
+    color: #000;
+  }
+  #outro small {
+    color: #444;
+    margin-top: 2em;
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+
+<div id="stage"><div class="slot" id="slot"></div></div>
+
+<div id="outro">
+  <p>there was never a jumpscare here.<br>if that's what you actually came for, it's waiting elsewhere.</p>
+  <a href="https://pranx.com/maze/" target="_blank" rel="noopener">the maze</a>
+  <a href="https://pacmanjd.neocities.org/" target="_blank" rel="noopener">pac-man jd</a>
+  <small>you have been reading this page for a while.</small>
+</div>
+
+<script>
+const slot = document.getElementById('slot');
+const outro = document.getElementById('outro');
+const stage = document.getElementById('stage');
+
+const script = [
+  {t:'heading', text:'Section 1: Preliminary Remarks on the Nature of Waiting'},
+  {t:'line', text:'Good evening. Please take a seat. There will be no further warnings after this one, and this is not really a warning either, more of a formality.'},
+  {t:'line', text:'You were told something would happen here. Something sudden. Something loud. I regret to inform you that this is not that kind of page.'},
+  {t:'line', text:'Instead, for the next several minutes, I will be reading to you. Slowly. In order. From the beginning.'},
+  {t:'line', text:'I would recommend getting comfortable, though comfort is not a requirement for attendance.'},
+  {t:'heading', text:'Section 2: A Brief History of the Stapler'},
+  {t:'line', text:'The stapler, in its modern spring-loaded form, was not standardized until the late nineteenth century, following decades of inconsistent binding mechanisms across several competing manufacturers.'},
+  {t:'line', text:'Early prototypes were handmade, and each staple was individually placed by an assistant, a practice which today would be considered both impractical and faintly medieval.'},
+  {t:'line', text:'It is worth noting that none of this historical background is relevant to anything that will happen on this page, because nothing will happen on this page.'},
+  {t:'heading', text:'Section 3: On the Subject of Fluorescent Lighting'},
+  {t:'line', text:'Fluorescent lighting operates by exciting mercury vapor into emitting ultraviolet light, which is then converted to visible light by a phosphor coating on the interior of the tube.'},
+  {t:'line', text:'This process produces a mild flicker, imperceptible to most observers, occurring at a frequency of approximately one hundred and twenty times per second.'},
+  {t:'line', text:'You may now be anticipating that the lighting in this room, hypothetically, will begin to flicker in a threatening manner. It will not. It was never on to begin with.'},
+  {t:'heading', text:'Section 4: A Digression on Filing Cabinets'},
+  {t:'line', text:'There are, generally speaking, three accepted filing systems for standard vertical cabinets: alphabetical, chronological, and subject-based, each with its own committee of quiet enthusiasts.'},
+  {t:'line', text:'Alphabetical filing is the most common, though it suffers when documents concern more than one named party, at which point disputes may arise regarding precedence.'},
+  {t:'line', text:'None of the cabinets referenced in this section exist. There is no cabinet. There was never a cabinet.'},
+  {t:'heading', text:'Section 5: Notes on Elevator Music'},
+  {t:'line', text:'The genre now commonly referred to as elevator music was originally developed under the name "functional music," and was engineered specifically to reduce passenger anxiety in confined vertical spaces.'},
+  {t:'line', text:'Studies from the period suggested that tempos between seventy and one hundred beats per minute were most effective at this task, roughly matching a relaxed resting heart rate.'},
+  {t:'line', text:'There is no elevator here. There is no music. I only bring it up because it felt like the right moment, tempo-wise.'},
+  {t:'heading', text:'Section 6: On Thermostats and the Illusion of Control'},
+  {t:'line', text:'In many shared office environments, a significant proportion of installed thermostats are, in fact, non-functional, wired to nothing, present solely to reduce complaints about temperature.'},
+  {t:'line', text:'Researchers have referred to this phenomenon as the "placebo thermostat effect," and have noted that satisfaction with room temperature rises regardless of whether any adjustment occurs.'},
+  {t:'line', text:'I mention this not because it is frightening, but because you may currently be adjusting your posture, and I wanted you to know that this, too, changes nothing.'},
+  {t:'heading', text:'Section 7: A Short Account of Parking Lot Striping'},
+  {t:'line', text:'The standard width of a parking space in most municipalities falls between eight and a half and nine feet, a figure arrived at through decades of incremental committee revision.'},
+  {t:'line', text:'Striping paint is typically applied in a single reflective coat, though high-traffic lots may receive a second coat for improved nighttime visibility.'},
+  {t:'line', text:'None of this is building toward anything. I want to be honest with you about that, since we have come this far together.'},
+  {t:'heading', text:'Section 8: On the Subject of Printer Paper'},
+  {t:'line', text:'Standard letter paper in the United States measures eight and a half by eleven inches, a size derived from historical papermaking mold dimensions rather than any deliberate design choice.'},
+  {t:'line', text:'Most of the rest of the world instead uses the A-series system, in which each size is exactly half the area of the one before it, folded along its longer edge.'},
+  {t:'line', text:'You may feel, at this point, a small and reasonable frustration. I understand. There is still more paper to discuss.'},
+  {t:'line', text:'Paper jams, statistically, occur most frequently in the first and last few sheets of any given tray, for reasons relating to static buildup and edge alignment.'},
+  {t:'heading', text:'Section 9: Concerning the Common Waiting Room Chair'},
+  {t:'line', text:'The chairs found in most waiting rooms are selected primarily for stackability and ease of cleaning, with comfort treated as a secondary, occasionally optional, design criterion.'},
+  {t:'line', text:'Armrests, where present, are typically set at a height intended to discourage extended lying down, a detail few visitors consciously notice.'},
+  {t:'line', text:'You are, in a manner of speaking, still sitting in one of these chairs. Metaphorically. There is no chair. There is only this text.'},
+  {t:'heading', text:'Section 10: Concluding Thoughts, Such As They Are'},
+  {t:'line', text:'At this point in a different kind of page, something would have already happened. A sound. A face. A sudden change in the pixels you are looking at.'},
+  {t:'line', text:'That is not what this page does. This page simply continues, at a measured pace, discussing minor administrative topics of no particular consequence.'},
+  {t:'line', text:'If you are still reading, I would like to thank you for your patience, and I would like to gently note that patience was, in fact, the entire test.'},
+  {t:'line', text:'There is nothing further. You may go.'},
+];
+
+let i = 0;
+
+function showNext() {
+  if (i >= script.length) {
+    stage.style.display = 'none';
+    outro.style.display = 'flex';
+    return;
+  }
+  const item = script[i];
+  slot.className = item.t;
+  slot.style.animation = 'none';
+  void slot.offsetWidth;
+  slot.style.animation = '';
+  slot.textContent = item.text;
+  i++;
+  const readTime = 1200 + item.text.length * 18;
+  setTimeout(showNext, readTime);
+}
+
+setTimeout(showNext, 1800);
+</script>
+
+</body>
+</html>

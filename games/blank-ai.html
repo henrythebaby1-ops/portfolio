@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blank AI</title>
+<style>
+  :root {
+    --ink: #0F1115;
+    --panel: #171A21;
+    --panel-raised: #1D212A;
+    --line: #2A2F3A;
+    --amber: #E8A33D;
+    --amber-dim: #6B5228;
+    --text: #E7E5DF;
+    --text-muted: #8A8F98;
+    --ok: #6FCF97;
+    --err: #E5533D;
+    --warn: #E8A33D;
+    --font-ui: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  @font-face {
+    font-family: 'Space Grotesk';
+    src: local('Space Grotesk');
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--ink);
+    color: var(--text);
+    font-family: var(--font-ui);
+    min-height: 100vh;
+  }
+
+  a { color: inherit; }
+
+  /* ---------- Header ---------- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 28px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, #14161C 0%, #0F1115 100%);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .brand-mark {
+    width: 26px;
+    height: 26px;
+    border: 1.5px solid var(--amber);
+    border-radius: 4px;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .brand-mark::before, .brand-mark::after {
+    content: '';
+    position: absolute;
+    background: var(--amber);
+  }
+  .brand-mark::before {
+    width: 10px; height: 1.5px;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .brand-mark::after {
+    width: 1.5px; height: 10px;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .brand-text {
+    font-weight: 600;
+    font-size: 17px;
+    letter-spacing: 0.2px;
+  }
+  .brand-text span { color: var(--amber); }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 3px;
+  }
+
+  .tab-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    padding: 7px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .tab-btn.active {
+    background: var(--panel-raised);
+    color: var(--text);
+  }
+  .tab-btn:hover:not(.active) { color: var(--text); }
+
+  /* ---------- Layout ---------- */
+  .layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 0;
+    min-height: calc(100vh - 66px);
+  }
+  @media (max-width: 820px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  .rail {
+    border-right: 1px solid var(--line);
+    padding: 24px 20px;
+    background: #121419;
+  }
+  @media (max-width: 820px) {
+    .rail { border-right: none; border-bottom: 1px solid var(--line); }
+  }
+
+  .rail-label {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin: 0 0 10px 2px;
+  }
+
+  .provider-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 28px;
+  }
+
+  .provider-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .provider-item:hover { background: var(--panel); }
+  .provider-item.selected {
+    background: var(--panel-raised);
+    border-color: var(--line);
+  }
+
+  .led {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #3A3F4A;
+    flex-shrink: 0;
+    transition: background 0.2s, box-shadow 0.2s;
+  }
+  .provider-item.selected .led {
+    background: var(--amber);
+    box-shadow: 0 0 6px var(--amber);
+  }
+
+  .provider-name { font-size: 14.5px; }
+  .provider-sub { font-size: 12px; color: var(--text-muted); margin-left: auto; }
+
+  .switch-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .switch-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    cursor: pointer;
+    font-size: 13.5px;
+    color: var(--text-muted);
+  }
+  .switch-option.active {
+    border-color: var(--amber-dim);
+    color: var(--text);
+    background: rgba(232, 163, 61, 0.06);
+  }
+  .switch-option input { accent-color: var(--amber); }
+
+  .rail-note {
+    margin-top: 24px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-muted);
+    border-top: 1px solid var(--line);
+    padding-top: 16px;
+  }
+
+  /* ---------- Main readout ---------- */
+  .main {
+    padding: 28px 32px;
+    max-width: 760px;
+  }
+
+  .main h1 {
+    font-size: 20px;
+    margin: 0 0 4px 0;
+    font-weight: 600;
+  }
+  .main .sub {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin: 0 0 26px 0;
+  }
+
+  label.field-label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  .field {
+    margin-bottom: 18px;
+  }
+
+  input[type="text"], input[type="password"], textarea {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 11px 13px;
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    resize: vertical;
+    transition: border-color 0.15s;
+  }
+  input[type="text"]:focus, input[type="password"]:focus, textarea:focus {
+    outline: none;
+    border-color: var(--amber);
+  }
+  textarea { font-family: var(--font-ui); font-size: 14px; min-height: 90px; }
+
+  .row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 560px) { .row-2 { grid-template-columns: 1fr; } }
+
+  .run-btn {
+    background: var(--amber);
+    color: #201705;
+    border: none;
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: 14.5px;
+    padding: 12px 22px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: filter 0.15s, transform 0.05s;
+  }
+  .run-btn:hover { filter: brightness(1.08); }
+  .run-btn:active { transform: translateY(1px); }
+  .run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .readout {
+    margin-top: 24px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #0C0D11;
+    overflow: hidden;
+  }
+
+  .readout-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel);
+    font-size: 12.5px;
+    color: var(--text-muted);
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    border: 1px solid var(--line);
+  }
+  .status-pill .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .status-pill.ok { color: var(--ok); border-color: rgba(111,207,151,0.35); }
+  .status-pill.ok .dot { background: var(--ok); }
+  .status-pill.err { color: var(--err); border-color: rgba(229,83,61,0.35); }
+  .status-pill.err .dot { background: var(--err); }
+  .status-pill.idle { color: var(--text-muted); }
+  .status-pill.idle .dot { background: #3A3F4A; }
+  .status-pill.pending { color: var(--warn); border-color: rgba(232,163,61,0.35); }
+  .status-pill.pending .dot { background: var(--warn); animation: blink 1s infinite; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+
+  .readout-body {
+    padding: 16px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+    min-height: 90px;
+    max-height: 340px;
+    overflow-y: auto;
+    color: var(--text);
+  }
+  .readout-body.empty { color: var(--text-muted); }
+
+  /* ---------- Admin ---------- */
+  .lock-screen {
+    max-width: 380px;
+    margin: 60px auto 0 auto;
+    text-align: left;
+  }
+  .lock-screen h2 {
+    font-size: 18px;
+    margin-bottom: 6px;
+  }
+  .lock-screen .sub {
+    color: var(--text-muted);
+    font-size: 13.5px;
+    margin-bottom: 22px;
+  }
+  .lock-error {
+    color: var(--err);
+    font-size: 13px;
+    margin-top: 10px;
+    min-height: 18px;
+  }
+
+  .admin-card {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+    background: var(--panel);
+  }
+  .admin-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .admin-card-head h3 {
+    margin: 0;
+    font-size: 15px;
+  }
+  .key-status {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .key-status.set { color: var(--ok); }
+
+  .admin-row {
+    display: flex;
+    gap: 10px;
+  }
+  .admin-row input { flex: 1; }
+
+  .ghost-btn {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .ghost-btn:hover { border-color: var(--amber-dim); }
+
+  .danger-btn {
+    background: transparent;
+    border: 1px solid rgba(229,83,61,0.4);
+    color: var(--err);
+    font-family: var(--font-ui);
+    font-size: 12.5px;
+    padding: 7px 12px;
+    border-radius: 7px;
+    cursor: pointer;
+  }
+  .danger-btn:hover { background: rgba(229,83,61,0.08); }
+
+  .admin-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 22px;
+  }
+
+  .shared-note {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    background: rgba(232,163,61,0.06);
+    border: 1px solid var(--amber-dim);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark"></div>
+    <div class="brand-text">Blank <span>AI</span></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="tester">Tester</button>
+    <button class="tab-btn" data-tab="admin">Admin</button>
+  </div>
+</div>
+
+<!-- ===================== TESTER VIEW ===================== -->
+<div class="layout" id="tester-view">
+  <div class="rail">
+    <p class="rail-label">Provider</p>
+    <div class="provider-list" id="provider-list"></div>
+
+    <p class="rail-label">Key source</p>
+    <div class="switch-row">
+      <label class="switch-option active" id="opt-own">
+        <input type="radio" name="keysource" value="own" checked>
+        Use my own key
+      </label>
+      <label class="switch-option" id="opt-house">
+        <input type="radio" name="keysource" value="house">
+        I don't have one — use a house key
+      </label>
+    </div>
+
+    <div class="rail-note" id="rail-note">
+      Your key stays in this browser tab only. Nothing is uploaded or logged.
+    </div>
+  </div>
+
+  <div class="main">
+    <h1 id="main-title">Test an OpenRouter key</h1>
+    <p class="sub" id="main-sub">Enter a key, write a prompt, and see a live response come back.</p>
+
+    <div class="field" id="own-key-field">
+      <label class="field-label">API key</label>
+      <input type="password" id="api-key-input" placeholder="sk-or-v1-...">
+    </div>
+
+    <div class="row-2">
+      <div class="field">
+        <label class="field-label">Model / mode <span style="opacity:0.6">(optional — a sensible default is used)</span></label>
+        <input type="text" id="model-input" placeholder="">
+      </div>
+      <div class="field">
+        <label class="field-label">Prompt</label>
+        <input type="text" id="prompt-input" value="Say hello in one short sentence.">
+      </div>
+    </div>
+
+    <button class="run-btn" id="run-btn">Run test</button>
+
+    <div class="readout">
+      <div class="readout-head">
+        <span>Response</span>
+        <span class="status-pill idle" id="status-pill"><span class="dot"></span><span id="status-text">Idle</span></span>
+      </div>
+      <div class="readout-body empty" id="readout-body">No test run yet.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== ADMIN VIEW ===================== -->
+<div class="main" id="admin-view" style="display:none; max-width: 640px;">
+
+  <div id="admin-lock" class="lock-screen">
+    <h2>Admin access</h2>
+    <p class="sub">Enter the admin password to manage house keys.</p>
+    <div class="field">
+      <label class="field-label">Password</label>
+      <input type="password" id="admin-password-input" placeholder="Password">
+    </div>
+    <button class="run-btn" id="admin-login-btn">Enter</button>
+    <div class="lock-error" id="admin-error"></div>
+  </div>
+
+  <div id="admin-panel" style="display:none;">
+    <div class="admin-top">
+      <div>
+        <h1 style="margin-bottom:4px;">House keys</h1>
+        <p class="sub" style="margin-bottom:0;">Keys uploaded here are used whenever a user picks "I don't have one."</p>
+      </div>
+      <button class="ghost-btn" id="admin-logout-btn">Log out</button>
+    </div>
+
+    <div class="shared-note">
+      Keys saved here are shared across everyone using this app, not just this browser. Only upload keys you're comfortable making available to any tester.
+    </div>
+
+    <div id="admin-cards"></div>
+  </div>
+</div>
+
+<script>
+  // ---------- Provider config ----------
+  const PROVIDERS = [
+    {
+      id: 'openrouter',
+      name: 'OpenRouter',
+      sub: 'many models',
+      defaultModel: 'openai/gpt-3.5-turbo',
+      keyPlaceholder: 'sk-or-v1-...'
+    },
+    {
+      id: 'gemini',
+      name: 'Gemini',
+      sub: 'Google',
+      defaultModel: 'gemini-1.5-flash',
+      keyPlaceholder: 'AIza...'
+    },
+    {
+      id: 'youcom',
+      name: 'You.com',
+      sub: 'YouChat API',
+      defaultModel: 'smart',
+      keyPlaceholder: 'your You.com API key'
+    }
+  ];
+
+  const ADMIN_PASSWORD = ''; // admin is turned off in the public copy
+
+  let state = {
+    provider: 'openrouter',
+    keySource: 'own',
+    houseKeys: { openrouter: '', gemini: '', youcom: '' }
+  };
+
+  // ---------- Storage helpers (best-effort; app still works without it) ----------
+  async function loadHouseKeys() {
+    try {
+      const result = await window.storage.get('house-keys', true);
+      if (result && result.value) {
+        state.houseKeys = { ...state.houseKeys, ...JSON.parse(result.value) };
+      }
+    } catch (e) {
+      // no stored keys yet, or storage unavailable — fine, defaults stand
+    }
+  }
+
+  async function saveHouseKeys() {
+    try {
+      await window.storage.set('house-keys', JSON.stringify(state.houseKeys), true);
+      return true;
+    } catch (e) {
+      console.error('Could not save house keys', e);
+      return false;
+    }
+  }
+
+  // ---------- Tester view rendering ----------
+  const providerListEl = document.getElementById('provider-list');
+  function renderProviderList() {
+    providerListEl.innerHTML = '';
+    PROVIDERS.forEach(p => {
+      const el = document.createElement('div');
+      el.className = 'provider-item' + (state.provider === p.id ? ' selected' : '');
+      el.innerHTML = `<span class="led"></span><span class="provider-name">${p.name}</span><span class="provider-sub">${p.sub}</span>`;
+      el.addEventListener('click', () => {
+        state.provider = p.id;
+        renderProviderList();
+        updateMainCopy();
+      });
+      providerListEl.appendChild(el);
+    });
+  }
+
+  function currentProvider() {
+    return PROVIDERS.find(p => p.id === state.provider);
+  }
+
+  function updateMainCopy() {
+    const p = currentProvider();
+    document.getElementById('main-title').textContent = `Test a ${p.name} key`;
+    document.getElementById('api-key-input').placeholder = p.keyPlaceholder;
+    document.getElementById('model-input').placeholder = p.defaultModel;
+    const usingHouse = state.keySource === 'house';
+    document.getElementById('main-sub').textContent = usingHouse
+      ? `Using the house ${p.name} key. Just write a prompt and run it.`
+      : `Enter your own ${p.name} key, write a prompt, and see a live response come back.`;
+    document.getElementById('own-key-field').style.display = usingHouse ? 'none' : 'block';
+    resetReadout();
+  }
+
+  document.getElementById('opt-own').addEventListener('click', () => setKeySource('own'));
+  document.getElementById('opt-house').addEventListener('click', () => setKeySource('house'));
+
+  function setKeySource(src) {
+    state.keySource = src;
+    document.getElementById('opt-own').classList.toggle('active', src === 'own');
+    document.getElementById('opt-house').classList.toggle('active', src === 'house');
+    document.querySelector('#opt-own input').checked = src === 'own';
+    document.querySelector('#opt-house input').checked = src === 'house';
+    updateMainCopy();
+  }
+
+  function resetReadout() {
+    setStatus('idle', 'Idle');
+    const body = document.getElementById('readout-body');
+    body.textContent = 'No test run yet.';
+    body.classList.add('empty');
+  }
+
+  function setStatus(kind, label) {
+    const pill = document.getElementById('status-pill');
+    pill.className = 'status-pill ' + kind;
+    document.getElementById('status-text').textContent = label;
+  }
+
+  function writeReadout(text) {
+    const body = document.getElementById('readout-body');
+    body.textContent = text;
+    body.classList.remove('empty');
+  }
+
+  // ---------- Provider calls ----------
+  async function callOpenRouter(key, model, prompt) {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${key}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: model || 'openai/gpt-3.5-turbo',
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data?.error?.message || `Request failed (HTTP ${res.status})`);
+    }
+    const text = data?.choices?.[0]?.message?.content;
+    if (!text) throw new Error('Key worked, but no message content came back. Raw response:\n' + JSON.stringify(data, null, 2));
+    return text;
+  }
+
+  async function callGemini(key, model, prompt) {
+    const m = model || 'gemini-1.5-flash';
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data?.error?.message || `Request failed (HTTP ${res.status})`);
+    }
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error('Key worked, but no message content came back. Raw response:\n' + JSON.stringify(data, null, 2));
+    return text;
+  }
+
+  async function callYouCom(key, model, prompt) {
+    // You.com's YouChat API. Endpoint path ("smart"/"research") may need adjusting
+    // to match the exact plan/version on your account.
+    const endpoint = model === 'research' ? 'research' : 'smart';
+    const res = await fetch(`https://chat-api.you.com/${endpoint}?query=${encodeURIComponent(prompt)}`, {
+      method: 'GET',
+      headers: { 'X-API-Key': key }
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data?.error || data?.message || `Request failed (HTTP ${res.status})`);
+    }
+    const text = data?.answer || data?.response;
+    if (!text) throw new Error('Key worked, but no message content came back. Raw response:\n' + JSON.stringify(data, null, 2));
+    return text;
+  }
+
+  const CALLERS = { openrouter: callOpenRouter, gemini: callGemini, youcom: callYouCom };
+
+  // ---------- Run test ----------
+  document.getElementById('run-btn').addEventListener('click', async () => {
+    const p = currentProvider();
+    const prompt = document.getElementById('prompt-input').value.trim() || 'Say hello in one short sentence.';
+    const model = document.getElementById('model-input').value.trim();
+
+    let key;
+    if (state.keySource === 'house') {
+      key = state.houseKeys[p.id];
+      if (!key) {
+        setStatus('err', 'No house key set');
+        writeReadout(`There's no house key uploaded for ${p.name} yet. Try "Use my own key," or check back once an admin adds one.`);
+        return;
+      }
+    } else {
+      key = document.getElementById('api-key-input').value.trim();
+      if (!key) {
+        setStatus('err', 'Missing key');
+        writeReadout('Enter an API key first, or switch to "I don\'t have one."');
+        return;
+      }
+    }
+
+    const btn = document.getElementById('run-btn');
+    btn.disabled = true;
+    setStatus('pending', 'Running…');
+    writeReadout('Sending request...');
+
+    try {
+      const text = await CALLERS[p.id](key, model, prompt);
+      setStatus('ok', 'Valid');
+      writeReadout(text);
+    } catch (err) {
+      setStatus('err', 'Error');
+      let msg = err.message || String(err);
+      if (msg.toLowerCase().includes('failed to fetch')) {
+        msg = 'The request could not reach the provider from this browser (network or CORS restriction). This is not necessarily a bad key.';
+      }
+      writeReadout(msg);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // ---------- Tabs ----------
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const tab = btn.dataset.tab;
+      document.getElementById('tester-view').style.display = tab === 'tester' ? 'grid' : 'none';
+      document.getElementById('admin-view').style.display = tab === 'admin' ? 'block' : 'none';
+    });
+  });
+
+  // ---------- Admin ----------
+  document.getElementById('admin-login-btn').addEventListener('click', handleAdminLogin);
+  document.getElementById('admin-password-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleAdminLogin();
+  });
+
+  function handleAdminLogin() {
+    const val = document.getElementById('admin-password-input').value;
+    if (ADMIN_PASSWORD && val === ADMIN_PASSWORD) {
+      document.getElementById('admin-lock').style.display = 'none';
+      document.getElementById('admin-panel').style.display = 'block';
+      document.getElementById('admin-error').textContent = '';
+      renderAdminCards();
+    } else {
+      document.getElementById('admin-error').textContent = 'Incorrect password.';
+    }
+  }
+
+  document.getElementById('admin-logout-btn').addEventListener('click', () => {
+    document.getElementById('admin-panel').style.display = 'none';
+    document.getElementById('admin-lock').style.display = 'block';
+    document.getElementById('admin-password-input').value = '';
+  });
+
+  function maskKey(key) {
+    if (!key) return '';
+    if (key.length <= 8) return '••••';
+    return key.slice(0, 4) + '…' + key.slice(-4);
+  }
+
+  function renderAdminCards() {
+    const container = document.getElementById('admin-cards');
+    container.innerHTML = '';
+    PROVIDERS.forEach(p => {
+      const hasKey = !!state.houseKeys[p.id];
+      const card = document.createElement('div');
+      card.className = 'admin-card';
+      card.innerHTML = `
+        <div class="admin-card-head">
+          <h3>${p.name}</h3>
+          <span class="key-status ${hasKey ? 'set' : ''}">${hasKey ? 'Key set · ' + maskKey(state.houseKeys[p.id]) : 'No key uploaded'}</span>
+        </div>
+        <div class="admin-row">
+          <input type="text" placeholder="${p.keyPlaceholder}" id="admin-input-${p.id}">
+          <button class="ghost-btn" id="admin-save-${p.id}">Save</button>
+          ${hasKey ? `<button class="danger-btn" id="admin-delete-${p.id}">Remove</button>` : ''}
+        </div>
+      `;
+      container.appendChild(card);
+
+      document.getElementById(`admin-save-${p.id}`).addEventListener('click', async () => {
+        const input = document.getElementById(`admin-input-${p.id}`);
+        const val = input.value.trim();
+        if (!val) return;
+        state.houseKeys[p.id] = val;
+        await saveHouseKeys();
+        renderAdminCards();
+      });
+
+      if (hasKey) {
+        document.getElementById(`admin-delete-${p.id}`).addEventListener('click', async () => {
+          state.houseKeys[p.id] = '';
+          await saveHouseKeys();
+          renderAdminCards();
+        });
+      }
+    });
+  }
+
+  // ---------- Init ----------
+  (async function init() {
+    await loadHouseKeys();
+    renderProviderList();
+    updateMainCopy();
+    setKeySource('own');
+  })();
+</script>
+
+</body>
+</html>

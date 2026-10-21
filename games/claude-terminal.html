@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Terminal</title>
+<style>
+  :root {
+    --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f5f4ef;
+    --color-border-secondary: #d6d3c9;
+    --color-border-tertiary: #e6e3da;
+    --color-text-primary: #1f1e1b;
+    --color-text-secondary: #5c5a53;
+    --color-text-tertiary: #8d8a80;
+    --border-radius-lg: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-background-primary: #1f1e1b;
+      --color-background-secondary: #262521;
+      --color-border-secondary: #45433c;
+      --color-border-tertiary: #34322d;
+      --color-text-primary: #f0eee6;
+      --color-text-secondary: #b5b2a8;
+      --color-text-tertiary: #85827a;
+    }
+  }
+  html, body { background: var(--color-background-secondary); }
+  body { padding: 24px 16px; }
+  .shell { max-width: 960px; margin: 0 auto; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-mono); }
+.app { display: flex; flex-direction: column; height: 580px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-lg); overflow: hidden; background: var(--color-background-primary); }
+.titlebar { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-bottom: 0.5px solid var(--color-border-tertiary); background: var(--color-background-secondary); flex-shrink: 0; }
+.dots { display: flex; gap: 6px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; }
+.dot.r { background: #E24B4A; }
+.dot.y { background: #EF9F27; }
+.dot.g { background: #639922; }
+.title-label { font-size: 13px; color: var(--color-text-secondary); font-family: var(--font-sans); margin: 0 auto; }
+.main { display: flex; flex: 1; overflow: hidden; }
+.sidebar { width: 160px; border-right: 0.5px solid var(--color-border-tertiary); background: var(--color-background-secondary); display: flex; flex-direction: column; flex-shrink: 0; }
+.sidebar-header { padding: 10px 12px 6px; font-size: 10px; letter-spacing: .08em; color: var(--color-text-tertiary); font-family: var(--font-sans); text-transform: uppercase; }
+.file-item { display: flex; align-items: center; gap: 7px; padding: 5px 12px; font-size: 12px; color: var(--color-text-secondary); cursor: pointer; transition: background .1s; font-family: var(--font-mono); }
+.file-item:hover { background: var(--color-background-primary); }
+.file-item.active { background: var(--color-background-primary); color: var(--color-text-primary); }
+.file-item .ti { font-size: 14px; color: #EF9F27; }
+.center { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+.tabs { display: flex; border-bottom: 0.5px solid var(--color-border-tertiary); background: var(--color-background-secondary); flex-shrink: 0; }
+.tab { padding: 7px 14px; font-size: 12px; font-family: var(--font-mono); color: var(--color-text-secondary); cursor: pointer; border-right: 0.5px solid var(--color-border-tertiary); display: flex; align-items: center; gap: 6px; }
+.tab.active { background: var(--color-background-primary); color: var(--color-text-primary); border-bottom: 2px solid #534AB7; }
+.editor-area { flex: 1; overflow-y: auto; padding: 14px 0; background: var(--color-background-primary); }
+.line { display: flex; gap: 0; min-height: 20px; }
+.ln { width: 40px; text-align: right; padding-right: 12px; font-size: 12px; color: var(--color-text-tertiary); user-select: none; flex-shrink: 0; }
+.code { font-size: 12px; line-height: 1.6; white-space: pre; flex: 1; padding-right: 12px; }
+.kw { color: #534AB7; }
+.fn { color: #0F6E56; }
+.str { color: #993C1D; }
+.cm { color: var(--color-text-tertiary); font-style: italic; }
+.num { color: #185FA5; }
+.terminal-panel { height: 160px; border-top: 0.5px solid var(--color-border-tertiary); display: flex; flex-direction: column; flex-shrink: 0; }
+.term-header { display: flex; align-items: center; gap: 8px; padding: 5px 12px; background: var(--color-background-secondary); border-bottom: 0.5px solid var(--color-border-tertiary); flex-shrink: 0; }
+.term-label { font-size: 11px; color: var(--color-text-secondary); font-family: var(--font-sans); }
+.term-body { flex: 1; overflow-y: auto; padding: 8px 14px; font-size: 12px; line-height: 1.7; font-family: var(--font-mono); color: var(--color-text-primary); }
+.term-prompt { color: #1D9E75; }
+.term-out { color: var(--color-text-secondary); }
+.term-err { color: #E24B4A; }
+.term-input-row { display: flex; align-items: center; gap: 6px; padding: 4px 14px 8px; flex-shrink: 0; }
+.term-input-row span { color: #1D9E75; font-size: 12px; font-family: var(--font-mono); }
+.term-input { flex: 1; border: none; outline: none; background: transparent; font-size: 12px; font-family: var(--font-mono); color: var(--color-text-primary); }
+.chat-panel { width: 260px; border-left: 0.5px solid var(--color-border-tertiary); display: flex; flex-direction: column; }
+.chat-header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 0.5px solid var(--color-border-tertiary); background: var(--color-background-secondary); flex-shrink: 0; }
+.clawd-avatar { width: 28px; height: 28px; border-radius: 50%; background: #EEEDFE; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.chat-title { font-size: 13px; font-weight: 500; font-family: var(--font-sans); color: var(--color-text-primary); }
+.chat-sub { font-size: 11px; color: var(--color-text-tertiary); font-family: var(--font-sans); }
+.chat-messages { flex: 1; overflow-y: auto; padding: 10px 10px; display: flex; flex-direction: column; gap: 10px; }
+.msg { display: flex; flex-direction: column; gap: 3px; max-width: 100%; }
+.msg-bubble { padding: 7px 10px; border-radius: 10px; font-size: 12px; line-height: 1.5; font-family: var(--font-sans); }
+.msg.clawd .msg-bubble { background: var(--color-background-secondary); color: var(--color-text-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: 2px 10px 10px 10px; }
+.msg.user .msg-bubble { background: #EEEDFE; color: #26215C; border-radius: 10px 2px 10px 10px; align-self: flex-end; }
+.msg.user { align-items: flex-end; }
+.msg-name { font-size: 10px; color: var(--color-text-tertiary); font-family: var(--font-sans); }
+.typing { display: flex; gap: 3px; align-items: center; padding: 7px 10px; }
+.typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--color-text-tertiary); animation: bounce .9s infinite; }
+.typing span:nth-child(2) { animation-delay: .15s; }
+.typing span:nth-child(3) { animation-delay: .3s; }
+@keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
+.chat-input-row { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-top: 0.5px solid var(--color-border-tertiary); background: var(--color-background-secondary); flex-shrink: 0; }
+.chat-input { flex: 1; border: 0.5px solid var(--color-border-secondary); border-radius: 16px; padding: 6px 10px; font-size: 12px; font-family: var(--font-sans); background: var(--color-background-primary); color: var(--color-text-primary); outline: none; }
+.send-btn { width: 28px; height: 28px; border-radius: 50%; background: #534AB7; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+.send-btn i { font-size: 14px; color: white; }
+.send-btn:hover { background: #3C3489; }
+.status-bar { display: flex; align-items: center; gap: 12px; padding: 3px 12px; background: #534AB7; flex-shrink: 0; }
+.status-item { font-size: 11px; color: rgba(255,255,255,0.8); font-family: var(--font-sans); display: flex; align-items: center; gap: 4px; }
+.status-item i { font-size: 12px; }
+.status-right { margin-left: auto; }
+</style>
+
+<h2 class="sr-only">Claude Code IDE with Clawd AI assistant, featuring a code editor, file explorer, terminal, and chat panel.</h2>
+
+<div class="app">
+  <div class="titlebar">
+    <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+    <span class="title-label">Claude Code — clawd-street/app.js</span>
+  </div>
+
+  <div class="main">
+    <div class="sidebar">
+      <div class="sidebar-header">Explorer</div>
+      <div class="file-item"><i class="ti ti-folder" style="color:#EF9F27"></i> clawd-street</div>
+      <div class="file-item active"><i class="ti ti-file-code" style="color:#185FA5"></i> app.js</div>
+      <div class="file-item"><i class="ti ti-file-code" style="color:#185FA5"></i> npc.js</div>
+      <div class="file-item"><i class="ti ti-file" style="color:#888780"></i> index.html</div>
+      <div class="file-item"><i class="ti ti-file" style="color:#D4537E"></i> style.css</div>
+      <div class="file-item"><i class="ti ti-file" style="color:#888780"></i> README.md</div>
+    </div>
+
+    <div class="center">
+      <div class="tabs">
+        <div class="tab active"><i class="ti ti-file-code" style="font-size:13px;color:#185FA5"></i> app.js</div>
+        <div class="tab"><i class="ti ti-file-code" style="font-size:13px;color:#185FA5"></i> npc.js</div>
+      </div>
+
+      <div class="editor-area" id="editor">
+        <div class="line"><span class="ln">1</span><span class="code"><span class="cm">// Clawd Street — NPC life sim</span></span></div>
+        <div class="line"><span class="ln">2</span><span class="code"><span class="cm">// for Coco 🌸</span></span></div>
+        <div class="line"><span class="ln">3</span><span class="code"></span></div>
+        <div class="line"><span class="ln">4</span><span class="code"><span class="kw">const</span> <span class="fn">canvas</span> = document.<span class="fn">getElementById</span>(<span class="str">'world'</span>);</span></div>
+        <div class="line"><span class="ln">5</span><span class="code"><span class="kw">const</span> ctx = canvas.<span class="fn">getContext</span>(<span class="str">'2d'</span>);</span></div>
+        <div class="line"><span class="ln">6</span><span class="code"></span></div>
+        <div class="line"><span class="ln">7</span><span class="code"><span class="kw">class</span> <span class="fn">NPC</span> {</span></div>
+        <div class="line"><span class="ln">8</span><span class="code">  <span class="fn">constructor</span>(name, x, y) {</span></div>
+        <div class="line"><span class="ln">9</span><span class="code">    <span class="kw">this</span>.name = name;</span></div>
+        <div class="line"><span class="ln">10</span><span class="code">    <span class="kw">this</span>.x = x; <span class="kw">this</span>.y = y;</span></div>
+        <div class="line"><span class="ln">11</span><span class="code">    <span class="kw">this</span>.mood = <span class="str">'happy'</span>;</span></div>
+        <div class="line"><span class="ln">12</span><span class="code">    <span class="kw">this</span>.schedule = [];</span></div>
+        <div class="line"><span class="ln">13</span><span class="code">  }</span></div>
+        <div class="line"><span class="ln">14</span><span class="code"></span></div>
+        <div class="line"><span class="ln">15</span><span class="code">  <span class="fn">update</span>(dt) {</span></div>
+        <div class="line"><span class="ln">16</span><span class="code">    <span class="kw">const</span> task = <span class="kw">this</span>.schedule[<span class="num">0</span>];</span></div>
+        <div class="line"><span class="ln">17</span><span class="code">    <span class="kw">if</span> (task) task.<span class="fn">run</span>(<span class="kw">this</span>, dt);</span></div>
+        <div class="line"><span class="ln">18</span><span class="code">  }</span></div>
+        <div class="line"><span class="ln">19</span><span class="code"></span></div>
+        <div class="line"><span class="ln">20</span><span class="code">  <span class="fn">draw</span>() {</span></div>
+        <div class="line"><span class="ln">21</span><span class="code">    ctx.<span class="fn">fillStyle</span> = <span class="str">'#534AB7'</span>;</span></div>
+        <div class="line"><span class="ln">22</span><span class="code">    ctx.<span class="fn">beginPath</span>();</span></div>
+        <div class="line"><span class="ln">23</span><span class="code">    ctx.<span class="fn">arc</span>(<span class="kw">this</span>.x, <span class="kw">this</span>.y, <span class="num">8</span>, <span class="num">0</span>, Math.PI * <span class="num">2</span>);</span></div>
+        <div class="line"><span class="ln">24</span><span class="code">    ctx.<span class="fn">fill</span>();</span></div>
+        <div class="line"><span class="ln">25</span><span class="code">  }</span></div>
+        <div class="line"><span class="ln">26</span><span class="code">}</span></div>
+        <div class="line"><span class="ln">27</span><span class="code"></span></div>
+        <div class="line"><span class="ln">28</span><span class="code"><span class="kw">const</span> npcs = [</span></div>
+        <div class="line"><span class="ln">29</span><span class="code">  <span class="kw">new</span> <span class="fn">NPC</span>(<span class="str">'Clawd'</span>, <span class="num">120</span>, <span class="num">200</span>),</span></div>
+        <div class="line"><span class="ln">30</span><span class="code">  <span class="kw">new</span> <span class="fn">NPC</span>(<span class="str">'Mochi'</span>, <span class="num">300</span>, <span class="num">180</span>),</span></div>
+        <div class="line"><span class="ln">31</span><span class="code">];</span></div>
+      </div>
+
+      <div class="terminal-panel">
+        <div class="term-header">
+          <i class="ti ti-terminal-2" style="font-size:14px;color:var(--color-text-secondary)" aria-hidden="true"></i>
+          <span class="term-label">Terminal</span>
+        </div>
+        <div class="term-body" id="term-body">
+          <div><span class="term-prompt">$ </span>node app.js</div>
+          <div class="term-out">🐾 Clawd Street v0.3 booted</div>
+          <div class="term-out">NPC count: 2</div>
+          <div class="term-out">World size: 800×600</div>
+          <div class="term-out">All systems go ✓</div>
+          <div id="term-lines"></div>
+        </div>
+        <div class="term-input-row">
+          <span>$</span>
+          <input class="term-input" id="term-input" placeholder="run a command..." autocomplete="off" />
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-panel">
+      <div class="chat-header">
+        <div class="clawd-avatar">🐾</div>
+        <div>
+          <div class="chat-title">Clawd</div>
+          <div class="chat-sub">AI coding assistant</div>
+        </div>
+      </div>
+      <div class="chat-messages" id="chat-msgs">
+        <div class="msg clawd">
+          <div class="msg-name">Clawd</div>
+          <div class="msg-bubble">Hey! I'm Clawd, your coding assistant 🐾 I can see you're building the NPC life sim. What do you need?</div>
+        </div>
+      </div>
+      <div class="chat-input-row">
+        <input class="chat-input" id="chat-input" placeholder="Ask Clawd..." />
+        <button class="send-btn" id="send-btn" aria-label="Send message"><i class="ti ti-send" aria-hidden="true"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-bar">
+    <div class="status-item"><i class="ti ti-git-branch"></i> main</div>
+    <div class="status-item"><i class="ti ti-circle-check" style="color:#97C459"></i> No errors</div>
+    <div class="status-item"><i class="ti ti-cpu"></i> JS</div>
+    <div class="status-item status-right"><i class="ti ti-brand-claude"></i> Clawd active</div>
+  </div>
+</div>
+
+<script>
+const termInput = document.getElementById('term-input');
+const termLines = document.getElementById('term-lines');
+const termBody = document.getElementById('term-body');
+const chatInput = document.getElementById('chat-input');
+const chatMsgs = document.getElementById('chat-msgs');
+const sendBtn = document.getElementById('send-btn');
+
+const termResponses = {
+  'ls': 'app.js  npc.js  index.html  style.css  README.md',
+  'pwd': '/home/user/clawd-street',
+  'clear': '__clear__',
+  'help': 'Commands: ls, pwd, node app.js, npm install, clear',
+  'npm install': 'added 3 packages in 0.8s',
+  'node app.js': '🐾 Clawd Street v0.3 booted\nNPC count: 2\nWorld size: 800×600',
+};
+
+termInput.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const cmd = termInput.value.trim();
+  if (!cmd) return;
+  termInput.value = '';
+  const cmdLine = document.createElement('div');
+  cmdLine.innerHTML = `<span class="term-prompt">$ </span>${cmd}`;
+  termLines.appendChild(cmdLine);
+  const resp = termResponses[cmd] || `bash: ${cmd}: command not found`;
+  if (resp === '__clear__') {
+    termLines.innerHTML = '';
+  } else {
+    resp.split('\n').forEach(l => {
+      const out = document.createElement('div');
+      out.className = 'term-out';
+      out.textContent = l;
+      termLines.appendChild(out);
+    });
+  }
+  termBody.scrollTop = termBody.scrollHeight;
+});
+
+const clawdReplies = [
+  "Great question! For your NPC class, you could add a `pathfind(target)` method using A* — want me to write that?",
+  "I'd suggest storing NPC schedules as an array of `{time, action}` objects. Makes it easy to sort by time.",
+  "The `draw()` method looks good! You could add a name label above each NPC with `ctx.fillText(this.name, this.x, this.y - 12)`.",
+  "For mood states, a simple enum object works great: `const MOOD = { happy: '😊', sad: '😢', busy: '💼' }`",
+  "Consider adding a `wander()` behavior that picks a random nearby tile every few seconds — makes the world feel alive!",
+  "Nice structure! Want me to add collision detection between NPCs so they don't overlap?",
+];
+let replyIdx = 0;
+
+function addMessage(text, role) {
+  const msg = document.createElement('div');
+  msg.className = `msg ${role}`;
+  const name = document.createElement('div');
+  name.className = 'msg-name';
+  name.textContent = role === 'clawd' ? 'Clawd' : 'You';
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  bubble.textContent = text;
+  msg.appendChild(name);
+  msg.appendChild(bubble);
+  chatMsgs.appendChild(msg);
+  chatMsgs.scrollTop = chatMsgs.scrollHeight;
+}
+
+function showTyping() {
+  const msg = document.createElement('div');
+  msg.className = 'msg clawd';
+  msg.id = 'typing-indicator';
+  const name = document.createElement('div');
+  name.className = 'msg-name';
+  name.textContent = 'Clawd';
+  const bubble = document.createElement('div');
+  bubble.className = 'typing';
+  bubble.innerHTML = '<span></span><span></span><span></span>';
+  msg.appendChild(name);
+  msg.appendChild(bubble);
+  chatMsgs.appendChild(msg);
+  chatMsgs.scrollTop = chatMsgs.scrollHeight;
+  return msg;
+}
+
+function sendMessage() {
+  const text = chatInput.value.trim();
+  if (!text) return;
+  chatInput.value = '';
+  addMessage(text, 'user');
+  const typing = showTyping();
+  setTimeout(() => {
+    typing.remove();
+    const reply = clawdReplies[replyIdx % clawdReplies.length];
+    replyIdx++;
+    addMessage(reply, 'clawd');
+  }, 900 + Math.random() * 500);
+}
+
+sendBtn.addEventListener('click', sendMessage);
+chatInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+</script>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Top Banana — Click Simulator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --jungle-dark:#0a2318;
+    --jungle:#123b26;
+    --jungle-light:#1c5236;
+    --banana:#f7c927;
+    --banana-deep:#e0a90b;
+    --tip:#3b2314;
+    --cream:#fbf3df;
+    --coral:#ff6f59;
+    --leaf:#4f9a3c;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; width:100%; height:100%; overflow:hidden;
+    background:
+      radial-gradient(ellipse at 50% 30%, var(--jungle-light) 0%, var(--jungle) 45%, var(--jungle-dark) 100%);
+    font-family:'Fredoka', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  #leaf-bg{
+    position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none;
+  }
+  #leaf-bg svg{ position:absolute; opacity:.16; }
+  #canvas-wrap{ position:fixed; inset:0; z-index:1; cursor:pointer; }
+  canvas{ display:block; }
+
+  #hud{
+    position:fixed; inset:0; z-index:5; pointer-events:none;
+    display:flex; flex-direction:column; align-items:center;
+  }
+
+  .plaque{
+    margin-top: 22px;
+    background: linear-gradient(180deg, #16452c, #0f331f);
+    border: 3px solid var(--banana);
+    border-radius: 16px;
+    padding: 10px 30px 14px;
+    text-align:center;
+    transform: rotate(-1.2deg);
+    box-shadow: 0 6px 0 rgba(0,0,0,.35), 0 10px 24px rgba(0,0,0,.4);
+  }
+  .plaque .label{
+    color: var(--cream);
+    font-size: 12px;
+    font-weight:600;
+    letter-spacing: 3px;
+    opacity:.85;
+    text-transform:uppercase;
+  }
+  .plaque .count{
+    font-family:'JetBrains Mono', monospace;
+    font-weight:800;
+    font-size: clamp(36px, 8vw, 58px);
+    color: var(--banana);
+    text-shadow: 0 3px 0 var(--tip), 0 3px 10px rgba(0,0,0,.5);
+    line-height:1.1;
+    letter-spacing: 1px;
+  }
+  .plaque .sub{
+    color: var(--cream);
+    font-size: 12px;
+    opacity:.7;
+    font-weight:500;
+  }
+
+  #combo-pill{
+    margin-top: 12px;
+    background: var(--coral);
+    color: var(--cream);
+    font-weight:700;
+    font-size: 15px;
+    padding: 6px 16px;
+    border-radius: 999px;
+    box-shadow: 0 4px 0 #c2493a, 0 6px 14px rgba(0,0,0,.35);
+    opacity:0;
+    transform: scale(.5);
+    transition: transform .12s cubic-bezier(.34,1.56,.64,1), opacity .12s ease;
+    letter-spacing: .5px;
+  }
+  #combo-pill.show{ opacity:1; transform: scale(1); }
+
+  #toast{
+    position:fixed; top: 18px; left:50%; z-index: 8;
+    transform: translate(-50%, -80px);
+    background: var(--cream);
+    color: var(--tip);
+    font-weight:700;
+    font-size: 15px;
+    letter-spacing: .5px;
+    padding: 10px 22px;
+    border-radius: 999px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.4);
+    transition: transform .35s cubic-bezier(.34,1.56,.64,1);
+    pointer-events:none;
+    white-space:nowrap;
+  }
+  #toast.show{ transform: translate(-50%, 0px); }
+
+  #bottom-hud{
+    position:fixed; left:0; right:0; bottom: 18px; z-index:5;
+    display:flex; justify-content:space-between; align-items:flex-end;
+    padding: 0 18px;
+    pointer-events:none;
+  }
+  #best-tag{
+    background: rgba(10,35,24,.55);
+    border: 2px solid var(--banana-deep);
+    color: var(--cream);
+    font-size: 12px;
+    font-weight:600;
+    padding: 6px 12px;
+    border-radius: 10px;
+    letter-spacing:.5px;
+  }
+  #best-tag b{ color: var(--banana); font-family:'JetBrains Mono',monospace; }
+
+  #instructions{
+    position:fixed; left:50%; bottom: 60px; z-index:5;
+    transform: translateX(-50%);
+    color: var(--cream);
+    font-weight:600;
+    font-size: 14px;
+    letter-spacing: .5px;
+    opacity: .85;
+    text-align:center;
+    pointer-events:none;
+    animation: bob 2.4s ease-in-out infinite;
+    text-shadow: 0 2px 6px rgba(0,0,0,.4);
+  }
+  @keyframes bob{ 0%,100%{ transform: translateX(-50%) translateY(0);} 50%{ transform: translateX(-50%) translateY(-6px);} }
+  #instructions.hide{ display:none; }
+
+  #cps-tag{
+    background: rgba(10,35,24,.55);
+    border: 2px solid var(--banana-deep);
+    color: var(--cream);
+    font-size: 12px;
+    font-weight:600;
+    padding: 6px 12px;
+    border-radius: 10px;
+    letter-spacing:.5px;
+  }
+  #cps-tag b{ color: var(--banana); font-family:'JetBrains Mono',monospace; }
+
+  #floaters{ position:fixed; inset:0; z-index:6; pointer-events:none; overflow:hidden; }
+  .floater{
+    position:absolute;
+    font-family:'JetBrains Mono', monospace;
+    font-weight:800;
+    color: var(--coral);
+    text-shadow: 0 2px 0 rgba(0,0,0,.35);
+    transform: translate(-50%,-50%);
+    white-space:nowrap;
+    animation: floatUp .9s ease-out forwards;
+  }
+  @keyframes floatUp{
+    0%{ opacity:1; transform: translate(-50%,-50%) translateY(0) scale(1) rotate(var(--r,0deg)); }
+    100%{ opacity:0; transform: translate(-50%,-50%) translateY(-70px) scale(1.15) rotate(var(--r,0deg)); }
+  }
+  .floater.passive{ color: var(--banana); opacity:.85; font-weight:700; }
+
+  #crew-toggle{
+    position: fixed; top: 22px; right: 18px; z-index: 9;
+    background: linear-gradient(180deg, #ff8a6e, var(--coral));
+    color: var(--cream);
+    border: none; border-radius: 14px;
+    padding: 10px 16px;
+    font-family:'Fredoka', sans-serif;
+    font-weight:700; font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #c2493a, 0 8px 16px rgba(0,0,0,.35);
+    display:flex; align-items:center; gap:8px;
+  }
+  #crew-toggle:active{ transform: translateY(2px); box-shadow: 0 2px 0 #c2493a; }
+  #crew-badge{
+    background: var(--jungle-dark);
+    color: var(--banana);
+    font-family:'JetBrains Mono', monospace;
+    font-size: 11px; font-weight:800;
+    min-width: 20px; height:20px; padding: 0 5px;
+    border-radius: 999px;
+    display:none; align-items:center; justify-content:center;
+    border: 2px solid var(--banana);
+  }
+
+  #crew-backdrop{
+    position: fixed; inset:0; z-index: 10;
+    background: rgba(6,20,13,.55);
+    opacity:0; pointer-events:none;
+    transition: opacity .25s ease;
+  }
+  #crew-backdrop.show{ opacity:1; pointer-events:auto; }
+
+  #crew-panel{
+    position: fixed; top:0; right:0; height:100%; width: 320px; max-width: 86vw;
+    background: linear-gradient(180deg, #0f331f, #0a2318);
+    border-left: 3px solid var(--banana);
+    z-index: 11;
+    transform: translateX(105%);
+    transition: transform .32s cubic-bezier(.34,1.1,.4,1);
+    display:flex; flex-direction:column;
+  }
+  #crew-panel.open{ transform: translateX(0); }
+  .crew-panel-header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 18px 18px 12px;
+    color: var(--cream);
+    font-weight:700; font-size:18px;
+    border-bottom: 2px dashed rgba(247,201,39,.35);
+  }
+  .crew-panel-header button{
+    background:none; border:none; color:var(--cream); font-size:20px; cursor:pointer;
+    opacity:.7;
+  }
+  .crew-list{ flex:1; overflow-y:auto; padding: 12px; display:flex; flex-direction:column; gap:10px; }
+  .crew-card{
+    display:flex; align-items:center; gap:12px;
+    background: rgba(255,255,255,.04);
+    border: 2px solid rgba(247,201,39,.25);
+    border-radius: 14px;
+    padding: 10px 12px;
+  }
+  .crew-card.locked{ opacity:.55; }
+  .crew-icon{ font-size: 28px; width:38px; text-align:center; flex-shrink:0; }
+  .crew-info{ flex:1; min-width:0; }
+  .crew-name{ color: var(--banana); font-weight:700; font-size:14px; }
+  .crew-owned{ color: var(--cream); font-weight:600; font-size:12px; opacity:.8; }
+  .crew-flavor{ color: var(--cream); opacity:.65; font-size: 11px; margin-top:2px; }
+  .crew-stats{ color: var(--cream); opacity:.5; font-size: 10px; margin-top:3px; font-family:'JetBrains Mono',monospace; }
+  .crew-buy{
+    font-family:'JetBrains Mono', monospace;
+    background: var(--banana);
+    color: var(--tip);
+    border: none; border-radius: 10px;
+    padding: 6px 10px;
+    font-weight:800; font-size:11px;
+    line-height:1.4;
+    cursor:pointer;
+    flex-shrink:0;
+    box-shadow: 0 3px 0 var(--banana-deep);
+    text-align:center;
+  }
+  .crew-buy:active{ transform: translateY(2px); box-shadow:none; }
+  .crew-buy:disabled{
+    background: #4a5a4f; color: rgba(251,243,223,.5);
+    box-shadow: 0 3px 0 #38453d; cursor:not-allowed;
+  }
+
+  @media (max-width: 640px){
+    #crew-panel{
+      top:auto; bottom:0; right:0; left:0; width:100%; max-width:100%;
+      height: 62vh;
+      border-left:none; border-top: 3px solid var(--banana);
+      border-radius: 20px 20px 0 0;
+      transform: translateY(105%);
+    }
+    #crew-panel.open{ transform: translateY(0); }
+    #crew-toggle{ top:16px; right:14px; padding: 8px 12px; font-size:13px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="leaf-bg">
+  <svg width="420" height="420" style="top:-60px; left:-80px;" viewBox="0 0 100 100"><path d="M50 0 C 90 20, 90 80, 50 100 C 60 60, 60 40, 50 0" fill="#5fae42"/></svg>
+  <svg width="360" height="360" style="bottom:-70px; right:-60px; transform:rotate(160deg);" viewBox="0 0 100 100"><path d="M50 0 C 90 20, 90 80, 50 100 C 60 60, 60 40, 50 0" fill="#5fae42"/></svg>
+  <svg width="260" height="260" style="top:20%; right:-40px; transform:rotate(60deg);" viewBox="0 0 100 100"><path d="M50 0 C 90 20, 90 80, 50 100 C 60 60, 60 40, 50 0" fill="#5fae42"/></svg>
+</div>
+
+<div id="canvas-wrap"></div>
+
+<div id="hud">
+  <div class="plaque">
+    <div class="label">Bananas Peeled</div>
+    <div class="count" id="score">0</div>
+    <div class="sub" id="power-sub">+1 per click</div>
+    <div class="sub" id="bps-sub">0.0 🍌/sec</div>
+  </div>
+  <div id="combo-pill">COMBO ×1</div>
+</div>
+
+<div id="toast"></div>
+<div id="instructions">🍌 tap the banana 🍌</div>
+
+<div id="bottom-hud">
+  <div id="best-tag">BEST COMBO <b id="best-combo">×0</b></div>
+  <div id="cps-tag">CLICKS/SEC <b id="cps">0.0</b></div>
+</div>
+
+<button id="crew-toggle">🐒 Crew <span id="crew-badge">0</span></button>
+<div id="crew-backdrop"></div>
+<div id="crew-panel">
+  <div class="crew-panel-header">
+    <span>Hire a Crew</span>
+    <button id="crew-close">✕</button>
+  </div>
+  <div class="crew-list" id="crew-list"></div>
+</div>
+
+<div id="floaters"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  // ---------- Renderer / Scene / Camera ----------
+  const wrap = document.getElementById('canvas-wrap');
+  const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  wrap.appendChild(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(42, window.innerWidth/window.innerHeight, 0.1, 100);
+  const baseCamPos = new THREE.Vector3(0, 0.15, 7.2);
+  camera.position.copy(baseCamPos);
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  // ---------- Lights ----------
+  scene.add(new THREE.AmbientLight(0x8fae7a, 0.55));
+  const sun = new THREE.DirectionalLight(0xfff2c8, 1.1);
+  sun.position.set(4, 6, 5);
+  scene.add(sun);
+  const fill = new THREE.DirectionalLight(0x3fae7a, 0.5);
+  fill.position.set(-5, -2, -3);
+  scene.add(fill);
+  const accent = new THREE.PointLight(0xff6f59, 0.6, 12);
+  accent.position.set(-2, -1.5, 3);
+  scene.add(accent);
+
+  // ---------- Banana geometry (bent low-poly lathe) ----------
+  function buildBananaGeometry(){
+    const profile = [
+      new THREE.Vector2(0.001, 0.00),
+      new THREE.Vector2(0.055, 0.06),
+      new THREE.Vector2(0.130, 0.18),
+      new THREE.Vector2(0.225, 0.45),
+      new THREE.Vector2(0.300, 0.95),
+      new THREE.Vector2(0.330, 1.55),
+      new THREE.Vector2(0.320, 2.15),
+      new THREE.Vector2(0.255, 2.65),
+      new THREE.Vector2(0.155, 2.95),
+      new THREE.Vector2(0.085, 3.08),
+      new THREE.Vector2(0.100, 3.14),
+      new THREE.Vector2(0.001, 3.20)
+    ];
+    let geo = new THREE.LatheGeometry(profile, 8);
+    geo = geo.toNonIndexed();
+
+    // vertex colors based on position along length (t) + a little speckle
+    const pos = geo.attributes.position;
+    const colors = new Float32Array(pos.count * 3);
+    const cBody = new THREE.Color(0xf7c927);
+    const cBodyDeep = new THREE.Color(0xe0a90b);
+    const cTip = new THREE.Color(0x3b2314);
+    const length = 3.20;
+
+    for (let i = 0; i < pos.count; i++){
+      const y = pos.getY(i);
+      const t = y / length;
+      let col;
+      if (t < 0.045 || t > 0.965){
+        col = cTip.clone();
+      } else {
+        col = cBody.clone().lerp(cBodyDeep, Math.abs(t-0.5)*0.9);
+        if (Math.random() < 0.05) col.lerp(cTip, 0.4 + Math.random()*0.3);
+      }
+      colors[i*3] = col.r; colors[i*3+1] = col.g; colors[i*3+2] = col.b;
+    }
+    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    // bend along the length (Y) axis, deflect in X, per standard bend-modifier math
+    const angle = 1.35; // total curvature in radians
+    const r = length / angle;
+    const bentPos = geo.attributes.position;
+    for (let i = 0; i < bentPos.count; i++){
+      const x = bentPos.getX(i);
+      const y = bentPos.getY(i);
+      const z = bentPos.getZ(i);
+      const theta = (y / length) * angle;
+      const newX = (r - x) * Math.sin(theta);
+      const newY = r - (r - x) * Math.cos(theta);
+      bentPos.setXYZ(i, newX, newY, z);
+    }
+    geo.computeVertexNormals();
+    geo.center();
+    return geo;
+  }
+
+  const bananaGeo = buildBananaGeometry();
+  const bananaMat = new THREE.MeshStandardMaterial({
+    vertexColors: true, roughness: 0.55, metalness: 0.04, flatShading: true
+  });
+  const banana = new THREE.Mesh(bananaGeo, bananaMat);
+
+  // orient so the curve reads horizontally, tilt for a nice 3/4 view
+  banana.rotation.z = -1.15;
+  banana.rotation.x = 0.18;
+  banana.rotation.y = 0.35;
+
+  const rig = new THREE.Group(); // handles idle spin + click wobble
+  rig.add(banana);
+  scene.add(rig);
+
+  // ---------- Squash / wobble spring state ----------
+  let squish = 0, squishVel = 0;
+  let wobble = 0, wobbleVel = 0;
+  let autoSpin = 0;
+
+  // ---------- Camera shake ----------
+  let shakeTime = 0;
+
+  // ---------- Particles ----------
+  const particlePool = [];
+  const particleGeo = new THREE.SphereGeometry(0.06, 6, 5);
+  function spawnBurst(point){
+    const count = 12;
+    for (let i = 0; i < count; i++){
+      const colors = [0xf7c927, 0xe0a90b, 0xfbf3df, 0x3b2314];
+      const mat = new THREE.MeshBasicMaterial({ color: colors[i % colors.length], transparent:true });
+      const p = new THREE.Mesh(particleGeo, mat);
+      p.position.copy(point);
+      const s = 0.35 + Math.random()*0.55;
+      p.scale.setScalar(s);
+      const ang = Math.random()*Math.PI*2;
+      const up = 1.5 + Math.random()*2.2;
+      const spd = 1.2 + Math.random()*2.0;
+      p.userData.vel = new THREE.Vector3(Math.cos(ang)*spd, up, Math.sin(ang)*spd*0.6);
+      p.userData.life = 0;
+      p.userData.maxLife = 0.55 + Math.random()*0.35;
+      scene.add(p);
+      particlePool.push(p);
+    }
+    while (particlePool.length > 220){
+      const old = particlePool.shift();
+      scene.remove(old); old.material.dispose();
+    }
+  }
+  function updateParticles(dt){
+    for (let i = particlePool.length - 1; i >= 0; i--){
+      const p = particlePool[i];
+      p.userData.life += dt;
+      const lt = p.userData.life / p.userData.maxLife;
+      if (lt >= 1){
+        scene.remove(p); p.material.dispose();
+        particlePool.splice(i,1);
+        continue;
+      }
+      p.userData.vel.y -= 4.2 * dt; // gravity
+      p.position.addScaledVector(p.userData.vel, dt);
+      p.material.opacity = 1 - lt;
+      p.rotation.x += dt*4; p.rotation.y += dt*3;
+    }
+  }
+
+  // ---------- Crew / workers (idle production) ----------
+  const workerDefs = [
+    { id:'monkey',  icon:'🐒', name:'Monkey Helper',     flavor:'Flings peels with real enthusiasm.',  baseCost:15,       bps:0.1 },
+    { id:'intern',  icon:'🧑‍🍳', name:'Peeling Intern',    flavor:'Works for exposure. And snacks.',     baseCost:100,      bps:1 },
+    { id:'vendor',  icon:'🛒', name:'Snack Cart Vendor', flavor:'Sells them... after a quick peel.',   baseCost:1100,     bps:8 },
+    { id:'robot',   icon:'🤖', name:'Peeling Robot',     flavor:'99.9% accurate. Ask about the .1%.',  baseCost:12000,    bps:47 },
+    { id:'farm',    icon:'🌴', name:'Banana Farm',       flavor:'Grows them practically pre-peeled.',  baseCost:130000,   bps:260 },
+    { id:'factory', icon:'🏭', name:'Banana Factory',    flavor:'Industrial-strength peeling, 24/7.',  baseCost:1400000,  bps:1400 },
+    { id:'rocket',  icon:'🚀', name:'Banana Rocket',     flavor:'Imports bananas from lunar orbit.',   baseCost:20000000, bps:7800 }
+  ];
+  const workers = workerDefs.map(d => ({ ...d, owned: 0 }));
+
+  function costFor(w){ return Math.ceil(w.baseCost * Math.pow(1.15, w.owned)); }
+  function totalBPS(){ return workers.reduce((s, w) => s + w.owned * w.bps, 0); }
+  function isUnlocked(i){ return i === 0 || workers[i-1].owned >= 3; }
+
+  const crewListEl = document.getElementById('crew-list');
+  const crewToggleEl = document.getElementById('crew-toggle');
+  const crewBadgeEl = document.getElementById('crew-badge');
+  const crewPanelEl = document.getElementById('crew-panel');
+  const crewBackdropEl = document.getElementById('crew-backdrop');
+  const bpsSubEl = document.getElementById('bps-sub');
+
+  function renderCrew(){
+    let html = '';
+    for (let i = 0; i < workers.length; i++){
+      const w = workers[i];
+      if (!isUnlocked(i)){
+        html += `<div class="crew-card locked"><div class="crew-icon">🔒</div>
+          <div class="crew-info"><div class="crew-name">???</div>
+          <div class="crew-flavor">Hire 3× ${workers[i-1].name} to unlock.</div></div></div>`;
+        continue;
+      }
+      const cost = costFor(w);
+      const canAfford = currentScore() >= cost;
+      html += `<div class="crew-card">
+        <div class="crew-icon">${w.icon}</div>
+        <div class="crew-info">
+          <div class="crew-name">${w.name} <span class="crew-owned">×${w.owned}</span></div>
+          <div class="crew-flavor">${w.flavor}</div>
+          <div class="crew-stats">${w.bps.toLocaleString()} 🍌/sec each</div>
+        </div>
+        <button class="crew-buy" data-idx="${i}" ${canAfford ? '' : 'disabled'}>Hire<br><span>${cost.toLocaleString()}</span></button>
+      </div>`;
+    }
+    crewListEl.innerHTML = html;
+    crewListEl.querySelectorAll('.crew-buy').forEach(btn => {
+      btn.addEventListener('click', () => buyWorker(parseInt(btn.dataset.idx, 10)));
+    });
+    const owned = workers.reduce((s, w) => s + w.owned, 0);
+    crewBadgeEl.textContent = owned;
+    crewBadgeEl.style.display = owned > 0 ? 'flex' : 'none';
+  }
+
+  function buyWorker(i){
+    const w = workers[i];
+    const cost = costFor(w);
+    if (currentScore() < cost) return;
+    scoreFloat -= cost;
+    w.owned++;
+    updateScoreDisplay();
+    renderCrew();
+  }
+
+  crewToggleEl.addEventListener('click', () => {
+    crewPanelEl.classList.add('open');
+    crewBackdropEl.classList.add('show');
+    renderCrew();
+  });
+  function closeCrewPanel(){
+    crewPanelEl.classList.remove('open');
+    crewBackdropEl.classList.remove('show');
+  }
+  document.getElementById('crew-close').addEventListener('click', closeCrewPanel);
+  crewBackdropEl.addEventListener('click', closeCrewPanel);
+
+  // ---------- Raycasting / click handling ----------
+  const raycaster = new THREE.Raycaster();
+  const ndc = new THREE.Vector2();
+  let scoreFloat = 0, combo = 0, bestCombo = 0, lastClickAt = 0;
+  const comboWindow = 650;
+  let clicksThisSecond = 0, cps = 0, cpsAcc = 0;
+  let milestoneIdx = 0;
+
+  const scoreEl = document.getElementById('score');
+  const powerSubEl = document.getElementById('power-sub');
+  const comboPillEl = document.getElementById('combo-pill');
+  const bestComboEl = document.getElementById('best-combo');
+  const cpsEl = document.getElementById('cps');
+  const instructionsEl = document.getElementById('instructions');
+  const toastEl = document.getElementById('toast');
+  const floaters = document.getElementById('floaters');
+
+  function currentScore(){ return Math.floor(scoreFloat); }
+  function updateScoreDisplay(){ scoreEl.textContent = currentScore().toLocaleString(); }
+
+  const milestones = [
+    [10, "SLIPPERY START!"], [50, "GOING BANANAS!"], [100, "A-PEEL-ING!"],
+    [250, "PEAK RIPENESS!"], [500, "TOP BANANA!"], [1000, "BUNCH OF FUN!"],
+    [2500, "BANANA TYCOON!"], [5000, "LEGENDARY PEELER!"], [10000, "BANANARCHY!"]
+  ];
+  let toastTimer = null;
+  function showToast(text){
+    toastEl.textContent = text;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1500);
+  }
+  function checkMilestones(){
+    while (milestoneIdx < milestones.length && currentScore() >= milestones[milestoneIdx][0]){
+      showToast(milestones[milestoneIdx][1]);
+      milestoneIdx++;
+    }
+  }
+
+  function spawnFloater(clientX, clientY, text, passive){
+    const el = document.createElement('div');
+    el.className = 'floater' + (passive ? ' passive' : '');
+    el.textContent = text;
+    el.style.left = clientX + 'px';
+    el.style.top = clientY + 'px';
+    el.style.fontSize = (passive ? (12 + Math.random()*4) : (16 + Math.random()*10)) + 'px';
+    el.style.setProperty('--r', (Math.random()*24 - 12) + 'deg');
+    floaters.appendChild(el);
+    setTimeout(() => el.remove(), 950);
+  }
+
+  function handleClick(clientX, clientY){
+    ndc.x = (clientX / window.innerWidth) * 2 - 1;
+    ndc.y = -(clientY / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(ndc, camera);
+    const hits = raycaster.intersectObject(banana, false);
+    if (!hits.length) return;
+
+    instructionsEl.classList.add('hide');
+
+    const now = performance.now();
+    combo = (now - lastClickAt < comboWindow) ? combo + 1 : 1;
+    lastClickAt = now;
+    bestCombo = Math.max(bestCombo, combo);
+    const power = 1 + Math.floor((combo - 1) / 5);
+    scoreFloat += power;
+    clicksThisSecond++;
+
+    updateScoreDisplay();
+    powerSubEl.textContent = '+' + power + ' per click';
+    bestComboEl.textContent = '×' + bestCombo;
+
+    if (combo > 1){
+      comboPillEl.textContent = 'COMBO ×' + combo;
+      comboPillEl.classList.add('show');
+    }
+
+    checkMilestones();
+    if (crewPanelEl.classList.contains('open')) renderCrew();
+
+    spawnBurst(hits[0].point);
+    spawnFloater(clientX, clientY, '+' + power);
+
+    squishVel += 9.5;
+    wobbleVel += (Math.random() < 0.5 ? 1 : -1) * 7.5;
+    shakeTime = 0.16;
+  }
+
+  wrap.addEventListener('pointerdown', (e) => handleClick(e.clientX, e.clientY));
+
+  // ---------- Animate ----------
+  let passiveFloaterAcc = 0, lastPassiveFloaterAt = 0, crewRenderAcc = 0;
+  const clock = new THREE.Clock();
+  function animate(){
+    requestAnimationFrame(animate);
+    const dt = Math.min(clock.getDelta(), 0.05);
+    const t = clock.elapsedTime;
+
+    // idle bob + slow spin
+    autoSpin += dt * 0.35;
+    rig.position.y = Math.sin(t * 1.1) * 0.12;
+
+    // squash spring (critically-damped-ish)
+    const springK = 90, springD = 9;
+    squishVel += (-springK * squish - springD * squishVel) * dt;
+    squish += squishVel * dt;
+    wobbleVel += (-springK * wobble - springD * wobbleVel) * dt;
+    wobble += wobbleVel * dt;
+
+    banana.scale.set(1 + squish * 0.30, 1 - squish * 0.38, 1 + squish * 0.30);
+    rig.rotation.y = autoSpin + wobble * 0.12;
+    rig.rotation.z = Math.sin(t * 0.6) * 0.04 + wobble * 0.05;
+
+    // camera shake
+    if (shakeTime > 0){
+      shakeTime -= dt;
+      const s = Math.max(shakeTime, 0) * 0.35;
+      camera.position.set(
+        baseCamPos.x + (Math.random()-0.5) * s,
+        baseCamPos.y + (Math.random()-0.5) * s,
+        baseCamPos.z
+      );
+    } else {
+      camera.position.lerp(baseCamPos, 0.2);
+    }
+
+    // combo decay
+    if (combo > 1 && performance.now() - lastClickAt > comboWindow){
+      combo = 1;
+      comboPillEl.classList.remove('show');
+    }
+
+    // clicks-per-second display
+    cpsAcc += dt;
+    if (cpsAcc >= 1){
+      cps = clicksThisSecond / cpsAcc;
+      cpsEl.textContent = cps.toFixed(1);
+      clicksThisSecond = 0; cpsAcc = 0;
+    }
+
+    // passive income from hired crew
+    const bps = totalBPS();
+    if (bps > 0){
+      scoreFloat += bps * dt;
+      passiveFloaterAcc += bps * dt;
+      updateScoreDisplay();
+      checkMilestones();
+      const nowMs = performance.now();
+      if (passiveFloaterAcc >= 1 && nowMs - lastPassiveFloaterAt > 500){
+        const amount = Math.floor(passiveFloaterAcc);
+        passiveFloaterAcc -= amount;
+        lastPassiveFloaterAt = nowMs;
+        const wp = new THREE.Vector3();
+        banana.getWorldPosition(wp);
+        const sp = wp.project(camera);
+        const sx = (sp.x * 0.5 + 0.5) * window.innerWidth;
+        const sy = (-sp.y * 0.5 + 0.5) * window.innerHeight - 40;
+        spawnFloater(sx, sy, '+' + amount, true);
+      }
+    }
+    bpsSubEl.textContent = bps.toFixed(1) + ' 🍌/sec';
+
+    crewRenderAcc += dt;
+    if (crewRenderAcc > 0.4){
+      crewRenderAcc = 0;
+      if (crewPanelEl.classList.contains('open')) renderCrew();
+    }
+
+    updateParticles(dt);
+    renderer.render(scene, camera);
+  }
+  animate();
+})();
+</script>
+</body>
+</html>

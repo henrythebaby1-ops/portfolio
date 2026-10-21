@@ -1,0 +1,661 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Worstfish</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: engine-analysis screen — board + eval bar on the left, Worstfish's readout on the right; stacks on phones. */
+:root {
+  --bg: #eef3f1;
+  --panel: #ffffff;
+  --ink: #16302b;
+  --muted: #5d736e;
+  --line: #d3dfdb;
+  --accent: #e2583e;       /* blunder coral */
+  --accent-ink: #ffffff;
+  --good: #2f8a5b;
+  --sq-light: #e7ecd9;
+  --sq-dark: #7d9b8a;
+  --sq-hi: rgba(226, 88, 62, .35);
+  --sq-sel: rgba(255, 214, 90, .7);
+  --bar-you: #f7f7f2;
+  --bar-fish: #22302d;
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1b19; --panel: #172624; --ink: #e3eeea; --muted: #8fa7a1; --line: #29403c;
+    --accent: #ff7a5c; --accent-ink: #1a0d09; --good: #5cc98f;
+    --sq-light: #c9d3bd; --sq-dark: #5f7d6e; --bar-you: #e9ede6; --bar-fish: #0a1211;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1b19; --panel: #172624; --ink: #e3eeea; --muted: #8fa7a1; --line: #29403c;
+  --accent: #ff7a5c; --accent-ink: #1a0d09; --good: #5cc98f;
+  --sq-light: #c9d3bd; --sq-dark: #5f7d6e; --bar-you: #e9ede6; --bar-fish: #0a1211;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--display); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1060px; margin: 0 auto; padding-inline: 16px; padding-block: 24px 40px; display: grid; gap: 20px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; }
+h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 800; letter-spacing: -.03em; line-height: 1; margin: 0; }
+h1 .q { color: var(--accent); }
+.tag { color: var(--muted); margin: 0; max-width: 52ch; text-wrap: balance; }
+
+.main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 340px); gap: 20px; align-items: start; }
+@media (max-width: 820px) { .main { grid-template-columns: minmax(0, 1fr); } }
+
+.boardzone { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; max-width: 600px; width: 100%; }
+.evalbar { position: relative; border-radius: 4px; overflow: hidden; background: var(--bar-fish); border: 1px solid var(--line); }
+.evalbar .you { position: absolute; left: 0; right: 0; bottom: 0; height: 50%; background: var(--bar-you); transition: height .5s ease; }
+.evalbar .num { position: absolute; left: 0; right: 0; font: 600 9px/1 var(--mono); text-align: center; padding: 4px 0; }
+.evalbar .num.bottom { bottom: 0; color: var(--bar-fish); }
+.evalbar .num.top { top: 0; color: var(--bar-you); }
+
+.board { display: grid; grid-template-columns: repeat(8, 1fr); aspect-ratio: 1; width: 100%; max-width: 100%; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 0 var(--line), 0 12px 30px -18px rgba(0,0,0,.45); user-select: none; }
+.sq { position: relative; border: 0; padding: 0; margin: 0; font: inherit; cursor: pointer; display: grid; place-items: center; aspect-ratio: 1; }
+.sq.l { background: var(--sq-light); }
+.sq.d { background: var(--sq-dark); }
+.sq.last::before { content: ""; position: absolute; inset: 0; background: var(--sq-hi); }
+.sq.sel::before { content: ""; position: absolute; inset: 0; background: var(--sq-sel); }
+.sq.check::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle, rgba(226,40,30,.85) 0, rgba(226,40,30,.4) 45%, transparent 72%); }
+.sq:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; z-index: 2; }
+.sq .dot { position: absolute; width: 28%; height: 28%; border-radius: 50%; background: rgba(20, 40, 35, .32); z-index: 1; }
+.sq .ring { position: absolute; inset: 4%; border-radius: 50%; border: 5px solid rgba(20, 40, 35, .32); z-index: 1; }
+.pc { position: relative; z-index: 1; font-size: clamp(26px, 8.4vw, 58px); line-height: 1; font-family: "Segoe UI Symbol", "Apple Symbols", "DejaVu Sans", serif; }
+.pc.w { color: #fbfaf5; -webkit-text-stroke: 1.2px #1b2522; text-shadow: 0 2px 2px rgba(0,0,0,.25); }
+.pc.b { color: #1b2522; -webkit-text-stroke: .6px #1b2522; text-shadow: 0 2px 2px rgba(0,0,0,.2); }
+.coord { position: absolute; font: 600 10px/1 var(--mono); opacity: .75; pointer-events: none; }
+.coord.f { right: 3px; bottom: 3px; }
+.coord.r { left: 3px; top: 3px; }
+.sq.l .coord { color: var(--sq-dark); }
+.sq.d .coord { color: var(--sq-light); }
+
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 16px; min-width: 0; }
+.status { display: grid; gap: 4px; }
+.label { font: 600 11px/1.2 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.status .line { font-size: 1.15rem; font-weight: 600; margin: 0; text-wrap: balance; }
+.quip { margin: 0; color: var(--muted); min-height: 1.5em; }
+.lastmove { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.lastmove .san { font: 600 1.6rem/1 var(--mono); }
+.lastmove .nag { font: 800 1.6rem/1 var(--display); color: var(--accent); }
+.thinking .line::after { content: "…"; animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+table { width: 100%; border-collapse: collapse; font: 400 13px/1.4 var(--mono); font-variant-numeric: tabular-nums; }
+th { text-align: left; font-weight: 600; color: var(--muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; padding: 0 0 6px; }
+td { padding: 4px 0; border-top: 1px solid var(--line); }
+td.n { text-align: right; }
+tr.picked td { color: var(--accent); font-weight: 600; }
+.meta { font: 400 11px/1.4 var(--mono); color: var(--muted); margin: 0; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 8px; }
+button.btn { font: 600 13px/1 var(--display); border-radius: 999px; padding: 10px 14px; cursor: pointer; border: 1px solid var(--line); background: transparent; color: var(--ink); }
+button.btn:hover { border-color: var(--muted); }
+button.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+button.btn[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+button.btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+button.btn:disabled { opacity: .45; cursor: default; }
+
+.moves { max-height: 180px; overflow-y: auto; font: 400 13px/1.7 var(--mono); display: grid; grid-template-columns: 2.4em 1fr 1fr; column-gap: 8px; }
+.moves .no { color: var(--muted); }
+.moves .fish { color: var(--accent); }
+.empty { color: var(--muted); font: 400 13px/1.5 var(--display); margin: 0; }
+@media (prefers-reduced-motion: reduce) { .evalbar .you { transition: none; } .thinking .line::after { animation: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Worstfish<span class="q">??</span></h1>
+    <p class="tag">A chess engine that searches every line properly, then plays the move that helps you most. It resigns nothing and wins almost never.</p>
+  </header>
+
+  <div class="main">
+    <div class="boardzone">
+      <div class="evalbar" id="evalbar" aria-label="Evaluation">
+        <div class="you" id="evalYou"></div>
+        <span class="num top" id="evalTop"></span>
+        <span class="num bottom" id="evalBottom"></span>
+      </div>
+      <div class="board" id="board" role="grid" aria-label="Chess board"></div>
+    </div>
+
+    <aside class="panel">
+      <div class="status" id="statusBox">
+        <p class="label">Worstfish says</p>
+        <p class="line" id="statusLine">Your move.</p>
+        <div class="lastmove" id="lastMove" hidden><span class="san" id="lastSan"></span><span class="nag">??</span></div>
+        <p class="quip" id="quip"></p>
+      </div>
+
+      <div>
+        <p class="label" style="margin-bottom:6px">Shortlist, worst first</p>
+        <table id="cands" hidden>
+          <thead><tr><th>Move</th><th class="n" style="text-align:right">Your eval after</th></tr></thead>
+          <tbody id="candBody"></tbody>
+        </table>
+        <p class="empty" id="candEmpty">After its first move, Worstfish shows the moves it considered and how much each one helps you.</p>
+        <p class="meta" id="searchMeta"></p>
+      </div>
+
+      <div class="controls">
+        <button class="btn primary" id="newWhite" type="button">New game as White</button>
+        <button class="btn" id="newBlack" type="button">Play Black</button>
+        <button class="btn" id="undo" type="button">Take back</button>
+        <button class="btn" id="mirror" type="button" aria-pressed="false">Worstfish vs Worstfish</button>
+      </div>
+
+      <div>
+        <p class="label" style="margin-bottom:6px">Moves</p>
+        <div class="moves" id="moves"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script>
+// Worstfish: a small 0x88 engine that searches normally, then plays the move that leaves its opponent best off.
+var Worstfish = (function () {
+  var MATE = 100000, INF = 1e9;
+  var VAL = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 0 };
+  // Piece-square tables from White's side, a8 first.
+  var PST = {
+    p: [0,0,0,0,0,0,0,0, 50,50,50,50,50,50,50,50, 10,10,20,30,30,20,10,10, 5,5,10,25,25,10,5,5,
+        0,0,0,20,20,0,0,0, 5,-5,-10,0,0,-10,-5,5, 5,10,10,-20,-20,10,10,5, 0,0,0,0,0,0,0,0],
+    n: [-50,-40,-30,-30,-30,-30,-40,-50, -40,-20,0,0,0,0,-20,-40, -30,0,10,15,15,10,0,-30, -30,5,15,20,20,15,5,-30,
+        -30,0,15,20,20,15,0,-30, -30,5,10,15,15,10,5,-30, -40,-20,0,5,5,0,-20,-40, -50,-40,-30,-30,-30,-30,-40,-50],
+    b: [-20,-10,-10,-10,-10,-10,-10,-20, -10,0,0,0,0,0,0,-10, -10,0,5,10,10,5,0,-10, -10,5,5,10,10,5,5,-10,
+        -10,0,10,10,10,10,0,-10, -10,10,10,10,10,10,10,-10, -10,5,0,0,0,0,5,-10, -20,-10,-10,-10,-10,-10,-10,-20],
+    r: [0,0,0,0,0,0,0,0, 5,10,10,10,10,10,10,5, -5,0,0,0,0,0,0,-5, -5,0,0,0,0,0,0,-5,
+        -5,0,0,0,0,0,0,-5, -5,0,0,0,0,0,0,-5, -5,0,0,0,0,0,0,-5, 0,0,0,5,5,0,0,0],
+    q: [-20,-10,-10,-5,-5,-10,-10,-20, -10,0,0,0,0,0,0,-10, -10,0,5,5,5,5,0,-10, -5,0,5,5,5,5,0,-5,
+        0,0,5,5,5,5,0,-5, -10,5,5,5,5,5,0,-10, -10,0,5,0,0,0,0,-10, -20,-10,-10,-5,-5,-10,-10,-20],
+    k: [-30,-40,-40,-50,-50,-40,-40,-30, -30,-40,-40,-50,-50,-40,-40,-30, -30,-40,-40,-50,-50,-40,-40,-30, -30,-40,-40,-50,-50,-40,-40,-30,
+        -20,-30,-30,-40,-40,-30,-30,-20, -10,-20,-20,-20,-20,-20,-20,-10, 20,20,0,0,0,0,20,20, 20,30,10,0,0,10,30,20]
+  };
+  var N_OFF = [-33, -31, -18, -14, 14, 18, 31, 33];
+  var B_OFF = [-17, -15, 15, 17];
+  var R_OFF = [-16, -1, 1, 16];
+  var K_OFF = [-17, -16, -15, -1, 1, 15, 16, 17];
+  // Castling rights lost when a piece leaves or lands on these squares (bits: wK 1, wQ 2, bK 4, bQ 8).
+  var CASTLE_MASK = {};
+  CASTLE_MASK[116] = 3; CASTLE_MASK[119] = 1; CASTLE_MASK[112] = 2;
+  CASTLE_MASK[4] = 12; CASTLE_MASK[7] = 4; CASTLE_MASK[0] = 8;
+
+  // Position state
+  var board, side, castle, ep, kings, stack;
+
+  function colorOf(p) { return p === p.toUpperCase() ? 'w' : 'b'; }
+  function sqName(s) { return 'abcdefgh'[s & 7] + (8 - (s >> 4)); }
+  function sqFrom(name) { return (8 - +name[1]) * 16 + 'abcdefgh'.indexOf(name[0]); }
+
+  function load(fen) {
+    var parts = fen.split(' ');
+    board = new Array(128).fill(null);
+    kings = { w: -1, b: -1 };
+    var rows = parts[0].split('/');
+    for (var r = 0; r < 8; r++) {
+      var f = 0;
+      for (var i = 0; i < rows[r].length; i++) {
+        var c = rows[r][i];
+        if (c >= '1' && c <= '8') { f += +c; continue; }
+        board[r * 16 + f] = c;
+        if (c === 'K') kings.w = r * 16 + f;
+        if (c === 'k') kings.b = r * 16 + f;
+        f++;
+      }
+    }
+    side = parts[1];
+    castle = 0;
+    if (parts[2].indexOf('K') >= 0) castle |= 1;
+    if (parts[2].indexOf('Q') >= 0) castle |= 2;
+    if (parts[2].indexOf('k') >= 0) castle |= 4;
+    if (parts[2].indexOf('q') >= 0) castle |= 8;
+    ep = parts[3] && parts[3] !== '-' ? sqFrom(parts[3]) : -1;
+    stack = [];
+  }
+
+  function attacked(sq, by) {
+    var i, t, p;
+    // Pawns
+    var pd = by === 'w' ? 16 : -16, pawn = by === 'w' ? 'P' : 'p';
+    for (i = -1; i <= 1; i += 2) { t = sq + pd + i; if (!(t & 0x88) && board[t] === pawn) return true; }
+    var kn = by === 'w' ? 'N' : 'n', kg = by === 'w' ? 'K' : 'k';
+    for (i = 0; i < 8; i++) { t = sq + N_OFF[i]; if (!(t & 0x88) && board[t] === kn) return true; }
+    for (i = 0; i < 8; i++) { t = sq + K_OFF[i]; if (!(t & 0x88) && board[t] === kg) return true; }
+    var bq = by === 'w' ? 'BQ' : 'bq', rq = by === 'w' ? 'RQ' : 'rq';
+    for (i = 0; i < 4; i++) {
+      t = sq + B_OFF[i];
+      while (!(t & 0x88)) { p = board[t]; if (p) { if (p === bq[0] || p === bq[1]) return true; break; } t += B_OFF[i]; }
+      t = sq + R_OFF[i];
+      while (!(t & 0x88)) { p = board[t]; if (p) { if (p === rq[0] || p === rq[1]) return true; break; } t += R_OFF[i]; }
+    }
+    return false;
+  }
+
+  function inCheck(s) { return attacked(kings[s], s === 'w' ? 'b' : 'w'); }
+
+  function add(list, from, to, capOnly, promoRow) {
+    var cap = board[to];
+    if (capOnly && !cap) return;
+    if (promoRow) { for (var k = 0; k < 4; k++) list.push({ from: from, to: to, cap: cap, promo: 'qrbn'[k] }); }
+    else list.push({ from: from, to: to, cap: cap });
+  }
+
+  // Pseudo-legal moves; legality is checked in make().
+  function gen(capOnly) {
+    var list = [], them = side === 'w' ? 'b' : 'w';
+    for (var sq = 0; sq < 128; sq++) {
+      if (sq & 0x88) { sq += 7; continue; }
+      var p = board[sq];
+      if (!p || colorOf(p) !== side) continue;
+      var type = p.toLowerCase(), t, i;
+      if (type === 'p') {
+        var dir = side === 'w' ? -16 : 16, startRow = side === 'w' ? 6 : 1, lastRow = side === 'w' ? 0 : 7;
+        t = sq + dir;
+        if (!(t & 0x88) && !board[t]) {
+          if (!capOnly || (t >> 4) === lastRow) add(list, sq, t, false, (t >> 4) === lastRow);
+          if (!capOnly && (sq >> 4) === startRow && !board[t + dir]) list.push({ from: sq, to: t + dir, cap: null, dbl: true });
+        }
+        for (i = -1; i <= 1; i += 2) {
+          t = sq + dir + i;
+          if (t & 0x88) continue;
+          if (board[t] && colorOf(board[t]) === them) add(list, sq, t, false, (t >> 4) === lastRow);
+          else if (t === ep) list.push({ from: sq, to: t, cap: side === 'w' ? 'p' : 'P', ep: true });
+        }
+        continue;
+      }
+      var offs = type === 'n' ? N_OFF : type === 'b' ? B_OFF : type === 'r' ? R_OFF : K_OFF;
+      var slide = type === 'b' || type === 'r' || type === 'q';
+      for (i = 0; i < offs.length; i++) {
+        t = sq + offs[i];
+        while (!(t & 0x88)) {
+          if (board[t]) { if (colorOf(board[t]) === them) add(list, sq, t, false); break; }
+          if (!capOnly) add(list, sq, t, false);
+          if (!slide) break;
+          t += offs[i];
+        }
+      }
+      if (type === 'k' && !capOnly) {
+        var home = side === 'w' ? 116 : 4, kBit = side === 'w' ? 1 : 4, qBit = side === 'w' ? 2 : 8;
+        if (sq === home && !attacked(home, them)) {
+          if ((castle & kBit) && !board[home + 1] && !board[home + 2] &&
+              !attacked(home + 1, them) && !attacked(home + 2, them))
+            list.push({ from: sq, to: home + 2, cap: null, castle: true });
+          if ((castle & qBit) && !board[home - 1] && !board[home - 2] && !board[home - 3] &&
+              !attacked(home - 1, them) && !attacked(home - 2, them))
+            list.push({ from: sq, to: home - 2, cap: null, castle: true });
+        }
+      }
+    }
+    return list;
+  }
+
+  // Returns false (and leaves the position unchanged) if the move leaves the mover in check.
+  function make(m) {
+    var p = board[m.from], mover = side;
+    stack.push({ m: m, piece: p, castle: castle, ep: ep, kings: { w: kings.w, b: kings.b } });
+    board[m.to] = m.promo ? (mover === 'w' ? m.promo.toUpperCase() : m.promo) : p;
+    board[m.from] = null;
+    if (m.ep) board[m.to + (mover === 'w' ? 16 : -16)] = null;
+    if (m.castle) {
+      if (m.to > m.from) { board[m.from + 1] = board[m.from + 3]; board[m.from + 3] = null; }
+      else { board[m.from - 1] = board[m.from - 4]; board[m.from - 4] = null; }
+    }
+    if (p === 'K' || p === 'k') kings[mover] = m.to;
+    castle &= ~((CASTLE_MASK[m.from] || 0) | (CASTLE_MASK[m.to] || 0));
+    ep = m.dbl ? (m.from + m.to) >> 1 : -1;
+    side = mover === 'w' ? 'b' : 'w';
+    if (attacked(kings[mover], side)) { unmake(); return false; }
+    return true;
+  }
+
+  function unmake() {
+    var u = stack.pop(), m = u.m;
+    side = side === 'w' ? 'b' : 'w';
+    board[m.from] = u.piece;
+    board[m.to] = m.ep ? null : m.cap;
+    if (m.ep) board[m.to + (side === 'w' ? 16 : -16)] = m.cap;
+    if (m.castle) {
+      if (m.to > m.from) { board[m.from + 3] = board[m.from + 1]; board[m.from + 1] = null; }
+      else { board[m.from - 4] = board[m.from - 1]; board[m.from - 1] = null; }
+    }
+    castle = u.castle; ep = u.ep; kings = u.kings;
+  }
+
+  // Static score for the side to move.
+  function evaluate() {
+    var s = 0;
+    for (var sq = 0; sq < 128; sq++) {
+      if (sq & 0x88) { sq += 7; continue; }
+      var p = board[sq];
+      if (!p) continue;
+      var type = p.toLowerCase(), r = sq >> 4, f = sq & 7;
+      if (p !== type) s += VAL[type] + PST[type][r * 8 + f];
+      else s -= VAL[type] + PST[type][(7 - r) * 8 + f];
+    }
+    return side === 'w' ? s : -s;
+  }
+
+  function score(m) {
+    return (m.cap ? VAL[m.cap.toLowerCase()] * 10 - VAL[board[m.from].toLowerCase()] : 0) + (m.promo === 'q' ? 8000 : 0);
+  }
+  function order(list) {
+    for (var i = 0; i < list.length; i++) list[i].s = score(list[i]);
+    return list.sort(function (a, b) { return b.s - a.s; });
+  }
+
+  var deadline = 0, nodes = 0;
+  function Abort() {}
+  function tick() { if ((++nodes & 1023) === 0 && Date.now() > deadline) throw new Abort(); }
+
+  function quiesce(alpha, beta, qd) {
+    tick();
+    var stand = evaluate();
+    if (qd === 0 || stand >= beta) return stand;
+    if (stand > alpha) alpha = stand;
+    var list = order(gen(true));
+    for (var i = 0; i < list.length; i++) {
+      if (!make(list[i])) continue;
+      var v = -quiesce(-beta, -alpha, qd - 1);
+      unmake();
+      if (v >= beta) return v;
+      if (v > alpha) alpha = v;
+    }
+    return alpha;
+  }
+
+  // Ordinary negamax: below the root, both sides try to win.
+  function negamax(depth, alpha, beta, ply) {
+    tick();
+    if (depth === 0) {
+      // Still need to spot mate/stalemate at the horizon.
+      var anyLegal = false, all = gen(false);
+      for (var j = 0; j < all.length && !anyLegal; j++) if (make(all[j])) { anyLegal = true; unmake(); }
+      if (!anyLegal) return inCheck(side) ? -MATE + ply : 0;
+      return quiesce(alpha, beta, 6);
+    }
+    var list = order(gen(false)), best = -INF, legal = 0;
+    for (var i = 0; i < list.length; i++) {
+      if (!make(list[i])) continue;
+      legal++;
+      var v = -negamax(depth - 1, -beta, -alpha, ply + 1);
+      unmake();
+      if (v > best) best = v;
+      if (v > alpha) alpha = v;
+      if (alpha >= beta) break;
+    }
+    if (!legal) return inCheck(side) ? -MATE + ply : 0;
+    return best;
+  }
+
+  function legalRoot() {
+    return gen(false).filter(function (m) { if (!make(m)) return false; unmake(); return true; });
+  }
+
+  // Score every root move by how good it is for the OPPONENT, then pick the highest.
+  function think(fen, opts) {
+    opts = opts || {};
+    var budget = opts.timeMs || 1200, maxDepth = opts.maxDepth || 6;
+    load(fen);
+    var root = legalRoot();
+    if (!root.length) return null;
+    var before = evaluate(), start = Date.now(), scored = null, depthDone = 0;
+    nodes = 0;
+    for (var d = 1; d <= maxDepth; d++) {
+      deadline = d === 1 ? Infinity : start + budget; // depth 1 always finishes
+      var cur = [];
+      try {
+        for (var i = 0; i < root.length; i++) {
+          make(root[i]);
+          try { cur.push({ m: root[i], opp: negamax(d - 1, -INF, INF, 1) }); }
+          finally { unmake(); }
+        }
+      } catch (e) {
+        if (e instanceof Abort) break;
+        throw e;
+      }
+      scored = cur; depthDone = d;
+      if (Date.now() - start > budget * 0.3) break; // the next depth would not finish in time
+    }
+    scored.sort(function (a, b) { return b.opp - a.opp; });
+    // A little variety: choose among moves within 10 centipawns of the very worst.
+    var top = scored[0].opp;
+    var pool = mateIn(top) ? [scored[0]] : scored.filter(function (s) { return s.opp >= top - 10; });
+    var pick = pool[Math.floor(Math.random() * pool.length)];
+    function out(s) { return { from: sqName(s.m.from), to: sqName(s.m.to), promotion: s.m.promo, opp: s.opp }; }
+    return {
+      move: out(pick),
+      before: before,             // static score for Worstfish before moving
+      candidates: scored.map(out),
+      depth: depthDone,
+      nodes: nodes,
+      ms: Date.now() - start
+    };
+  }
+
+  function mateIn(s) {
+    var a = Math.abs(s);
+    return a > MATE - 1000 ? Math.ceil((MATE - a) / 2) : 0;
+  }
+
+  return { think: think, mateIn: mateIn, MATE: MATE,
+           _perft: function (fen, d) { load(fen); return (function p(d) { if (!d) return 1; var n = 0, l = gen(false);
+             for (var i = 0; i < l.length; i++) if (make(l[i])) { n += p(d - 1); unmake(); } return n; })(d); } };
+})();
+
+</script>
+<script>
+(function () {
+  var GLYPH = { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟︎' };
+  var game = new Chess(), you = 'w', selected = null, mirror = false, busy = false, timer = null;
+  var last = null, lastInfo = null, evalForYou = 0;
+  var $ = function (id) { return document.getElementById(id); };
+
+  var QUIPS = {
+    mate: ['Walks into mate in {n}. Textbook.', 'Found a forced mate. For you.', 'Sets up its own funeral in {n}.'],
+    huge: ['Gives away a major piece, on purpose.', 'Donates material to a worthy cause: you.', 'That piece was bothering it anyway.'],
+    big: ['Hangs a piece and feels nothing.', 'A clean, confident blunder.', 'Stockfish would never. That is the point.'],
+    mid: ['Quietly ruins its position.', 'Weakens every square it can reach.', 'Retreats toward disaster.'],
+    small: ['Nothing to blunder here, so it makes things slightly worse.', 'Even its bad moves have run out. This one is merely poor.', 'A subtle inaccuracy. It wanted more.'],
+    winning: ['It is winning and very upset about it.', 'Trying hard to give this back.']
+  };
+  function pickQuip(kind, n) { var a = QUIPS[kind]; return a[Math.floor(Math.random() * a.length)].replace('{n}', n); }
+
+  function fmt(cp) {
+    var m = Worstfish.mateIn(cp);
+    if (m) return (cp > 0 ? '+M' : '−M') + m;
+    var v = (cp / 100).toFixed(1);
+    return cp > 0 ? '+' + v : cp < 0 ? '−' + v.slice(1) : '0.0';
+  }
+
+  function render() {
+    var el = $('board'), b = game.board(), flip = you === 'b';
+    var legal = selected ? game.moves({ square: selected, verbose: true }) : [];
+    var targets = {}; legal.forEach(function (m) { targets[m.to] = m; });
+    var checkSq = null;
+    if (game.in_check()) {
+      for (var r0 = 0; r0 < 8; r0++) for (var f0 = 0; f0 < 8; f0++) {
+        var q = b[r0][f0]; if (q && q.type === 'k' && q.color === game.turn()) checkSq = 'abcdefgh'[f0] + (8 - r0);
+      }
+    }
+    var html = '';
+    for (var i = 0; i < 8; i++) for (var j = 0; j < 8; j++) {
+      var r = flip ? 7 - i : i, f = flip ? 7 - j : j;
+      var name = 'abcdefgh'[f] + (8 - r), p = b[r][f];
+      var cls = 'sq ' + ((r + f) % 2 ? 'd' : 'l');
+      if (last && (name === last.from || name === last.to)) cls += ' last';
+      if (name === selected) cls += ' sel';
+      if (name === checkSq) cls += ' check';
+      var inner = '';
+      if (p) inner += '<span class="pc ' + p.color + '">' + GLYPH[p.type] + '</span>';
+      if (targets[name]) inner += p ? '<span class="ring"></span>' : '<span class="dot"></span>';
+      if (j === 0) inner += '<span class="coord r">' + (8 - r) + '</span>';
+      if (i === 7) inner += '<span class="coord f">' + 'abcdefgh'[f] + '</span>';
+      var label = name + (p ? ' ' + (p.color === 'w' ? 'white ' : 'black ') + ({k:'king',q:'queen',r:'rook',b:'bishop',n:'knight',p:'pawn'})[p.type] : '');
+      html += '<button type="button" class="' + cls + '" data-sq="' + name + '" aria-label="' + label + '">' + inner + '</button>';
+    }
+    el.innerHTML = html;
+    renderMoves();
+    renderEval();
+    $('undo').disabled = mirror || busy || game.history().length === 0;
+  }
+
+  function renderMoves() {
+    var h = game.history(), out = '';
+    // Mark Worstfish's moves: in mirror mode every move is its own.
+    for (var i = 0; i < h.length; i += 2) {
+      var wFish = mirror || you === 'b', bFish = mirror || you === 'w';
+      out += '<span class="no">' + (i / 2 + 1) + '.</span><span class="' + (wFish ? 'fish' : '') + '">' + h[i] + (wFish ? '??' : '') + '</span>' +
+             '<span class="' + (bFish && h[i + 1] ? 'fish' : '') + '">' + (h[i + 1] ? h[i + 1] + (bFish ? '??' : '') : '') + '</span>';
+    }
+    $('moves').innerHTML = out || '<p class="empty" style="grid-column:1/-1">No moves yet.</p>';
+    $('moves').scrollTop = 1e6;
+  }
+
+  function renderEval() {
+    // Bar fills from the bottom with the human's share (White's share in mirror mode).
+    var cp = evalForYou, m = Worstfish.mateIn(cp);
+    var pct = m ? (cp > 0 ? 100 : 0) : 50 + 50 * (2 / (1 + Math.exp(-cp / 400)) - 1);
+    $('evalYou').style.height = pct + '%';
+    $('evalBottom').textContent = cp >= 0 ? fmt(cp).replace('+', '') : '';
+    $('evalTop').textContent = cp < 0 ? fmt(-cp).replace('+', '') : '';
+    $('evalbar').setAttribute('aria-label', 'Evaluation for ' + (mirror ? 'White' : 'you') + ': ' + fmt(cp));
+  }
+
+  function setStatus(line, quip, thinking) {
+    $('statusLine').textContent = line;
+    $('quip').textContent = quip || '';
+    $('statusBox').classList.toggle('thinking', !!thinking);
+  }
+
+  function checkGameOver() {
+    if (!game.game_over()) return false;
+    var fishLost;
+    if (game.in_checkmate()) {
+      var loser = game.turn();
+      if (mirror) setStatus((loser === 'w' ? 'White' : 'Black') + ' is checkmated.', 'One Worstfish finally succeeded at losing. The other one is devastated.');
+      else if (loser === you) setStatus('You got checkmated by Worstfish.', 'It is as surprised as you are, and more upset.');
+      else setStatus('Checkmate. You beat Worstfish.', 'It considers this its finest game.');
+    } else {
+      var why = game.in_stalemate() ? 'Stalemate' : game.in_threefold_repetition() ? 'Draw by repetition' : game.insufficient_material() ? 'Draw, not enough material' : 'Draw by the 50-move rule';
+      setStatus(why + '.', mirror ? 'Two engines trying to lose, and nobody did.' : 'A draw against Worstfish takes real effort. Well done, sort of.');
+    }
+    $('lastMove').hidden = true;
+    return true;
+  }
+
+  function fishMove() {
+    if (game.game_over()) { checkGameOver(); render(); return; }
+    busy = true;
+    setStatus('Looking for the worst move', '', true);
+    render();
+    timer = setTimeout(function () {
+      timer = null;
+      var fishColor = game.turn();
+      var res = Worstfish.think(game.fen(), { timeMs: 700 });
+      var mv = game.move({ from: res.move.from, to: res.move.to, promotion: res.move.promotion });
+      busy = false;
+      last = mv;
+      // Evaluation from the human's side (White's side in mirror mode).
+      var forOpp = res.move.opp;
+      evalForYou = mirror ? (fishColor === 'w' ? -forOpp : forOpp) : forOpp;
+      var gain = forOpp + res.before, n = Worstfish.mateIn(forOpp), kind;
+      if (n && forOpp > 0) kind = 'mate';
+      else if (forOpp < -300) kind = 'winning';
+      else if (gain >= 700) kind = 'huge';
+      else if (gain >= 250) kind = 'big';
+      else if (gain >= 60) kind = 'mid';
+      else kind = 'small';
+      showCandidates(res, mv);
+      if (!checkGameOver()) {
+        $('lastMove').hidden = false;
+        $('lastSan').textContent = mv.san;
+        setStatus(mirror ? (fishColor === 'w' ? 'White' : 'Black') + ' plays' : 'Worstfish plays', pickQuip(kind, n));
+      }
+      render();
+      if (mirror && !game.game_over()) { busy = true; timer = setTimeout(fishMove, 450); }
+    }, 280);
+  }
+
+  function showCandidates(res, mv) {
+    // Replay the position before Worstfish's move so candidates get proper notation.
+    var hist = new Chess(); hist.load_pgn(game.pgn()); hist.undo();
+    var rows = res.candidates.slice(0, 6).map(function (c) {
+      var m = hist.move({ from: c.from, to: c.to, promotion: c.promotion }); hist.undo();
+      var picked = c.from === res.move.from && c.to === res.move.to && c.promotion === res.move.promotion;
+      return '<tr class="' + (picked ? 'picked' : '') + '"><td>' + (m ? m.san : c.from + c.to) + (picked ? '  ← played' : '') + '</td><td class="n">' + fmt(c.opp) + '</td></tr>';
+    });
+    $('candBody').innerHTML = rows.join('');
+    $('cands').hidden = false;
+    $('candEmpty').hidden = true;
+    $('searchMeta').textContent = 'Depth ' + res.depth + ' · ' + res.nodes.toLocaleString() + ' positions · ' + res.ms + ' ms · ' + res.candidates.length + ' legal moves';
+  }
+
+  function onSquare(name) {
+    if (busy || mirror || game.game_over() || game.turn() !== you) return;
+    var p = game.get(name);
+    if (selected) {
+      var mv = game.move({ from: selected, to: name, promotion: 'q' });
+      if (mv) {
+        selected = null; last = mv;
+        $('lastMove').hidden = true;
+        if (!checkGameOver()) fishMove(); else render();
+        return;
+      }
+    }
+    selected = p && p.color === you && name !== selected ? name : null;
+    render();
+  }
+
+  function stopTimer() { if (timer) { clearTimeout(timer); timer = null; } busy = false; }
+
+  function newGame(color, isMirror) {
+    stopTimer();
+    game = new Chess(); you = color; mirror = !!isMirror; selected = null; last = null; evalForYou = 0;
+    $('mirror').setAttribute('aria-pressed', String(mirror));
+    $('lastMove').hidden = true;
+    $('cands').hidden = true; $('candEmpty').hidden = false; $('searchMeta').textContent = '';
+    if (mirror || you === 'b') fishMove();
+    else { setStatus('Your move.', 'You play White. Worstfish will do its worst.'); render(); }
+  }
+
+  $('board').addEventListener('click', function (e) {
+    var sq = e.target.closest('.sq'); if (sq) onSquare(sq.getAttribute('data-sq'));
+  });
+  $('newWhite').addEventListener('click', function () { newGame('w'); });
+  $('newBlack').addEventListener('click', function () { newGame('b'); });
+  $('mirror').addEventListener('click', function () { mirror ? newGame('w') : newGame('w', true); });
+  $('undo').addEventListener('click', function () {
+    if (busy || mirror) return;
+    game.undo();
+    if (game.turn() !== you) game.undo();
+    var h = game.history({ verbose: true });
+    last = h[h.length - 1] || null; selected = null;
+    $('lastMove').hidden = true;
+    setStatus('Your move.', 'Took it back. Worstfish forgives you.');
+    render();
+  });
+
+  // Keep the game across live updates to the page.
+  function start(data) {
+    if (data && data.pgn !== undefined) {
+      you = data.you || 'w';
+      if (data.pgn) game.load_pgn(data.pgn);
+      var h = game.history({ verbose: true }); last = h[h.length - 1] || null;
+      if (game.turn() !== you && !game.game_over()) { fishMove(); return; }
+      if (!checkGameOver()) setStatus('Your move.', '');
+      render();
+    } else newGame('w');
+  }
+  if (window.claude && window.claude.hot && window.claude.hot.snapshot) {
+    window.claude.hot.snapshot(function () { return { pgn: mirror ? '' : game.pgn(), you: you }; });
+  }
+  window.claude && window.claude.hot && window.claude.hot.ready ? window.claude.hot.ready(start) : start((window.claude && window.claude.hot && window.claude.hot.data) || {});
+})();
+</script>
+
+</body></html>

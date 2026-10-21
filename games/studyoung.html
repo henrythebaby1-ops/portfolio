@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>studyoung — study smarter, not longer.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F2F3ED;
+    --paper-line:#DBD8C9;
+    --card:#FFFFFF;
+    --ink:#1C1B18;
+    --ink-soft:#5B584E;
+    --yellow:#F4C744;
+    --yellow-deep:#9C6B12;
+    --yellow-tint: rgba(244,199,68,.28);
+    --coral:#D14A2D;
+    --coral-deep:#A83A22;
+    --coral-tint: rgba(209,74,45,.13);
+    --teal:#2F8577;
+    --teal-deep:#1F6155;
+    --teal-tint: rgba(47,133,119,.14);
+    --shadow: rgba(28,27,24,.14);
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  h1,h2,h3{ font-family:'Bricolage Grotesque', 'Inter', sans-serif; margin:0; }
+  p{ margin:0; }
+  button{ font-family:inherit; cursor:pointer; }
+  :focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
+
+  #app{ max-width:1040px; margin:0 auto; padding:0 24px 80px; }
+
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:26px 0 10px;
+  }
+  .brand{
+    font-weight:800; font-size:1.35rem; letter-spacing:-0.02em; color:var(--ink);
+  }
+  .ghost-btn{
+    background:transparent; border:1.5px solid var(--paper-line); color:var(--ink);
+    border-radius:999px; padding:9px 18px; font-weight:600; font-size:.92rem;
+    transition: background-color .15s, border-color .15s;
+  }
+  .ghost-btn:hover{ background:var(--yellow); border-color:var(--yellow); }
+
+  /* ---------- HOME ---------- */
+  .hero{ max-width:640px; margin:44px auto 0; text-align:left; }
+  .hero-title{
+    font-size:clamp(2.1rem, 5vw, 3.1rem); font-weight:600; line-height:1.06;
+    letter-spacing:-0.01em; color:var(--ink);
+  }
+  .hero-sub{
+    margin-top:16px; color:var(--ink-soft); font-size:1.05rem; line-height:1.55;
+    max-width:46ch;
+  }
+
+  .note-card{
+    background:var(--card); border:1px solid var(--paper-line); border-radius:16px;
+    margin-top:32px; overflow:hidden; box-shadow:0 22px 46px -30px var(--shadow);
+    transform: rotate(-0.35deg);
+  }
+  textarea#notesInput{
+    width:100%; min-height:230px; border:none; resize:vertical; display:block;
+    padding:26px 26px 18px; font-family:'Inter', sans-serif; font-size:1rem;
+    line-height:1.9; color:var(--ink);
+    background-image: repeating-linear-gradient(var(--card) 0 43px, var(--paper-line) 44px);
+    background-position: 0 8px;
+  }
+  textarea#notesInput:focus{ outline:none; }
+  textarea#notesInput::placeholder{ color:#A7A493; }
+  .note-card-bar{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:12px 22px; border-top:1px dashed var(--paper-line);
+    font-size:.85rem; color:var(--ink-soft);
+  }
+  .upload-error{ color:var(--coral-deep); font-weight:600; display:none; }
+
+  .actions-row{ display:flex; justify-content:center; margin-top:26px; }
+  .btn-primary{
+    background:var(--ink); color:var(--paper); border:none; border-radius:999px;
+    padding:15px 34px; font-weight:700; font-size:1rem; letter-spacing:-0.01em;
+    transition: background-color .15s, color .15s, transform .1s;
+  }
+  .btn-primary:hover{ background:var(--yellow); color:var(--ink); }
+  .btn-primary:active{ transform:scale(.98); }
+
+  .upload-row{ display:flex; justify-content:center; margin-top:16px; }
+  .upload-link{
+    color:var(--ink-soft); font-size:.92rem; font-weight:600; text-decoration:underline;
+    text-decoration-color:var(--paper-line); text-underline-offset:3px; cursor:pointer;
+  }
+  .upload-link:hover{ color:var(--ink); }
+
+  .steps{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:22px; margin-top:68px;
+  }
+  .step-num{
+    width:34px; height:34px; border-radius:50%; display:flex; align-items:center;
+    justify-content:center; font-weight:700; font-size:.95rem; color:var(--ink);
+    margin-bottom:12px;
+  }
+  .step:nth-child(1) .step-num{ background:var(--yellow); }
+  .step:nth-child(2) .step-num{ background:var(--coral); color:#fff; }
+  .step:nth-child(3) .step-num{ background:var(--teal); color:#fff; }
+  .step h3{ font-size:1.02rem; font-weight:700; margin-bottom:6px; }
+  .step p{ color:var(--ink-soft); font-size:.92rem; line-height:1.5; }
+
+  /* ---------- SHARED ---------- */
+  .back-link{
+    background:none; border:none; color:var(--ink-soft); font-weight:600; font-size:.92rem;
+    padding:8px 0; margin-top:8px;
+  }
+  .back-link:hover{ color:var(--ink); }
+
+  .results{ max-width:640px; margin:8px auto 0; }
+  .results-card{
+    background:var(--card); border:1px solid var(--paper-line); border-radius:18px;
+    padding:34px 32px; margin-top:14px; box-shadow:0 22px 46px -30px var(--shadow);
+  }
+  .results-title{
+    font-family:'Bricolage Grotesque', sans-serif; font-weight:700; font-size:1.6rem;
+    letter-spacing:-0.01em; color:var(--ink); text-transform:lowercase;
+  }
+  .stat-row{ display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; }
+  .chip{
+    display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:999px;
+    font-size:.88rem; font-weight:700;
+  }
+  .chip-yellow{ background:var(--yellow-tint); color:var(--yellow-deep); }
+  .chip-coral{ background:var(--coral-tint); color:var(--coral-deep); }
+  .chip-teal{ background:var(--teal-tint); color:var(--teal-deep); }
+
+  .results-buttons{ display:flex; gap:14px; margin-top:26px; flex-wrap:wrap; }
+  .btn-flash, .btn-quiz{
+    flex:1; min-width:180px; border:none; border-radius:14px; padding:16px 20px;
+    font-weight:700; font-size:1rem; transition:transform .1s, filter .15s;
+  }
+  .btn-flash{ background:var(--yellow); color:var(--ink); }
+  .btn-quiz{ background:var(--coral); color:#fff; }
+  .btn-flash:hover, .btn-quiz:hover{ filter:brightness(1.05); }
+  .btn-flash:active, .btn-quiz:active{ transform:scale(.98); }
+  .btn-flash:disabled, .btn-quiz:disabled{ opacity:.45; cursor:not-allowed; filter:none; transform:none; }
+
+  .link-toggle{
+    background:none; border:none; color:var(--ink-soft); font-weight:600; font-size:.88rem;
+    margin-top:22px; text-decoration:underline; text-underline-offset:3px;
+  }
+  .link-toggle:hover{ color:var(--ink); }
+
+  .concept-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+  .concept-chip{
+    background:var(--paper); border:1px solid var(--paper-line); color:var(--ink);
+    padding:7px 13px; border-radius:999px; font-size:.85rem; font-weight:600;
+  }
+
+  .save-row{ margin-top:26px; padding-top:22px; border-top:1px dashed var(--paper-line); }
+  .btn-save{
+    background:transparent; border:1.5px solid var(--ink); color:var(--ink);
+    border-radius:999px; padding:11px 22px; font-weight:700; font-size:.92rem;
+  }
+  .btn-save:hover{ background:var(--ink); color:var(--paper); }
+  .btn-save:disabled{ background:var(--teal-tint); border-color:transparent; color:var(--teal-deep); cursor:default; }
+
+  /* ---------- STUDY VIEW (flashcards + quiz) ---------- */
+  .study-view{ max-width:600px; margin:8px auto 0; }
+  .progress-text{ text-align:center; color:var(--ink-soft); font-weight:600; font-size:.9rem; margin-top:6px; }
+
+  .flash-card{
+    margin:26px auto 0; max-width:560px; min-height:260px; border-radius:20px;
+    display:flex; align-items:center; justify-content:center; flex-direction:column;
+    text-align:center; padding:40px 34px; cursor:pointer; user-select:none;
+    background:var(--card); border:1px solid var(--paper-line); color:var(--ink);
+    box-shadow:0 24px 48px -30px var(--shadow); transition:background-color .2s, color .2s;
+  }
+  .flash-card.is-flipped{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+  .flash-content{ font-size:1.25rem; font-weight:600; line-height:1.5; }
+  .flash-card.is-flipped .flash-content{ font-weight:500; font-size:1.1rem; }
+  .fc-hint{ margin-top:14px; font-size:.8rem; font-weight:700; color:var(--coral-deep); text-transform:lowercase; }
+  .flash-card.flip-anim{ animation:flipPulse .38s ease; }
+  @keyframes flipPulse{ 0%{transform:scaleX(1);} 45%{transform:scaleX(.06);} 100%{transform:scaleX(1);} }
+
+  .tap-hint{ text-align:center; color:var(--ink-soft); font-size:.88rem; margin-top:16px; }
+  .verdict-row{ display:flex; gap:14px; justify-content:center; margin-top:20px; }
+  .btn-outline-coral, .btn-fill-teal{
+    border-radius:999px; padding:13px 24px; font-weight:700; font-size:.95rem; min-width:150px;
+  }
+  .btn-outline-coral{ background:transparent; border:1.5px solid var(--coral); color:var(--coral-deep); }
+  .btn-outline-coral:hover{ background:var(--coral-tint); }
+  .btn-fill-teal{ background:var(--teal); color:#fff; border:none; }
+  .btn-fill-teal:hover{ filter:brightness(1.08); }
+
+  .quiz-prompt{
+    background:var(--card); border:1px solid var(--paper-line); border-radius:18px;
+    padding:26px 26px; margin-top:22px; font-size:1.1rem; font-weight:600; line-height:1.5;
+    box-shadow:0 22px 46px -30px var(--shadow);
+  }
+  .quiz-options{ display:flex; flex-direction:column; gap:10px; margin-top:16px; }
+  .quiz-option{
+    text-align:left; background:var(--card); border:1.5px solid var(--paper-line); color:var(--ink);
+    border-radius:12px; padding:14px 18px; font-size:.98rem; font-weight:600;
+    transition:border-color .15s, background-color .15s;
+  }
+  .quiz-option:hover:not(:disabled){ border-color:var(--ink); }
+  .quiz-option.correct{ background:var(--teal-tint); border-color:var(--teal); color:var(--teal-deep); }
+  .quiz-option.incorrect{ background:var(--coral-tint); border-color:var(--coral); color:var(--coral-deep); }
+  .quiz-option:disabled{ cursor:default; }
+  #main .btn-primary{ display:block; margin:22px auto 0; }
+
+  .recap h2{ text-align:center; font-size:1.7rem; margin-top:18px; }
+  .recap p{ text-align:center; color:var(--ink-soft); margin-top:10px; font-size:1rem; }
+  .recap .concept-chips{ justify-content:center; margin-top:18px; }
+  .recap .results-buttons{ justify-content:center; margin-top:24px; }
+
+  /* ---------- LIBRARY ---------- */
+  .library{ max-width:640px; margin:8px auto 0; }
+  .library h2{ font-size:1.5rem; margin:18px 0 20px; text-transform:lowercase; }
+  .set-row{
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    background:var(--card); border:1px solid var(--paper-line); border-radius:14px;
+    padding:16px 20px; margin-bottom:12px;
+  }
+  .set-row-title{ font-weight:700; font-size:1rem; text-transform:lowercase; }
+  .set-row-meta{ color:var(--ink-soft); font-size:.85rem; margin-top:4px; }
+  .set-row-actions{ display:flex; gap:10px; flex-shrink:0; }
+  .btn-outline{
+    background:transparent; border:1.5px solid var(--paper-line); color:var(--ink);
+    border-radius:999px; padding:8px 16px; font-weight:600; font-size:.85rem;
+  }
+  .btn-outline:hover{ border-color:var(--ink); }
+  .link-danger{ background:none; border:none; color:var(--coral-deep); font-weight:600; font-size:.85rem; }
+  .link-danger:hover{ text-decoration:underline; }
+  .empty-state{ color:var(--ink-soft); font-size:.95rem; padding:26px 0; text-align:center; }
+
+  .toast{
+    position:fixed; left:50%; bottom:26px; transform:translate(-50%,20px);
+    background:var(--ink); color:var(--paper); padding:12px 22px; border-radius:999px;
+    font-size:.88rem; font-weight:600; opacity:0; pointer-events:none; transition:opacity .25s, transform .25s;
+    z-index:50;
+  }
+  .toast.show{ opacity:1; transform:translate(-50%,0); }
+
+  .ai-status{ text-align:center; font-size:.82rem; color:var(--ink-soft); margin-top:14px; }
+
+  .settings-overlay{
+    display:none; position:fixed; inset:0; background:rgba(28,27,24,.5);
+    align-items:center; justify-content:center; z-index:60; padding:20px;
+  }
+  .settings-overlay.open{ display:flex; }
+  .settings-panel{
+    background:var(--card); border-radius:18px; padding:28px 26px; max-width:420px;
+    width:100%; box-shadow:0 30px 60px -20px var(--shadow);
+  }
+  .settings-panel h3{ font-size:1.2rem; text-transform:lowercase; }
+  .settings-hint{ font-size:.85rem; color:var(--ink-soft); line-height:1.5; margin:12px 0 20px; }
+  .settings-label{ font-size:.8rem; font-weight:700; color:var(--ink-soft); display:block; margin-bottom:6px; }
+  .settings-panel input{
+    width:100%; padding:11px 14px; border:1.5px solid var(--paper-line); border-radius:10px;
+    margin-bottom:16px; font-size:.95rem; font-family:inherit; color:var(--ink);
+  }
+  .settings-panel input:focus{ outline:none; border-color:var(--ink); }
+  .settings-actions{ display:flex; align-items:center; gap:10px; margin-top:4px; }
+  .settings-actions .btn-primary{ padding:11px 22px; }
+
+  @media (max-width:640px){
+    .topbar nav{ display:flex; gap:8px; }
+    .topbar .ghost-btn{ padding:8px 12px; font-size:.82rem; }
+    .steps{ grid-template-columns:1fr; }
+    .results-buttons{ flex-direction:column; }
+    .btn-flash, .btn-quiz{ min-width:0; }
+    .set-row{ flex-direction:column; align-items:flex-start; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; transition:none !important; }
+  }
+</style>
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">🎓 studyoung</div>
+      <nav>
+        <button class="ghost-btn" data-action="open-settings">⚙ ai settings</button>
+        <button class="ghost-btn" data-action="goto-library">my sets</button>
+      </nav>
+    </header>
+    <main id="main"></main>
+  </div>
+  <div id="toast" class="toast"></div>
+
+  <div id="settingsOverlay" class="settings-overlay">
+    <div class="settings-panel">
+      <h3>ai settings</h3>
+      <p class="settings-hint">Add your OpenRouter API key to generate flashcards and quizzes with a real model instead of the built-in generator. Your key is stored only in your account's private artifact storage — it isn't shared with anyone else.</p>
+      <label class="settings-label" for="apiKeyInput">OpenRouter API key</label>
+      <input type="password" id="apiKeyInput" placeholder="sk-or-v1-…" autocomplete="off">
+      <label class="settings-label" for="modelInput">Model</label>
+      <input type="text" id="modelInput" placeholder="openai/gpt-4o-mini">
+      <div class="settings-actions">
+        <button class="btn-outline" data-action="clear-key">clear key</button>
+        <div style="flex:1"></div>
+        <button class="ghost-btn" data-action="close-settings">cancel</button>
+        <button class="btn-primary" data-action="save-settings">save</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ============ STATE ============ */
+const state = {
+  view: 'home',
+  currentSet: null,
+  showConcepts: false,
+  flashSession: null,
+  quizSession: null,
+  library: null,
+  libraryLoading: false,
+  confirmDeleteId: null,
+  aiSettings: null,
+};
+
+/* ============ UTILITIES ============ */
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+function plural(n, word){ return `${n} ${word}${n===1?'':'s'}`; }
+function uid(){ return 'set_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function shuffle(arr){
+  const a = [...arr];
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+function sampleUnique(pool, n){
+  const seen = new Set(); const out = [];
+  for(const item of shuffle(pool)){
+    const key = item.toLowerCase().trim();
+    if(!key || seen.has(key)) continue;
+    seen.add(key); out.push(item);
+    if(out.length>=n) break;
+  }
+  return out;
+}
+function toTitle(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+function toTitleCase(s){
+  return s.split(/\s+/).map(w=>{
+    if(/^[A-Z0-9]{2,}$/.test(w)) return w;
+    return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+  }).join(' ');
+}
+function formatDate(ts){
+  const d = new Date(ts);
+  return d.toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' });
+}
+let toastTimer = null;
+function showToast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> el.classList.remove('show'), 2400);
+}
+
+/* ============ STUDY SET GENERATION ============ */
+const STOPWORDS = ['it','this','that','there','these','those','he','she','they','we','i','you',
+  'what','which','who','when','where','why','how','the','a','an','its','his','her','their','our','your'];
+
+function splitSentences(text){
+  return text
+    .split(/\n+/)
+    .flatMap(line => line.split(/(?<=[.?!])\s+(?=[A-Z0-9])/))
+    .map(s => s.trim())
+    .filter(s => s.length > 0)
+    .slice(0, 400);
+}
+
+function isValidTerm(term){
+  const t = term.trim();
+  if(!t || t.length > 60) return false;
+  const words = t.split(/\s+/);
+  if(words.length > 6) return false;
+  if(STOPWORDS.includes(t.toLowerCase())) return false;
+  if(STOPWORDS.includes(words[0].toLowerCase())) return false;
+  return true;
+}
+
+function extractPairs(sentences){
+  const pairs = [];
+  const used = new Set();
+  const patterns = [
+    /^([A-Za-z][\w\s\-\/&]{1,50}?):\s+(.{10,320})$/,
+    /^([A-Za-z][\w\s\-\/&]{1,50}?)\s+[-–—]\s+(.{10,320})$/,
+    /^(.{2,50}?)\s+(?:is defined as|can be defined as|refers to|is|are|means|describes)\s+(.{10,320})$/i,
+  ];
+  for(const sentence of sentences){
+    for(const re of patterns){
+      const m = sentence.match(re);
+      if(m){
+        const term = m[1].trim().replace(/^(the|a|an)\s+/i, '');
+        const def = m[2].trim().replace(/[.]$/, '');
+        if(isValidTerm(term) && def.split(/\s+/).length >= 3){
+          const key = term.toLowerCase();
+          if(!used.has(key)){
+            used.add(key);
+            pairs.push({ term: toTitle(term), definition: def, source: sentence });
+          }
+          break;
+        }
+      }
+    }
+  }
+  return pairs;
+}
+
+function makeCloze(sentence){
+  const clean = sentence.replace(/[.!?]$/, '');
+  const words = clean.split(/\s+/);
+  if(words.length < 4) return null;
+  let idx = -1;
+  for(let i=1;i<words.length;i++){
+    const w = words[i].replace(/[^A-Za-z0-9]/g, '');
+    if(w.length >= 4 && /^[A-Z]/.test(w) && !STOPWORDS.includes(w.toLowerCase())){ idx = i; break; }
+  }
+  if(idx === -1){
+    let best = -1, bestLen = 0;
+    words.forEach((w,i)=>{
+      const c = w.replace(/[^A-Za-z0-9]/g, '');
+      if(c.length > bestLen && c.length >= 5 && !STOPWORDS.includes(c.toLowerCase())){ best=i; bestLen=c.length; }
+    });
+    idx = best;
+  }
+  if(idx === -1) return null;
+  const answer = words[idx].replace(/[^A-Za-z0-9\-]/g, '');
+  if(!answer) return null;
+  const blanked = [...words];
+  blanked[idx] = '_____';
+  return { answer, question: blanked.join(' ') + '.' };
+}
+
+function buildQuiz(pairs, clozeItems){
+  const qs = [];
+  const allDefs = pairs.map(p=>p.definition);
+  const allTerms = pairs.map(p=>p.term);
+
+  pairs.forEach((p,i)=>{
+    const canReverse = allTerms.length >= 4;
+    const reverse = canReverse && Math.random() < 0.5;
+    let correct, pool, prompt;
+    if(!reverse){
+      correct = p.definition;
+      pool = allDefs.filter((d,j)=> j!==i);
+      prompt = `Which of these best describes "${p.term}"?`;
+    } else {
+      correct = p.term;
+      pool = allTerms.filter((t,j)=> j!==i);
+      prompt = `Which term does this describe: "${p.definition}"?`;
+    }
+    const distractors = sampleUnique(pool, 3);
+    if(distractors.length < 3) return;
+    const options = shuffle([correct, ...distractors]);
+    qs.push({ id:'q'+qs.length, prompt, options, correctIndex: options.indexOf(correct), concept: p.term });
+  });
+
+  const allAnswers = clozeItems.map(c=>c.answer);
+  clozeItems.forEach((c,i)=>{
+    const pool = allAnswers.filter((a,j)=> j!==i && a.toLowerCase()!==c.answer.toLowerCase())
+      .concat(allTerms.filter(t=> t.toLowerCase()!==c.answer.toLowerCase()));
+    const distractors = sampleUnique(pool, 3);
+    if(distractors.length < 3) return;
+    const options = shuffle([c.answer, ...distractors]);
+    qs.push({ id:'q'+qs.length, prompt:`Fill in the blank: ${c.question}`, options, correctIndex: options.indexOf(c.answer), concept: c.answer });
+  });
+
+  return shuffle(qs).slice(0, 20).map((q,i)=> ({...q, id:'q'+i}));
+}
+
+function detectTitle(notes, concepts){
+  const firstLine = (notes.split('\n').map(l=>l.trim()).find(l=>l.length>0)) || '';
+  const wordCount = firstLine.split(/\s+/).filter(Boolean).length;
+  if(firstLine && wordCount <= 8 && !/[.!?]$/.test(firstLine) && firstLine.length < 60){
+    return toTitleCase(firstLine).toLowerCase();
+  }
+  if(concepts.length > 0) return toTitleCase(concepts[0]).toLowerCase();
+  return 'your study set';
+}
+
+function buildStudySet(notesText){
+  const sentences = splitSentences(notesText).filter(s=> s.length > 15);
+  if(sentences.length === 0) return null;
+
+  const pairs = extractPairs(sentences);
+  const usedSet = new Set(pairs.map(p=>p.source));
+  const leftover = sentences.filter(s=> !usedSet.has(s));
+
+  let flashcards = pairs.map((p,i)=> ({ id:'f'+i, front:p.term, back:p.definition, concept:p.term, type:'term' }));
+
+  const target = Math.max(6, Math.min(30, Math.round(sentences.length * 0.6)));
+  const clozeItems = [];
+  for(const s of leftover){
+    if(flashcards.length + clozeItems.length >= target) break;
+    const c = makeCloze(s);
+    if(c) clozeItems.push(c);
+  }
+  clozeItems.forEach((c,i)=> flashcards.push({ id:'c'+i, front:c.question, back:c.answer, concept:c.answer, type:'cloze', hint:'fill in the blank' }));
+
+  const seenFront = new Set();
+  flashcards = flashcards.filter(f=>{
+    const k = f.front.toLowerCase();
+    if(seenFront.has(k)) return false;
+    seenFront.add(k); return true;
+  });
+
+  if(flashcards.length === 0) return null;
+
+  const conceptSet = []; const seenConcept = new Set();
+  pairs.forEach(p=>{ const k=p.term.toLowerCase(); if(!seenConcept.has(k)){ seenConcept.add(k); conceptSet.push(p.term); } });
+  clozeItems.forEach(c=>{ const k=c.answer.toLowerCase(); if(!seenConcept.has(k)){ seenConcept.add(k); conceptSet.push(c.answer); } });
+  const concepts = conceptSet.slice(0, 12);
+
+  const quiz = buildQuiz(pairs, clozeItems);
+  const title = detectTitle(notesText, concepts);
+
+  return { title, flashcards, quiz, concepts, notes: notesText };
+}
+
+/* ============ AI SETTINGS (OpenRouter) ============ */
+async function loadAISettings(){
+  try{
+    const res = await window.storage.get('openrouter-settings', false);
+    state.aiSettings = res ? JSON.parse(res.value) : null;
+  }catch(e){ state.aiSettings = null; }
+  return state.aiSettings;
+}
+async function saveAISettings(apiKey, model){
+  const payload = { apiKey: apiKey.trim(), model: (model || '').trim() || 'openai/gpt-4o-mini' };
+  try{
+    await window.storage.set('openrouter-settings', JSON.stringify(payload), false);
+    state.aiSettings = payload;
+    return true;
+  }catch(e){ return false; }
+}
+async function clearAISettings(){
+  try{ await window.storage.delete('openrouter-settings', false); }catch(e){}
+  state.aiSettings = null;
+}
+function openSettings(){
+  document.getElementById('settingsOverlay').classList.add('open');
+  const s = state.aiSettings;
+  document.getElementById('apiKeyInput').value = (s && s.apiKey) || '';
+  document.getElementById('modelInput').value = (s && s.model) || 'openai/gpt-4o-mini';
+}
+function closeSettings(){
+  document.getElementById('settingsOverlay').classList.remove('open');
+}
+async function handleSaveSettings(){
+  const key = document.getElementById('apiKeyInput').value.trim();
+  const model = document.getElementById('modelInput').value.trim();
+  if(!key){ showToast('add an API key, or use "clear key" to turn AI generation off'); return; }
+  const ok = await saveAISettings(key, model);
+  showToast(ok ? 'ai settings saved' : 'could not save settings — try again');
+  closeSettings();
+  if(state.view === 'home') render();
+}
+async function handleClearSettings(){
+  await clearAISettings();
+  document.getElementById('apiKeyInput').value = '';
+  document.getElementById('modelInput').value = '';
+  showToast('ai key cleared — back to the built-in generator');
+  closeSettings();
+  if(state.view === 'home') render();
+}
+
+/* ============ AI GENERATION (OpenRouter) ============ */
+function safeParseJSON(raw){
+  let cleaned = String(raw).trim();
+  cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+  try{ return JSON.parse(cleaned); }catch(e){}
+  const match = cleaned.match(/\{[\s\S]*\}/);
+  if(match){ try{ return JSON.parse(match[0]); }catch(e){} }
+  return null;
+}
+function normalizeAIResult(parsed, notesText){
+  if(!parsed || typeof parsed !== 'object') return null;
+  const flashcardsRaw = Array.isArray(parsed.flashcards) ? parsed.flashcards : [];
+  const quizRaw = Array.isArray(parsed.quiz) ? parsed.quiz : [];
+  const conceptsRaw = Array.isArray(parsed.concepts) ? parsed.concepts : [];
+
+  const flashcards = flashcardsRaw
+    .filter(f => f && f.front && f.back)
+    .slice(0, 40)
+    .map((f,i) => ({
+      id:'a'+i,
+      front: String(f.front).trim(),
+      back: String(f.back).trim(),
+      concept: (f.concept ? String(f.concept) : String(f.front)).trim(),
+      type:'term'
+    }));
+
+  const quiz = quizRaw
+    .filter(q => q && q.prompt && Array.isArray(q.options) && q.options.length === 4
+      && Number.isInteger(q.correctIndex) && q.correctIndex >= 0 && q.correctIndex < 4)
+    .slice(0, 20)
+    .map((q,i) => {
+      const options = q.options.map(o => String(o).trim());
+      const concept = q.concept ? String(q.concept).trim() : options[q.correctIndex].slice(0, 40);
+      return { id:'q'+i, prompt:String(q.prompt).trim(), options, correctIndex:q.correctIndex, concept };
+    });
+
+  const concepts = conceptsRaw.map(c => String(c).trim()).filter(Boolean).slice(0, 12);
+  if(flashcards.length === 0) return null;
+
+  const title = (parsed.title ? String(parsed.title).trim() : detectTitle(notesText, concepts)).toLowerCase();
+  return { title, flashcards, quiz, concepts, notes: notesText };
+}
+async function generateWithAI(notesText, settings){
+  const prompt = `You are studyoung, an app that turns study notes into flashcards and quizzes.
+Read the notes below and respond with ONLY a JSON object (no markdown code fences, no commentary) in exactly this shape:
+
+{
+  "title": "short lowercase topic title, 2-5 words",
+  "concepts": ["key concept 1", "key concept 2"],
+  "flashcards": [{"front": "term or short prompt", "back": "concise answer or definition", "concept": "short concept label"}],
+  "quiz": [{"prompt": "question text", "options": ["option a","option b","option c","option d"], "correctIndex": 0, "concept": "short concept label"}]
+}
+
+Rules:
+- Cover the notes thoroughly: roughly one flashcard per distinct fact, definition, or idea in the notes.
+- Every quiz question needs exactly 4 plausible options with exactly one correct answer; correctIndex is the 0-based index of the correct option.
+- Reuse the same short "concept" label across a flashcard and any quiz question that tests the same idea, so related items can be matched up later.
+- Keep flashcard backs and quiz prompts concise and clear.
+- concepts should list 5-12 short phrases naming the most important ideas in the notes.
+- Base everything only on the notes provided. Do not invent facts that aren't in them.
+
+Notes:
+"""
+${notesText}
+"""`;
+
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${settings.apiKey}`,
+      'HTTP-Referer': 'https://studyoung.app',
+      'X-Title': 'studyoung'
+    },
+    body: JSON.stringify({
+      model: settings.model || 'openai/gpt-4o-mini',
+      messages: [{ role:'user', content: prompt }],
+      temperature: 0.4
+    })
+  });
+
+  if(!res.ok){
+    const errText = await res.text().catch(()=> '');
+    throw new Error(`OpenRouter error ${res.status}: ${errText.slice(0,200)}`);
+  }
+  const data = await res.json();
+  const raw = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+  if(!raw) throw new Error('empty response from model');
+  const parsed = safeParseJSON(raw);
+  if(!parsed) throw new Error('could not parse model response as JSON');
+  return normalizeAIResult(parsed, notesText);
+}
+
+/* ============ RENDER: HOME ============ */
+function renderHome(){
+  return `
+  <section class="hero">
+    <h1 class="hero-title">study smarter, not longer.</h1>
+    <p class="hero-sub">Paste your notes and studyoung turns them into flashcards, quiz questions, and the key ideas worth remembering.</p>
+    <div class="note-card">
+      <textarea id="notesInput" placeholder="Paste your notes here…"></textarea>
+      <div class="note-card-bar">
+        <span id="wordCount">0 words</span>
+        <span id="uploadErrorMsg" class="upload-error"></span>
+      </div>
+    </div>
+    <div class="actions-row">
+      <button class="btn-primary" data-action="generate">generate study set</button>
+    </div>
+    <div class="upload-row">
+      <label class="upload-link">
+        or upload a file
+        <input type="file" id="fileInput" accept=".txt,.md" hidden>
+      </label>
+    </div>
+    <p class="ai-status">${state.aiSettings && state.aiSettings.apiKey
+      ? `✨ AI generation is on — ${escapeHtml(state.aiSettings.model || 'openai/gpt-4o-mini')}`
+      : 'using the built-in generator — add an OpenRouter key in ai settings for smarter results'}</p>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><h3>paste</h3><p>Drop in your notes, a chapter summary, or your handwritten recap.</p></div>
+      <div class="step"><div class="step-num">2</div><h3>generate</h3><p>studyoung reads through it and pulls out what actually matters.</p></div>
+      <div class="step"><div class="step-num">3</div><h3>study</h3><p>Flip flashcards, take a quiz, and see exactly what needs another look.</p></div>
+    </div>
+  </section>`;
+}
+function updateWordCount(){
+  const ta = document.getElementById('notesInput');
+  const wc = document.getElementById('wordCount');
+  if(!ta || !wc) return;
+  const trimmed = ta.value.trim();
+  const words = trimmed ? trimmed.split(/\s+/).length : 0;
+  wc.textContent = plural(words, 'word');
+}
+function setUploadError(msg){
+  const el = document.getElementById('uploadErrorMsg');
+  if(!el) return;
+  el.textContent = msg || '';
+  el.style.display = msg ? 'inline' : 'none';
+}
+function bindHomeView(){
+  const ta = document.getElementById('notesInput');
+  const fi = document.getElementById('fileInput');
+  if(ta) ta.addEventListener('input', updateWordCount);
+  if(fi) fi.addEventListener('change', handleFileUpload);
+  updateWordCount();
+}
+function handleFileUpload(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const name = file.name.toLowerCase();
+  if(!(name.endsWith('.txt') || name.endsWith('.md'))){
+    setUploadError('we can only read .txt or .md files right now — try pasting your notes instead.');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    const ta = document.getElementById('notesInput');
+    if(ta){ ta.value = reader.result; updateWordCount(); }
+    setUploadError('');
+  };
+  reader.onerror = () => setUploadError('could not read that file — try pasting your notes instead.');
+  reader.readAsText(file);
+}
+async function doGenerate(){
+  const ta = document.getElementById('notesInput');
+  const text = ta ? ta.value.trim() : '';
+  setUploadError('');
+  if(text.length < 20){
+    setUploadError('paste a bit more before generating — a paragraph or two works best.');
+    return;
+  }
+  const btn = document.querySelector('[data-action="generate"]');
+  const originalLabel = btn ? btn.textContent : '';
+  if(btn){ btn.disabled = true; btn.textContent = 'thinking…'; }
+
+  let result = null;
+  if(state.aiSettings && state.aiSettings.apiKey){
+    try{
+      result = await generateWithAI(text, state.aiSettings);
+    }catch(err){
+      console.error(err);
+      showToast("AI generation didn't work — using the built-in generator instead.");
+      result = null;
+    }
+  }
+  if(!result){
+    result = buildStudySet(text);
+  }
+
+  if(btn){ btn.disabled = false; btn.textContent = originalLabel; }
+
+  if(!result){
+    setUploadError("hmm, couldn't find enough to work with — try adding a few more sentences.");
+    return;
+  }
+  state.currentSet = { ...result, savedId: null };
+  state.showConcepts = false;
+  state.view = 'results';
+  render();
+}
+
+/* ============ RENDER: RESULTS ============ */
+function renderResults(){
+  const set = state.currentSet;
+  return `
+  <section class="results">
+    <button class="back-link" data-action="goto-home">‹ start a new set</button>
+    <div class="results-card">
+      <div class="results-title">${escapeHtml(set.title)}</div>
+      <div class="stat-row">
+        <span class="chip chip-yellow">🃏 ${plural(set.flashcards.length,'flashcard')}</span>
+        <span class="chip chip-coral">❓ ${plural(set.quiz.length,'quiz question')}</span>
+        <span class="chip chip-teal">🧠 ${plural(set.concepts.length,'key concept')}</span>
+      </div>
+      <div class="results-buttons">
+        <button class="btn-flash" data-action="study-flashcards" ${set.flashcards.length===0?'disabled':''}>study flashcards</button>
+        <button class="btn-quiz" data-action="take-quiz" ${set.quiz.length===0?'disabled':''}>take quiz</button>
+      </div>
+      <button class="link-toggle" data-action="toggle-concepts">${state.showConcepts?'hide key concepts':'see key concepts'}</button>
+      ${state.showConcepts ? `<div class="concept-chips">${set.concepts.map(c=>`<span class="concept-chip">${escapeHtml(c)}</span>`).join('')}</div>` : ''}
+      <div class="save-row">
+        <button class="btn-save" data-action="save-set" ${set.savedId?'disabled':''}>${set.savedId?'saved ✓':'save this set'}</button>
+      </div>
+    </div>
+  </section>`;
+}
+async function handleSaveSet(){
+  const set = state.currentSet;
+  if(!set || set.savedId) return;
+  const id = uid();
+  const payload = { id, title:set.title, notes:set.notes, flashcards:set.flashcards, quiz:set.quiz, concepts:set.concepts, createdAt: Date.now() };
+  try{
+    await window.storage.set(`studyset:${id}`, JSON.stringify(payload), false);
+    let index = [];
+    try{
+      const res = await window.storage.get('studysets-index', false);
+      index = res ? JSON.parse(res.value) : [];
+    }catch(e){ index = []; }
+    index.unshift({ id, title:set.title, createdAt:payload.createdAt, counts:{ flashcards:set.flashcards.length, quiz:set.quiz.length, concepts:set.concepts.length } });
+    await window.storage.set('studysets-index', JSON.stringify(index), false);
+    state.currentSet.savedId = id;
+    showToast('saved to my sets');
+  }catch(err){
+    showToast('could not save — try again');
+  }
+  render();
+}
+
+/* ============ FLASHCARDS ============ */
+function getCard(id){ return state.currentSet.flashcards.find(c=> c.id===id); }
+function initFlashSession(mode){
+  const set = state.currentSet;
+  let cards = set.flashcards;
+  if(mode === 'review' && state.flashSession){
+    const learningIds = Object.entries(state.flashSession.results).filter(([id,v])=> v==='learning').map(([id])=>id);
+    const filtered = set.flashcards.filter(c=> learningIds.includes(c.id));
+    if(filtered.length > 0) cards = filtered;
+  }
+  state.flashSession = { order: cards.map(c=>c.id), pos:0, flipped:false, results:{} };
+}
+function renderFlashcards(){
+  const s = state.flashSession; const total = s.order.length;
+  if(s.pos >= total){
+    const learningIds = Object.entries(s.results).filter(([id,v])=> v==='learning').map(([id])=>id);
+    const knowCount = total - learningIds.length;
+    const learningConcepts = [...new Set(learningIds.map(id=> getCard(id)?.concept).filter(Boolean))];
+    return `
+    <section class="study-view recap">
+      <button class="back-link" data-action="back-to-results">‹ back to results</button>
+      <h2>that's the deck.</h2>
+      <p>${knowCount} down cold · ${learningIds.length} still sinking in.</p>
+      ${learningConcepts.length ? `
+        <div class="concept-chips">${learningConcepts.map(c=>`<span class="concept-chip">${escapeHtml(c)}</span>`).join('')}</div>
+        <div class="results-buttons">
+          <button class="btn-quiz" data-action="restart-flashcards" data-mode="review">review these again</button>
+          <button class="btn-flash" data-action="restart-flashcards" data-mode="all">study the full set again</button>
+        </div>` : `
+        <div class="results-buttons">
+          <button class="btn-flash" data-action="restart-flashcards" data-mode="all">study again</button>
+        </div>`}
+    </section>`;
+  }
+  const card = getCard(s.order[s.pos]);
+  return `
+  <section class="study-view">
+    <button class="back-link" data-action="back-to-results">‹ back to results</button>
+    <div class="progress-text">card ${s.pos+1} of ${total}</div>
+    <div class="flash-card ${s.flipped?'is-flipped':''}" data-action="flip-card">
+      <div class="flash-content">${escapeHtml(s.flipped ? card.back : card.front)}</div>
+      ${(!s.flipped && card.hint) ? `<div class="fc-hint">${escapeHtml(card.hint)}</div>` : ''}
+    </div>
+    ${s.flipped ? `
+      <div class="verdict-row">
+        <button class="btn-outline-coral" data-action="judge-card" data-verdict="learning">still learning</button>
+        <button class="btn-fill-teal" data-action="judge-card" data-verdict="know">got it</button>
+      </div>` : `<p class="tap-hint">tap the card to flip it</p>`}
+  </section>`;
+}
+function flipCurrentCard(){
+  if(!state.flashSession) return;
+  state.flashSession.flipped = !state.flashSession.flipped;
+  render();
+  const cardEl = document.querySelector('.flash-card');
+  if(cardEl){ cardEl.classList.add('flip-anim'); setTimeout(()=> cardEl.classList.remove('flip-anim'), 400); }
+}
+function judgeCard(verdict){
+  const s = state.flashSession; if(!s) return;
+  const cardId = s.order[s.pos];
+  s.results[cardId] = verdict;
+  s.pos++; s.flipped = false;
+  render();
+}
+
+/* ============ QUIZ ============ */
+function getQuizQ(id){ return state.currentSet.quiz.find(q=> q.id===id); }
+function initQuizSession(){
+  const set = state.currentSet;
+  state.quizSession = { order: shuffle(set.quiz.map(q=>q.id)), pos:0, score:0, missed:[], answered:false, chosen:null };
+}
+function renderQuiz(){
+  const s = state.quizSession; const total = s.order.length;
+  if(s.pos >= total){
+    const pct = total ? Math.round((s.score/total)*100) : 0;
+    const reaction = pct>=85 ? 'excellent recall.' : pct>=60 ? 'solid effort.' : 'keep at it — review and try again.';
+    const uniqueMissed = [...new Set(s.missed)];
+    return `
+    <section class="study-view recap">
+      <button class="back-link" data-action="back-to-results">‹ back to results</button>
+      <h2>${s.score} / ${total} correct</h2>
+      <p>${reaction}</p>
+      ${uniqueMissed.length ? `
+        <div class="concept-chips">${uniqueMissed.map(c=>`<span class="concept-chip">${escapeHtml(c)}</span>`).join('')}</div>
+        <div class="results-buttons">
+          <button class="btn-flash" data-action="review-missed-flashcards">review flashcards for these</button>
+          <button class="btn-quiz" data-action="retake-quiz">retake quiz</button>
+        </div>` : `
+        <div class="results-buttons">
+          <button class="btn-quiz" data-action="retake-quiz">retake quiz</button>
+        </div>`}
+    </section>`;
+  }
+  const q = getQuizQ(s.order[s.pos]);
+  return `
+  <section class="study-view">
+    <button class="back-link" data-action="back-to-results">‹ back to results</button>
+    <div class="progress-text">question ${s.pos+1} of ${total}</div>
+    <div class="quiz-prompt">${escapeHtml(q.prompt)}</div>
+    <div class="quiz-options">
+      ${q.options.map((opt,i)=>{
+        let cls = 'quiz-option';
+        if(s.answered){
+          if(i===q.correctIndex) cls += ' correct';
+          else if(i===s.chosen) cls += ' incorrect';
+        }
+        return `<button class="${cls}" data-action="quiz-answer" data-index="${i}" ${s.answered?'disabled':''}>${escapeHtml(opt)}</button>`;
+      }).join('')}
+    </div>
+    ${s.answered ? `<button class="btn-primary" data-action="quiz-next">${s.pos+1>=total?'see results':'next question'}</button>` : ''}
+  </section>`;
+}
+function answerQuiz(index){
+  const s = state.quizSession; if(!s || s.answered) return;
+  const q = getQuizQ(s.order[s.pos]);
+  s.answered = true; s.chosen = index;
+  if(index === q.correctIndex) s.score++;
+  else s.missed.push(q.concept);
+  render();
+}
+function nextQuiz(){
+  const s = state.quizSession; if(!s) return;
+  s.pos++; s.answered = false; s.chosen = null;
+  render();
+}
+function reviewMissedAsFlashcards(){
+  const set = state.currentSet;
+  const missed = [...new Set(state.quizSession.missed.map(c=>c.toLowerCase()))];
+  let cards = set.flashcards.filter(c=> missed.includes(c.concept.toLowerCase()));
+  if(cards.length === 0) cards = set.flashcards;
+  state.flashSession = { order: cards.map(c=>c.id), pos:0, flipped:false, results:{} };
+  state.view = 'flashcards';
+  render();
+}
+
+/* ============ LIBRARY ============ */
+function renderLibrary(){
+  if(state.libraryLoading){
+    return `<section class="library"><button class="back-link" data-action="goto-home">‹ back home</button><p class="empty-state">loading your sets…</p></section>`;
+  }
+  const list = state.library || [];
+  return `
+  <section class="library">
+    <button class="back-link" data-action="goto-home">‹ back home</button>
+    <h2>my study sets</h2>
+    ${list.length ? list.map(item=>`
+      <div class="set-row">
+        <div>
+          <div class="set-row-title">${escapeHtml(item.title)}</div>
+          <div class="set-row-meta">${formatDate(item.createdAt)} · ${plural(item.counts.flashcards,'flashcard')} · ${plural(item.counts.quiz,'quiz question')}</div>
+        </div>
+        <div class="set-row-actions">
+          <button class="btn-outline" data-action="open-set" data-id="${item.id}">open</button>
+          <button class="link-danger" data-action="delete-set" data-id="${item.id}">${state.confirmDeleteId===item.id?'confirm delete':'delete'}</button>
+        </div>
+      </div>`).join('') : `<p class="empty-state">no saved study sets yet — generate one and save it to see it here.</p>`}
+  </section>`;
+}
+async function openLibrary(){
+  state.view = 'library'; state.libraryLoading = true; state.confirmDeleteId = null; render();
+  try{
+    const res = await window.storage.get('studysets-index', false);
+    state.library = res ? JSON.parse(res.value) : [];
+  }catch(e){ state.library = []; }
+  state.libraryLoading = false;
+  render();
+}
+async function openSet(id){
+  state.libraryLoading = true; render();
+  try{
+    const res = await window.storage.get(`studyset:${id}`, false);
+    if(res){
+      const data = JSON.parse(res.value);
+      state.currentSet = { ...data, savedId:id };
+      state.showConcepts = false;
+      state.view = 'results';
+    } else {
+      showToast('could not find that set');
+      state.view = 'library';
+    }
+  }catch(e){
+    showToast('could not open that set');
+    state.view = 'library';
+  }
+  state.libraryLoading = false;
+  render();
+}
+async function handleDeleteSet(id){
+  if(state.confirmDeleteId !== id){ state.confirmDeleteId = id; render(); return; }
+  try{
+    let index = [];
+    try{
+      const res = await window.storage.get('studysets-index', false);
+      index = res ? JSON.parse(res.value) : [];
+    }catch(e){ index = []; }
+    index = index.filter(i=> i.id !== id);
+    await window.storage.set('studysets-index', JSON.stringify(index), false);
+    await window.storage.delete(`studyset:${id}`, false);
+    state.library = index;
+    state.confirmDeleteId = null;
+    showToast('deleted');
+  }catch(e){
+    showToast('could not delete — try again');
+  }
+  render();
+}
+
+/* ============ DISPATCH ============ */
+function render(){
+  const main = document.getElementById('main');
+  switch(state.view){
+    case 'home': main.innerHTML = renderHome(); bindHomeView(); break;
+    case 'results': main.innerHTML = renderResults(); break;
+    case 'flashcards': main.innerHTML = renderFlashcards(); break;
+    case 'quiz': main.innerHTML = renderQuiz(); break;
+    case 'library': main.innerHTML = renderLibrary(); break;
+  }
+}
+async function handleAction(action, el){
+  switch(action){
+    case 'generate': await doGenerate(); break;
+    case 'open-settings': openSettings(); break;
+    case 'close-settings': closeSettings(); break;
+    case 'save-settings': await handleSaveSettings(); break;
+    case 'clear-key': await handleClearSettings(); break;
+    case 'goto-home':
+      state.view='home'; state.currentSet=null; state.showConcepts=false;
+      state.flashSession=null; state.quizSession=null; render(); break;
+    case 'goto-library': await openLibrary(); break;
+    case 'study-flashcards': initFlashSession('all'); state.view='flashcards'; render(); break;
+    case 'take-quiz': initQuizSession(); state.view='quiz'; render(); break;
+    case 'toggle-concepts': state.showConcepts = !state.showConcepts; render(); break;
+    case 'save-set': await handleSaveSet(); break;
+    case 'flip-card': flipCurrentCard(); break;
+    case 'judge-card': judgeCard(el.dataset.verdict); break;
+    case 'restart-flashcards': initFlashSession(el.dataset.mode); state.view='flashcards'; render(); break;
+    case 'back-to-results':
+      state.view='results'; state.flashSession=null; state.quizSession=null; render(); break;
+    case 'quiz-answer': answerQuiz(parseInt(el.dataset.index,10)); break;
+    case 'quiz-next': nextQuiz(); break;
+    case 'retake-quiz': initQuizSession(); render(); break;
+    case 'review-missed-flashcards': reviewMissedAsFlashcards(); break;
+    case 'open-set': await openSet(el.dataset.id); break;
+    case 'delete-set': await handleDeleteSet(el.dataset.id); break;
+  }
+}
+document.getElementById('app').addEventListener('click', (e)=>{
+  const el = e.target.closest('[data-action]');
+  if(!el) return;
+  handleAction(el.dataset.action, el);
+});
+
+render();
+(async () => {
+  await loadAISettings();
+  if(state.view === 'home') render();
+})();
+</script>
+</body>
+</html>

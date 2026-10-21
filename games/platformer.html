@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>3D Platformer Starter</title>
+  <style>
+    body { margin: 0; overflow: hidden; background: #111; color: #eee; font-family: sans-serif; }
+    #info { position: absolute; top: 10px; left: 10px; z-index: 1; pointer-events: none; }
+    #debug { position: absolute; top: 40px; left: 10px; z-index: 1; pointer-events: none; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div id="info">WASD / Arrows to move · Space to jump · R to reset</div>
+  <div id="debug">Debug info here</div>
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+
+    const debugEl = document.getElementById('debug');
+    function debug(text) {
+      debugEl.textContent = text;
+      console.log('DEBUG:', text);
+    }
+
+    // --- Scene setup ---
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87CEEB);
+    scene.fog = new THREE.Fog(0x87CEEB, 20, 100);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    document.body.appendChild(renderer.domElement);
+
+    // --- Lights ---
+    const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambient);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+    dirLight.position.set(30, 50, 20);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
+    dirLight.shadow.camera.near = 0.5;
+    dirLight.shadow.camera.far = 150;
+    dirLight.shadow.camera.left = -50;
+    dirLight.shadow.camera.right = 50;
+    dirLight.shadow.camera.top = 50;
+    dirLight.shadow.camera.bottom = -50;
+    scene.add(dirLight);
+
+    // --- Player (cylinder) ---
+    const playerGeo = new THREE.CylinderGeometry(0.4, 0.4, 1, 16);
+    const playerMat = new THREE.MeshStandardMaterial({ color: 0xff6b6b });
+    const player = new THREE.Mesh(playerGeo, playerMat);
+    player.position.set(0, 2, 0);
+    player.castShadow = true;
+    scene.add(player);
+
+    // --- Physics state ---
+    const physics = {
+      velocity: new THREE.Vector3(),
+      onGround: false,
+      speed: 8,
+      jumpForce: 12,
+      gravity: 30,
+      playerHeight: 1,
+      playerRadius: 0.4
+    };
+
+    // --- Platforms (squares) ---
+    const platforms = [];
+    const platformColors = [0x4ecdc4, 0xffd93d, 0xff6b6b, 0x6c5ce7, 0xa29bfe];
+
+    function createPlatform(x, y, z, size, color) {
+      const geo = new THREE.BoxGeometry(size, 1, size);
+      const mat = new THREE.MeshStandardMaterial({ color });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(x, y, z);
+      mesh.receiveShadow = true;
+      mesh.castShadow = true;
+      scene.add(mesh);
+      platforms.push({ mesh, box: new THREE.Box3().setFromObject(mesh) });
+      return mesh;
+    }
+
+    // Ground
+    createPlatform(0, -1, 0, 40, 0x6bcb77);
+
+    // Platform layout
+    const layout = [
+      [5, 1, 5, 4], [12, 2, 5, 3.5], [19, 3, 5, 3],
+      [5, 1, -5, 4], [12, 2, -5, 3.5], [19, 3, -5, 3],
+      [26, 4, 0, 3], [33, 5, 0, 2.5], [40, 6, 0, 2],
+      [5, 1, 12, 3], [12, 2, 12, 3], [19, 3, 12, 3],
+      [-8, 1.5, 5, 3], [-8, 1.5, -5, 3], [-8, 1.5, 12, 3]
+    ];
+    layout.forEach(([x, y, z, s]) => createPlatform(x, y, z, s, platformColors[Math.floor(Math.random() * platformColors.length)]));
+
+    // --- Input handling ---
+    const keys = { w: false, a: false, s: false, d: false, space: false };
+    const keyMap = { w: 'w', a: 'a', s: 's', d: 'd', ArrowUp: 'w', ArrowLeft: 'a', ArrowDown: 's', ArrowRight: 'd' };
+
+    window.addEventListener('keydown', (e) => {
+      const key = keyMap[e.key] || e.key;
+      if (key in keys) {
+        keys[key] = true;
+        debug(`Key down: ${e.key} (${key})`);
+      }
+      if (e.code === 'Space') {
+        keys.space = true;
+        debug('Space pressed');
+      }
+      if (e.key.toLowerCase() === 'r') resetPlayer();
+    });
+    window.addEventListener('keyup', (e) => {
+      const key = keyMap[e.key] || e.key;
+      if (key in keys) {
+        keys[key] = false;
+        debug(`Key up: ${e.key} (${key})`);
+      }
+      if (e.code === 'Space') {
+        keys.space = false;
+        debug('Space released');
+      }
+    });
+
+    function resetPlayer() {
+      player.position.set(0, 2, 0);
+      physics.velocity.set(0, 0, 0);
+      debug('Player reset');
+    }
+
+    // --- Collision detection ---
+    const playerBox = new THREE.Box3();
+    const tempBox = new THREE.Box3();
+
+    function checkPlatformCollision(position) {
+      playerBox.setFromCenterAndSize(position, new THREE.Vector3(
+        physics.playerRadius * 2, physics.playerHeight, physics.playerRadius * 2));
+      for (const plat of platforms) {
+        tempBox.copy(plat.box);
+        if (playerBox.intersectsBox(tempBox)) {
+          return plat;
+        }
+      }
+      return null;
+    }
+
+    // --- Physics update ---
+    function updatePhysics(delta) {
+      const { velocity } = physics;
+
+      // Horizontal movement
+      const input = new THREE.Vector3();
+      if (keys.w) input.z -= 1;
+      if (keys.s) input.z += 1;
+      if (keys.a) input.x -= 1;
+      if (keys.d) input.x += 1;
+      input.normalize().multiplyScalar(physics.speed);
+
+      velocity.x = input.x;
+      velocity.z = input.z;
+
+      // Jump
+      if (keys.space && physics.onGround) {
+        velocity.y = physics.jumpForce;
+        physics.onGround = false;
+        debug('Jump!');
+      }
+
+      // Gravity
+      velocity.y -= physics.gravity * delta;
+
+      // Apply gravity to position
+      player.position.y += velocity.y * delta;
+
+      // Platform collision (vertical)
+      physics.onGround = false;
+      const collided = checkPlatformCollision(player.position);
+      if (collided) {
+        const platBox = collided.box;
+        const topY = platBox.max.y;
+        if (player.position.y - physics.playerHeight / 2 < topY && velocity.y <= 0) {
+          player.position.y = topY + physics.playerHeight / 2;
+          velocity.y = 0;
+          physics.onGround = true;
+          debug(`Landed on platform at y=${player.position.y.toFixed(2)}`);
+        }
+      }
+
+      // Floor (ground) fallback
+      if (player.position.y - physics.playerHeight / 2 < -1) {
+        player.position.y = -1 + physics.playerHeight / 2;
+        velocity.y = 0;
+        physics.onGround = true;
+        debug('Hit ground');
+      }
+
+      // Lateral movement with collision
+      const nextX = player.position.clone();
+      nextX.x += velocity.x * delta;
+      if (!checkPlatformCollision(nextX)) {
+        player.position.x = nextX.x;
+      }
+      const nextZ = player.position.clone();
+      nextZ.z += velocity.z * delta;
+      if (!checkPlatformCollision(nextZ)) {
+        player.position.z = nextZ.z;
+      }
+
+      debug(`Pos: (${player.position.x.toFixed(2)}, ${player.position.y.toFixed(2)}, ${player.position.z.toFixed(2)}) Vel: (${velocity.x.toFixed(2)}, ${velocity.y.toFixed(2)}, ${velocity.z.toFixed(2)}) Keys: w=${keys.w} a=${keys.a} s=${keys.s} d=${keys.d} space=${keys.space}`);
+    }
+
+    // --- Camera follow ---
+    function updateCamera() {
+      const offset = new THREE.Vector3(0, 8, 12);
+      const target = player.position.clone().add(offset);
+      camera.position.lerp(target, 0.1);
+      camera.lookAt(player.position.clone().add(new THREE.Vector3(0, 1, 0)));
+    }
+
+    // --- Animation loop ---
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = Math.min(clock.getDelta(), 0.1);
+      updatePhysics(delta);
+      updateCamera();
+      renderer.render(scene, camera);
+    }
+
+    // --- Resize handler ---
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    debug('Game initialized');
+    animate();
+  </script>
+</body>
+</html>
