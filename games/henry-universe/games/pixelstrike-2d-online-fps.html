@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PixelStrike 2D Online FPS</title>
+<style>
+body{margin:0;background:#070d1a;color:#dbeafe;font-family:Trebuchet MS,Segoe UI,sans-serif;overflow:hidden}
+#ui{position:fixed;left:10px;top:10px;width:360px;background:#0f1b2ed9;border:1px solid #2f4a75;border-radius:10px;padding:10px;z-index:20}
+input,button{border-radius:8px;border:1px solid #355383;background:#091426;color:#dbeafe;padding:7px;font-weight:700}button{cursor:pointer}.r{display:flex;gap:6px;margin-top:6px}
+#state,#weps,#board{font-size:12px;color:#9fc2ff;margin-top:7px;line-height:1.35}
+canvas{display:block}
+</style>
+</head>
+<body>
+<div id="ui">
+  <div style="font-weight:900">PixelStrike 2D Online FPS</div>
+  <div class="r"><input id="name" value="Ranger"/><input id="room" placeholder="Room ID"/></div>
+  <div class="r"><button id="host">Host</button><button id="join">Join</button><button id="leave">Leave</button></div>
+  <div id="state">WASD move, mouse aim, click to shoot. 1-0 weapons.</div>
+  <div id="weps"></div>
+  <div id="board"></div>
+</div>
+<canvas id="game"></canvas>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+const WSET=[
+{name:'Pistol',d:18,cd:220,r:520,spread:.02,p:1,col:'#93c5fd'},
+{name:'SMG',d:9,cd:85,r:430,spread:.06,p:1,col:'#22d3ee'},
+{name:'AR',d:13,cd:110,r:560,spread:.03,p:1,col:'#60a5fa'},
+{name:'BR',d:24,cd:260,r:620,spread:.02,p:1,col:'#a78bfa'},
+{name:'Shotgun',d:8,cd:460,r:280,spread:.22,p:10,col:'#f59e0b'},
+{name:'Sniper',d:85,cd:900,r:900,spread:.004,p:1,col:'#fca5a5'},
+{name:'LMG',d:11,cd:75,r:540,spread:.07,p:1,col:'#4ade80'},
+{name:'Plasma',d:19,cd:160,r:470,spread:.03,p:1,col:'#2dd4bf'},
+{name:'Rail',d:58,cd:980,r:1000,spread:.003,p:1,col:'#e879f9'},
+{name:'Minigun',d:7,cd:50,r:420,spread:.09,p:1,col:'#fb7185'}
+];
+const c=document.getElementById('game'),x=c.getContext('2d'); function rs(){c.width=innerWidth;c.height=innerHeight} rs(); addEventListener('resize',rs);
+const ui={name:document.getElementById('name'),room:document.getElementById('room'),state:document.getElementById('state'),weps:document.getElementById('weps'),board:document.getElementById('board')};
+ui.weps.innerHTML=WSET.map((w,i)=>`${i+1>9?0:i+1}:${w.name}`).join(' · ');
+let peer=null,myId=null,isHost=false,hostConn=null,cons={};
+let players={},bul=[],walls=[];for(let i=0;i<16;i++)walls.push({x:200+Math.random()*(innerWidth-400),y:140+Math.random()*(innerHeight-280),w:80+Math.random()*70,h:30+Math.random()*90});
+const me={x:innerWidth/2,y:innerHeight/2,a:0,hp:100,k:0,d:0,w:0,name:'Ranger',t:0}; const keys={},mouse={x:0,y:0,down:false}; let lastShot=0;
+let viewKick=0;
+function localId(){ return myId || 'local'; }
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;const n=parseInt(e.key,10);if(!isNaN(n))me.w=n===0?9:Math.max(0,Math.min(9,n-1));});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY});addEventListener('mousedown',()=>mouse.down=true);addEventListener('mouseup',()=>mouse.down=false);
+function status(t){ui.state.textContent=t;}
+function boot(cb){if(peer){cb&&cb();return;}peer=new Peer();peer.on('open',id=>{myId=id;cb&&cb();});peer.on('connection',c=>bind(c));peer.on('error',e=>status('Peer error: '+e.type));}
+function bind(cn){cons[cn.peer]=cn;cn.on('data',m=>onMsg(cn,m));cn.on('close',()=>{delete cons[cn.peer];delete players[cn.peer];});}
+function send(cn,o){if(cn&&cn.open)cn.send(o)} function bc(o){Object.values(cons).forEach(cn=>send(cn,o));}
+function onMsg(cn,m){if(isHost){if(m.t==='join'){players[cn.peer]={x:120+Math.random()*300,y:120+Math.random()*240,a:0,hp:100,k:0,d:0,w:0,name:m.name||'Player',t:Date.now()};send(cn,{t:'hello',id:cn.peer});}
+if(m.t==='state'){players[cn.peer]=Object.assign(players[cn.peer]||{},m.p,{t:Date.now()});}
+if(m.t==='shoot'){resolve(m,cn.peer);}}
+else if(m.t==='snapshot'){players=m.players||{};bul=m.bul||[];walls=m.walls||walls;}}
+function host(){boot(()=>{isHost=true;ui.room.value=myId;players[myId]=Object.assign({},me,{name:ui.name.value});status('Hosting '+myId);});}
+function join(){const r=ui.room.value.trim();if(!r)return;boot(()=>{isHost=false;hostConn=peer.connect(r,{reliable:true});hostConn.on('open',()=>{bind(hostConn);send(hostConn,{t:'join',name:ui.name.value||'Guest'});status('Joined '+r);});});}
+function leave(){try{peer&&peer.destroy()}catch{}peer=null;myId=null;isHost=false;hostConn=null;cons={};players={};status('Disconnected');}
+document.getElementById('host').onclick=host;document.getElementById('join').onclick=join;document.getElementById('leave').onclick=leave;
+function losBlocked(ax,ay,bx,by){for(const w of walls){if(Math.max(ax,bx)<w.x||Math.min(ax,bx)>w.x+w.w||Math.max(ay,by)<w.y||Math.min(ay,by)>w.y+w.h)continue;const sx=bx-ax,sy=by-ay;for(let t=0;t<=1;t+=0.08){const px=ax+sx*t,py=ay+sy*t;if(px>w.x&&px<w.x+w.w&&py>w.y&&py<w.y+w.h)return true;}}return false;}
+function resolve(m,sh){const s=players[sh]||me;const w=WSET[m.w|0]||WSET[0];for(let i=0;i<w.p;i++){const a=(m.a||0)+(Math.random()-.5)*w.spread;const ex=s.x+Math.cos(a)*w.r,ey=s.y+Math.sin(a)*w.r;bul.push({x:s.x,y:s.y,ex,ey,c:w.col,t:8});
+for(const id of Object.keys(players)){if(id===sh)continue;const p=players[id];const dx=p.x-s.x,dy=p.y-s.y;const proj=dx*Math.cos(a)+dy*Math.sin(a);if(proj<0||proj>w.r)continue;const ox=dx-Math.cos(a)*proj,oy=dy-Math.sin(a)*proj;if(Math.hypot(ox,oy)<14&&!losBlocked(s.x,s.y,p.x,p.y)){p.hp=(p.hp||100)-w.d;if(p.hp<=0){p.hp=100;p.x=120+Math.random()*(innerWidth-240);p.y=120+Math.random()*(innerHeight-240);p.d=(p.d||0)+1;if(players[sh])players[sh].k=(players[sh].k||0)+1;}}}
+}}
+let n=0;
+function step(){
+  const sp=keys['shift']?4.6:3.2; if(keys['w'])me.y-=sp;if(keys['s'])me.y+=sp;if(keys['a'])me.x-=sp;if(keys['d'])me.x+=sp; me.x=Math.max(20,Math.min(innerWidth-20,me.x)); me.y=Math.max(20,Math.min(innerHeight-20,me.y));
+  me.a=Math.atan2(mouse.y-me.y,mouse.x-me.x); me.name=ui.name.value||'Ranger';
+  const w=WSET[me.w];
+  if(mouse.down&&performance.now()-lastShot>w.cd){
+    lastShot=performance.now();
+    viewKick=18;
+    if(isHost)resolve({w:me.w,a:me.a},localId());
+    else if(hostConn&&hostConn.open)send(hostConn,{t:'shoot',w:me.w,a:me.a});
+    else resolve({w:me.w,a:me.a},localId());
+  }
+  players[localId()]=Object.assign(players[localId()]||{},me,{t:Date.now()});
+  if(isHost){for(const id of Object.keys(players)){if(id!==myId&&Date.now()-(players[id].t||0)>10000)delete players[id];} if(n++%2===0)bc({t:'snapshot',players,bul,walls});}
+  else if(hostConn&&hostConn.open&&n++%2===0)send(hostConn,{t:'state',p:Object.assign({},me,{t:Date.now()})});
+  bul=bul.filter(b=>--b.t>0);
+  viewKick*=0.75;
+}
+function draw(){x.fillStyle='#071227';x.fillRect(0,0,c.width,c.height);x.fillStyle='#1e355a';for(const w of walls)x.fillRect(w.x,w.y,w.w,w.h);
+for(const b of bul){x.strokeStyle=b.c;x.lineWidth=2;x.beginPath();x.moveTo(b.x,b.y);x.lineTo(b.ex,b.ey);x.stroke();}
+for(const id of Object.keys(players)){const p=players[id];x.fillStyle=id===myId?'#22d3ee':'#ef4444';x.beginPath();x.arc(p.x,p.y,14,0,Math.PI*2);x.fill();x.strokeStyle='#fff';x.beginPath();x.moveTo(p.x,p.y);x.lineTo(p.x+Math.cos(p.a||0)*20,p.y+Math.sin(p.a||0)*20);x.stroke();x.fillStyle='#dbeafe';x.font='12px Trebuchet MS';x.fillText((p.name||id.slice(0,4))+' ['+(p.hp||100)+']',p.x-22,p.y-18);}
+  const lid=localId();
+  const bd=Object.entries(players).map(([id,p])=>({n:p.name||id.slice(0,5),k:p.k||0,d:p.d||0,me:id===lid,h:p.hp||100})).sort((a,b)=>b.k-a.k).slice(0,8);
+  ui.board.innerHTML='Weapon: '+WSET[me.w].name+' | HP: '+(players[lid]?.hp||100)+'<br>'+bd.map((r,i)=>`${i+1}. ${r.me?'[YOU] ':''}${r.n} K:${r.k} D:${r.d} HP:${r.h}`).join('<br>');
+
+  // First-person hand + weapon viewmodel
+  const cx=c.width*0.5, cy=c.height-70+viewKick;
+  x.fillStyle='#d8b48a'; // hand
+  x.beginPath(); x.ellipse(cx-28,cy+16,26,18,0,0,Math.PI*2); x.fill();
+  x.fillStyle=WSET[me.w].col;
+  x.fillRect(cx-10,cy-12,88,24);
+  x.fillStyle='#cbd5e1';
+  x.fillRect(cx+74,cy-7,22,14);
+  x.fillStyle='#0b1220';
+  x.fillRect(cx+26,cy-5,24,8);
+
+  // Crosshair
+  x.strokeStyle='#9ee7ff'; x.lineWidth=2;
+  x.beginPath(); x.moveTo(mouse.x-8,mouse.y); x.lineTo(mouse.x+8,mouse.y); x.moveTo(mouse.x,mouse.y-8); x.lineTo(mouse.x,mouse.y+8); x.stroke();
+}
+function loop(){requestAnimationFrame(loop);step();draw();} loop();
+</script>
+</body>
+</html>

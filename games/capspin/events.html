@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CapSpin Championship | Events</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="site-wrap">
+      <header class="topbar">
+        <a class="brand" href="index.html">CapSpin <span>Championship</span></a>
+        <nav class="nav" aria-label="Main navigation">
+          <a href="index.html">Home</a>
+          <a class="active" href="events.html">Events</a>
+          <a href="register.html">Register</a>
+          <a href="rules.html">Rules</a>
+          <a href="login.html">Login</a>
+          <a href="admin.html">Admin</a>
+        </nav>
+      </header>
+
+      <main>
+        <section class="hero">
+          <span class="pill">Live Event Board</span>
+          <h1>League Events</h1>
+          <p id="events-status">
+            Join events with your account, or create a free guest account instantly.
+          </p>
+          <div class="cta-row">
+            <a class="btn ghost" href="login.html">Go to Login</a>
+            <button class="btn primary" id="guest-login-btn" type="button">
+              Create Free Guest Account
+            </button>
+            <button class="btn ghost" id="events-logout-btn" type="button">Logout</button>
+          </div>
+        </section>
+
+        <section class="card" id="events-gate" style="margin-top: 1rem; display: none">
+          <h2>Guest Joining Available</h2>
+          <p>
+            You are not logged in. Click "Create Free Guest Account" to join events now.
+          </p>
+        </section>
+
+        <section class="card" id="admin-panel" style="margin-top: 1rem; display: none">
+          <h2>Admin Event Creator (uncapped)</h2>
+          <form id="create-event-form" novalidate>
+            <label for="event-name">
+              Event Name
+              <input id="event-name" name="eventName" required />
+            </label>
+            <label for="event-campus">
+              Campus
+              <select id="event-campus" name="eventCampus" required>
+                <option value="">Select campus</option>
+                <option>Sunnyvale</option>
+                <option>Strawberry Park</option>
+                <option>Campbell</option>
+              </select>
+            </label>
+            <label for="event-time">
+              Time
+              <select id="event-time" name="eventTime" required>
+                <option value="">Select time</option>
+                <option>11:20 AM (Lunch)</option>
+                <option>3:00 PM (After School)</option>
+              </select>
+            </label>
+            <button class="btn primary" type="submit">Create Event</button>
+          </form>
+        </section>
+
+        <section class="grid" id="events-board" style="margin-top: 1rem"></section>
+
+        <section id="join-all-wrap" class="card" style="margin-top: 1rem; display: none">
+          <h2>Quick Join</h2>
+          <p class="muted">Join every event on the board with one click.</p>
+          <button class="btn primary" id="join-all-btn" type="button">Join All Events</button>
+        </section>
+
+        <section style="margin-top: 1rem">
+          <div id="events-feedback" class="notice ok" role="status" aria-live="polite"></div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        Uncapped can create events and view every team joined in each event.
+      </footer>
+    </div>
+    <script src="auth-events.js"></script>
+  </body>
+</html>

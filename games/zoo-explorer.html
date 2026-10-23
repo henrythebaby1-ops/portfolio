@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZooExplorer | 100+ Animals</title>
+    <style>
+:root {
+    --primary: #27ae60;
+    --dark: #2c3e50;
+    --bg: #f8f9fa;
+}
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: var(--bg);
+    margin: 0;
+    padding: 20px;
+}
+
+.container { max-width: 1200px; margin: 0 auto; }
+
+header { text-align: center; margin-bottom: 30px; }
+
+.controls {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 40px;
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    position: sticky;
+    top: 20px;
+    z-index: 10;
+}
+
+input, select {
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    font-size: 1rem;
+    outline: none;
+}
+
+input { flex: 2; }
+input:focus { border-color: var(--primary); }
+
+.results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 25px;
+}
+
+.animal-card {
+    background: white;
+    padding: 15px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.animal-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.card-img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.tag {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 0.7rem;
+    background: #eee;
+    padding: 4px 10px;
+    border-radius: 10px;
+    text-transform: uppercase;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    max-width: 500px;
+    margin: 50px auto;
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+}
+
+.modal-img { width: 100%; height: 300px; object-fit: cover; }
+.modal-text { padding: 30px; text-align: center; }
+
+.close-btn {
+    position: absolute;
+    top: 10px; right: 20px;
+    font-size: 30px;
+    color: white;
+    cursor: pointer;
+    z-index: 10;
+}
+</style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>🐾 Animal Explorer</h1>
+            <p>Click any animal to see its scientific name and facts.</p>
+        </header>
+        
+        <div class="controls">
+            <input type="text" id="searchInput" placeholder="Search by name (e.g. Tiger)...">
+            <select id="filterType">
+                <option value="all">All Categories</option>
+                <option value="mammal">Mammals</option>
+                <option value="bird">Birds</option>
+                <option value="reptile">Reptiles</option>
+                <option value="fish">Fish & Aquatic</option>
+            </select>
+        </div>
+
+        <div id="resultsGrid" class="results-grid">
+            </div>
+    </div>
+
+    <div id="animalModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+const resultsGrid = document.getElementById('resultsGrid');
+const modal = document.getElementById('animalModal');
+const modalBody = document.getElementById('modalBody');
+const closeBtn = document.querySelector('.close-btn');
+const searchInput = document.getElementById('searchInput');
+const filterType = document.getElementById('filterType');
+
+// Each animal has a `wikiSlug` which maps to:
+// https://en.wikipedia.org/api/rest_v1/page/summary/{wikiSlug}
+// That endpoint returns JSON with thumbnail.source — CORS-enabled, browser-safe.
+const animals = [
+    // --- EXISTING MAMMALS ---
+    { name: "Lion", type: "mammal", species: "Panthera leo", info: "Lives in social groups called prides and is the only truly social cat.", wikiSlug: "Lion" },
+    { name: "Giant Panda", type: "mammal", species: "Ailuropoda melanoleuca", info: "Pandas spend up to 12 hours a day eating bamboo.", wikiSlug: "Giant_panda" },
+    { name: "African Elephant", type: "mammal", species: "Loxodonta africana", info: "Elephants can communicate through vibrations felt through the ground.", wikiSlug: "African_bush_elephant" },
+    { name: "Giraffe", type: "mammal", species: "Giraffa camelopardalis", info: "The tallest living terrestrial animal; their tongues are 20 inches long.", wikiSlug: "Giraffe" },
+    { name: "Tiger", type: "mammal", species: "Panthera tigris", info: "No two tigers have the same stripe pattern — they're like fingerprints.", wikiSlug: "Tiger" },
+    { name: "Wolf", type: "mammal", species: "Canis lupus", info: "Wolves are legendary for their spine-tingling howls used to communicate.", wikiSlug: "Wolf" },
+    { name: "Plains Zebra", type: "mammal", species: "Equus quagga", info: "Zebra stripes may act as a natural insect repellent.", wikiSlug: "Plains_zebra" },
+    { name: "Polar Bear", type: "mammal", species: "Ursus maritimus", info: "The largest land-dwelling carnivore on Earth.", wikiSlug: "Polar_bear" },
+    { name: "Red Panda", type: "mammal", species: "Ailurus fulgens", info: "These 'firefoxes' are expert tree climbers from the Himalayas.", wikiSlug: "Red_panda" },
+    { name: "Koala", type: "mammal", species: "Phascolarctos cinereus", info: "Koalas have unique fingerprints nearly identical to humans.", wikiSlug: "Koala" },
+    { name: "Hippopotamus", type: "mammal", species: "Hippopotamus amphibius", info: "Their name means 'river horse' in Ancient Greek.", wikiSlug: "Hippopotamus" },
+    { name: "White Rhinoceros", type: "mammal", species: "Ceratotherium simum", info: "Their horns are made of keratin — the same protein as your hair.", wikiSlug: "White_rhinoceros" },
+    { name: "Gorilla", type: "mammal", species: "Gorilla beringei", info: "Highly intelligent primates sharing 98% of DNA with humans.", wikiSlug: "Gorilla" },
+    { name: "Cheetah", type: "mammal", species: "Acinonyx jubatus", info: "The fastest land animal, reaching 70 mph in under 3 seconds.", wikiSlug: "Cheetah" },
+    { name: "Red Kangaroo", type: "mammal", species: "Osphranter rufus", info: "Kangaroos use their powerful tails as a fifth limb for balance.", wikiSlug: "Red_kangaroo" },
+    { name: "Three-toed Sloth", type: "mammal", species: "Bradypus tridactylus", info: "Sloths move so slowly that algae actually grows on their fur.", wikiSlug: "Three-toed_sloth" },
+    { name: "Platypus", type: "mammal", species: "Ornithorhynchus anatinus", info: "A rare egg-laying mammal with a duck-like bill and beaver tail.", wikiSlug: "Platypus" },
+    { name: "Blue Whale", type: "mammal", species: "Balaenoptera musculus", info: "The largest animal ever known to exist, bigger than any dinosaur.", wikiSlug: "Blue_whale" },
+    { name: "Bottlenose Dolphin", type: "mammal", species: "Tursiops truncatus", info: "Dolphins have individual 'signature whistles' that act as names.", wikiSlug: "Common_bottlenose_dolphin" },
+    { name: "Red Fox", type: "mammal", species: "Vulpes vulpes", info: "Foxes use the Earth's magnetic field to precisely locate prey under snow.", wikiSlug: "Red_fox" },
+    { name: "Meerkat", type: "mammal", species: "Suricata suricatta", info: "They take turns acting as sentries standing watch for predators.", wikiSlug: "Meerkat" },
+    { name: "Bornean Orangutan", type: "mammal", species: "Pongo pygmaeus", info: "Orangutan means 'person of the forest' in Malay.", wikiSlug: "Bornean_orangutan" },
+    { name: "Jaguar", type: "mammal", species: "Panthera onca", info: "Jaguars have the strongest bite of all big cats.", wikiSlug: "Jaguar" },
+    { name: "Snow Leopard", type: "mammal", species: "Panthera uncia", info: "Known as the 'ghost of the mountains' due to elusive camouflage.", wikiSlug: "Snow_leopard" },
+    { name: "European Hedgehog", type: "mammal", species: "Erinaceus europaeus", info: "A group of hedgehogs is collectively called a 'prickle'.", wikiSlug: "European_hedgehog" },
+    { name: "Sea Otter", type: "mammal", species: "Enhydra lutris", info: "Sea otters hold hands while sleeping so they don't drift apart.", wikiSlug: "Sea_otter" },
+    { name: "Ring-tailed Lemur", type: "mammal", species: "Lemur catta", info: "Found only on the island of Madagascar.", wikiSlug: "Ring-tailed_lemur" },
+    { name: "Dromedary Camel", type: "mammal", species: "Camelus dromedarius", info: "Their humps store fat — not water — to sustain them in deserts.", wikiSlug: "Dromedary" },
+    { name: "Common Wombat", type: "mammal", species: "Vombatus ursinus", info: "The only animals in the world that produce cube-shaped droppings.", wikiSlug: "Common_wombat" },
+    { name: "West Indian Manatee", type: "mammal", species: "Trichechus manatus", info: "These gentle giants are often called 'sea cows'.", wikiSlug: "West_Indian_manatee" },
+    { name: "Walrus", type: "mammal", species: "Odobenus rosmarus", info: "Both males and females grow long ivory tusks used for hauling out.", wikiSlug: "Walrus" },
+    { name: "American Beaver", type: "mammal", species: "Castor canadensis", info: "Beavers build dams to create deep ponds for protection.", wikiSlug: "American_beaver" },
+    { name: "American Bison", type: "mammal", species: "Bison bison", info: "The largest land animal in North America.", wikiSlug: "American_bison" },
+    { name: "Eurasian Lynx", type: "mammal", species: "Lynx lynx", info: "Identifiable by the distinctive tufts of black hair on their ears.", wikiSlug: "Eurasian_lynx" },
+    { name: "Honey Badger", type: "mammal", species: "Mellivora capensis", info: "Renowned as one of the most fearless animals in the world.", wikiSlug: "Honey_badger" },
+    { name: "Chimpanzee", type: "mammal", species: "Pan troglodytes", info: "Humans' closest living relative, capable of using tools and communicating.", wikiSlug: "Chimpanzee" },
+    { name: "Nine-banded Armadillo", type: "mammal", species: "Dasypus novemcinctus", info: "Their name is Spanish for 'little armored one'.", wikiSlug: "Nine-banded_armadillo" },
+    { name: "Little Brown Bat", type: "mammal", species: "Myotis lucifugus", info: "The only mammals capable of true, sustained flight.", wikiSlug: "Little_brown_bat" },
+    { name: "Gibbon", type: "mammal", species: "Symphalangus syndactylus", info: "The masters of brachiation — swinging effortlessly through forest canopies.", wikiSlug: "Siamang" },
+    { name: "Capybara", type: "mammal", species: "Hydrochoerus hydrochaeris", info: "The world's largest rodent, beloved by virtually every animal it meets.", wikiSlug: "Capybara" },
+    { name: "Narwhal", type: "mammal", species: "Monodon monoceros", info: "The 'unicorn of the sea' — their tusk is an elongated canine tooth.", wikiSlug: "Narwhal" },
+    { name: "Pangolin", type: "mammal", species: "Manis temminckii", info: "The only mammal entirely covered in scales made of keratin.", wikiSlug: "Ground_pangolin" },
+    { name: "Wolverine", type: "mammal", species: "Gulo gulo", info: "Pound for pound, one of the most ferocious mammals on Earth.", wikiSlug: "Wolverine" },
+    { name: "Moose", type: "mammal", species: "Alces alces", info: "The largest member of the deer family, with massive palmate antlers.", wikiSlug: "Moose" },
+    { name: "Japanese Macaque", type: "mammal", species: "Macaca fuscata", info: "The only primates besides humans to live in snowy environments.", wikiSlug: "Japanese_macaque" },
+
+    // --- NEW MAMMALS ---
+    { name: "Okapi", type: "mammal", species: "Okapia johnstoni", info: "Though it has zebra-like stripes, it is the only living relative of the giraffe.", wikiSlug: "Okapi" },
+    { name: "Fennec Fox", type: "mammal", species: "Vulpes zerda", info: "Their massive ears help dissipate heat and listen for prey underground.", wikiSlug: "Fennec_fox" },
+    { name: "Tasmanian Devil", type: "mammal", species: "Sarcophilus harrisii", info: "The world's largest carnivorous marsupial, known for its loud screech.", wikiSlug: "Tasmanian_devil" },
+    { name: "Aardvark", type: "mammal", species: "Orycteropus afer", info: "Can eat up to 50,000 termites in a single night using its sticky tongue.", wikiSlug: "Aardvark" },
+    { name: "Sperm Whale", type: "mammal", species: "Physeter macrocephalus", info: "The largest toothed predator on Earth, capable of diving 2,000 meters deep.", wikiSlug: "Sperm_whale" },
+    { name: "Duck-billed Platypus", type: "mammal", species: "Ornithorhynchus anatinus", info: "One of the few venomous mammals; males have a spur on their hind foot.", wikiSlug: "Platypus" },
+    { name: "Bongo", type: "mammal", species: "Tragelaphus eurycerus", info: "A large, forest-dwelling antelope with striking spiraled horns.", wikiSlug: "Bongo_(antelope)" },
+    { name: "Clouded Leopard", type: "mammal", species: "Neofelis nebulosa", info: "Has the longest upper canine teeth relative to skull size of any living cat.", wikiSlug: "Clouded_leopard" },
+
+    // --- EXISTING REPTILES ---
+    { name: "King Cobra", type: "reptile", species: "Ophiophagus hannah", info: "The longest venomous snake; it can rear up to look a human in the eye.", wikiSlug: "King_cobra" },
+    { name: "Green Sea Turtle", type: "reptile", species: "Chelonia mydas", info: "Uses the Earth's magnetic field like a GPS to navigate vast oceans.", wikiSlug: "Green_sea_turtle" },
+    { name: "Veiled Chameleon", type: "reptile", species: "Chamaeleo calyptratus", info: "Their tongues are often twice the length of their own body.", wikiSlug: "Veiled_chameleon" },
+    { name: "Nile Crocodile", type: "reptile", species: "Crocodylus niloticus", info: "Can hold their breath underwater for over an hour while waiting for prey.", wikiSlug: "Nile_crocodile" },
+    { name: "Komodo Dragon", type: "reptile", species: "Varanus komodoensis", info: "The heaviest lizard on Earth, found only on a few Indonesian islands.", wikiSlug: "Komodo_dragon" },
+    { name: "American Alligator", type: "reptile", species: "Alligator mississippiensis", info: "Alligators have broad U-shaped snouts; crocodiles have narrow V-shaped ones.", wikiSlug: "American_alligator" },
+    { name: "Tokay Gecko", type: "reptile", species: "Gekko gecko", info: "Most geckos cannot blink, so they lick their eyes to keep them clean.", wikiSlug: "Tokay_gecko" },
+    { name: "Green Iguana", type: "reptile", species: "Iguana iguana", info: "Has a photosensitive 'third eye' on top of its head to detect light changes.", wikiSlug: "Green_iguana" },
+    { name: "Gila Monster", type: "reptile", species: "Heloderma suspectum", info: "One of the very few venomous lizards in the world.", wikiSlug: "Gila_monster" },
+    { name: "Western Diamondback", type: "reptile", species: "Crotalus atrox", info: "The rattle is made of interlocking hollow segments of keratin.", wikiSlug: "Western_diamondback_rattlesnake" },
+    { name: "Black Mamba", type: "reptile", species: "Dendroaspis polylepis", info: "The fastest snake in the world, capable of moving at 12 mph.", wikiSlug: "Black_mamba" },
+    { name: "Galápagos Tortoise", type: "reptile", species: "Chelonoidis niger", info: "Can live for over 150 years — some alive today were born in the 1800s.", wikiSlug: "Galápagos_tortoise" },
+    { name: "Boa Constrictor", type: "reptile", species: "Boa constrictor", info: "They squeeze prey until it can no longer breathe, then swallow whole.", wikiSlug: "Boa_constrictor" },
+    { name: "Green Basilisk", type: "reptile", species: "Basiliscus plumifrons", info: "Called the 'Jesus Lizard' for its astonishing ability to run on water.", wikiSlug: "Plumed_basilisk" },
+    { name: "Water Monitor", type: "reptile", species: "Varanus salvator", info: "Highly intelligent lizards found across South and Southeast Asia.", wikiSlug: "Water_monitor" },
+    { name: "Reticulated Python", type: "reptile", species: "Malayopython reticulatus", info: "The world's longest snake, sometimes exceeding 20 feet in length.", wikiSlug: "Reticulated_python" },
+    { name: "Tuatara", type: "reptile", species: "Sphenodon punctatus", info: "A living fossil from New Zealand — the last survivor of an ancient reptile order.", wikiSlug: "Tuatara" },
+    { name: "Green Anaconda", type: "reptile", species: "Eunectes murinus", info: "The heaviest snake in the world, lurking in South American swamps.", wikiSlug: "Green_anaconda" },
+    { name: "Frill-necked Lizard", type: "reptile", species: "Chlamydosaurus kingii", info: "Opens a dramatic skin frill around its neck to frighten predators.", wikiSlug: "Frill-necked_lizard" },
+    { name: "Leatherback Turtle", type: "reptile", species: "Dermochelys coriacea", info: "The largest turtle in the world, with a unique leathery shell.", wikiSlug: "Leatherback_sea_turtle" },
+    { name: "Saltwater Crocodile", type: "reptile", species: "Crocodylus porosus", info: "The largest living reptile and an apex predator across coastal Asia-Pacific.", wikiSlug: "Saltwater_crocodile" },
+    { name: "Blue-tongued Skink", type: "reptile", species: "Tiliqua scincoides", info: "Flashes its vivid blue tongue to startle and deter potential predators.", wikiSlug: "Common_blue-tongued_skink" },
+    { name: "Axolotl", type: "reptile", species: "Ambystoma mexicanum", info: "A 'forever young' salamander that retains its larval features into adulthood.", wikiSlug: "Axolotl" },
+    { name: "Desert Horned Lizard", type: "reptile", species: "Phrynosoma platyrhinos", info: "Can squirt blood from their eyes as a startling defence mechanism.", wikiSlug: "Desert_horned_lizard" },
+    { name: "Corn Snake", type: "reptile", species: "Pantherophis guttatus", info: "A popular and docile pet snake with beautiful orange and red patterning.", wikiSlug: "Corn_snake" },
+
+    // --- NEW REPTILES & AMPHIBIANS ---
+    { name: "Thorny Devil", type: "reptile", species: "Moloch horridus", info: "Its spikes are not just for defense; they help channel water to its mouth.", wikiSlug: "Thorny_dragon" },
+    { name: "Red-eyed Tree Frog", type: "reptile", species: "Agalychnis callidryas", info: "Their bright eyes and blue-and-yellow flanks are used to startle predators.", wikiSlug: "Red-eyed_tree_frog" },
+    { name: "Poison Dart Frog", type: "reptile", species: "Dendrobatidae", info: "Their skin contains enough toxin to kill 10-20 grown men.", wikiSlug: "Poison_dart_frog" },
+    { name: "Gharial", type: "reptile", species: "Gavialis gangeticus", info: "Recognizable by its extremely long, thin snout used for catching fish.", wikiSlug: "Gharial" },
+    { name: "Flying Gecko", type: "reptile", species: "Ptychozoon", info: "Uses flaps of skin on its feet and tail to glide between trees.", wikiSlug: "Ptychozoon" },
+
+    // --- EXISTING BIRDS ---
+    { name: "Bald Eagle", type: "bird", species: "Haliaeetus leucocephalus", info: "Their nests, called eyries, can weigh as much as a small car.", wikiSlug: "Bald_eagle" },
+    { name: "Emperor Penguin", type: "bird", species: "Aptenodytes forsteri", info: "The tallest and heaviest of all living penguin species.", wikiSlug: "Emperor_penguin" },
+    { name: "Greater Flamingo", type: "bird", species: "Phoenicopterus roseus", info: "They are born gray and turn pink from the carotenoids in their food.", wikiSlug: "Greater_flamingo" },
+    { name: "Snowy Owl", type: "bird", species: "Bubo scandiacus", info: "Unlike most owls, they hunt actively during the day in the Arctic.", wikiSlug: "Snowy_owl" },
+    { name: "Toco Toucan", type: "bird", species: "Ramphastos toco", info: "Their huge bill is actually very light, made of hollow keratin foam.", wikiSlug: "Toco_toucan" },
+    { name: "Common Ostrich", type: "bird", species: "Struthio camelus", info: "The largest living bird — it has eyes bigger than its own brain.", wikiSlug: "Common_ostrich" },
+    { name: "Anna's Hummingbird", type: "bird", species: "Calypte anna", info: "The only bird capable of flying in every direction, including backwards.", wikiSlug: "Anna%27s_hummingbird" },
+    { name: "Indian Peafowl", type: "bird", species: "Pavo cristatus", info: "The spectacular 'tail' is actually called a train, and has iridescent eyespots.", wikiSlug: "Indian_peafowl" },
+    { name: "Wandering Albatross", type: "bird", species: "Diomedea exulans", info: "Has the largest wingspan of any living bird — up to 11.5 feet across.", wikiSlug: "Wandering_albatross" },
+    { name: "Common Kingfisher", type: "bird", species: "Alcedo atthis", info: "Famous for its jewel-bright plumage and spectacular dives for fish.", wikiSlug: "Common_kingfisher" },
+    { name: "Atlantic Puffin", type: "bird", species: "Fratercula arctica", info: "Often called 'sea parrots' for their dramatically colorful bills.", wikiSlug: "Atlantic_puffin" },
+    { name: "Mute Swan", type: "bird", species: "Cygnus olor", info: "Swans often mate for life and are ancient symbols of love and loyalty.", wikiSlug: "Mute_swan" },
+    { name: "African Grey Parrot", type: "bird", species: "Psittacus erithacus", info: "Capable of learning hundreds of words and even grasping basic concepts.", wikiSlug: "Grey_parrot" },
+    { name: "Common Raven", type: "bird", species: "Corvus corax", info: "One of the most intelligent birds, able to plan ahead and use tools.", wikiSlug: "Common_raven" },
+    { name: "Pileated Woodpecker", type: "bird", species: "Dryocopus pileatus", info: "Hammers wood up to 20 times per second with its powerful chisel-like bill.", wikiSlug: "Pileated_woodpecker" },
+    { name: "Brown Pelican", type: "bird", species: "Pelecanus occidentalis", info: "Their flexible throat pouch can hold three times more than their stomach.", wikiSlug: "Brown_pelican" },
+    { name: "Peregrine Falcon", type: "bird", species: "Falco peregrinus", info: "The fastest animal on Earth, diving at over 240 mph to strike prey.", wikiSlug: "Peregrine_falcon" },
+    { name: "White Stork", type: "bird", species: "Ciconia ciconia", info: "Migrates thousands of miles each year between Europe and sub-Saharan Africa.", wikiSlug: "White_stork" },
+    { name: "Turkey Vulture", type: "bird", species: "Cathartes aura", info: "Nature's clean-up crew — their stomach acid destroys anthrax and botulism.", wikiSlug: "Turkey_vulture" },
+    { name: "Southern Brown Kiwi", type: "bird", species: "Apteryx australis", info: "A flightless bird that lays the largest egg relative to body size of any bird.", wikiSlug: "Southern_brown_kiwi" },
+    { name: "Red-crowned Crane", type: "bird", species: "Grus japonensis", info: "Famous for their breathtakingly beautiful courtship dances.", wikiSlug: "Red-crowned_crane" },
+    { name: "Scarlet Macaw", type: "bird", species: "Ara macao", info: "One of the most vivid and striking birds in the world.", wikiSlug: "Scarlet_macaw" },
+    { name: "Secretarybird", type: "bird", species: "Sagittarius serpentarius", info: "A long-legged eagle that hunts snakes by stomping them to death.", wikiSlug: "Secretarybird" },
+    { name: "Shoebill", type: "bird", species: "Balaeniceps rex", info: "An enormous, prehistoric-looking bird with a massive shoe-shaped bill.", wikiSlug: "Shoebill" },
+    { name: "Hyacinth Macaw", type: "bird", species: "Anodorhynchus hyacinthinus", info: "The largest parrot species, with stunning cobalt-blue plumage.", wikiSlug: "Hyacinth_macaw" },
+    { name: "Greater lophorina", type: "bird", species: "Lophorina superba", info: "The male transforms himself into a near-perfect oval for his dazzling courtship dance.", wikiSlug: "Superb_bird-of-paradise" },
+
+    // --- NEW BIRDS ---
+    { name: "Kakapo", type: "bird", species: "Strigops habroptilus", info: "The world's only flightless parrot, native to New Zealand.", wikiSlug: "Kakapo" },
+    { name: "Harpy Eagle", type: "bird", species: "Harpia harpyja", info: "One of the largest and most powerful eagles; its talons are larger than grizzly bear claws.", wikiSlug: "Harpy_eagle" },
+    { name: "Superb Lyrebird", type: "bird", species: "Menura novaehollandiae", info: "Famous for its ability to mimic almost any sound, including chainsaws and cameras.", wikiSlug: "Superb_lyrebird" },
+    { name: "Blue-footed Booby", type: "bird", species: "Sula nebouxi", info: "Males display their bright blue feet in a high-stepping dance to attract mates.", wikiSlug: "Blue-footed_booby" },
+    { name: "Great Hornbill", type: "bird", species: "Buceros bicornis", info: "Features a massive yellow casque on top of its bill.", wikiSlug: "Great_hornbill" },
+    { name: "Victoria Crowned Pigeon", type: "bird", species: "Goura victoria", info: "The largest pigeon in the world, known for its elegant lacy crest.", wikiSlug: "Victoria_crowned_pigeon" },
+
+    // --- EXISTING FISH & AQUATIC ---
+    { name: "Great White Shark", type: "fish", species: "Carcharodon carcharias", info: "Possess a sixth sense — ampullae of Lorenzini — detecting electrical fields.", wikiSlug: "Great_white_shark" },
+    { name: "Common Octopus", type: "fish", species: "Octopus vulgaris", info: "Has blue blood, three hearts, and can change color in milliseconds.", wikiSlug: "Common_octopus" },
+    { name: "Scalloped Hammerhead", type: "fish", species: "Sphyrna lewini", info: "Their wide head gives them 360-degree vision and enhanced electroreception.", wikiSlug: "Scalloped_hammerhead" },
+    { name: "Whale Shark", type: "fish", species: "Rhincodon typus", info: "The largest fish in the sea — yet it filters and eats only tiny plankton.", wikiSlug: "Whale_shark" },
+    { name: "Clownfish", type: "fish", species: "Amphiprion ocellaris", info: "Lives immune to the stinging tentacles of sea anemones for protection.", wikiSlug: "Ocellaris_clownfish" },
+    { name: "Seahorse", type: "fish", species: "Hippocampus hippocampus", info: "The only species on Earth where the male becomes pregnant and gives birth.", wikiSlug: "Short-snouted_seahorse" },
+    { name: "Oceanic Manta Ray", type: "fish", species: "Mobula birostris", info: "Can grow up to 23 feet wide and make dramatic acrobatic leaps from the ocean.", wikiSlug: "Oceanic_manta_ray" },
+    { name: "Moon Jellyfish", type: "fish", species: "Aurelia aurita", info: "A translucent creature that is 95% water with no brain, heart, or eyes.", wikiSlug: "Moon_jellyfish" },
+    { name: "Anglerfish", type: "fish", species: "Melanocetus johnsonii", info: "Uses a bioluminescent lure dangling from its forehead to attract prey in the dark.", wikiSlug: "Blackdevil" },
+    { name: "Electric Eel", type: "fish", species: "Electrophorus electricus", info: "Produces up to 600 volts of electricity to stun prey and defend itself.", wikiSlug: "Electric_eel" },
+    { name: "Stingray", type: "fish", species: "Dasyatis pastinaca", info: "Closely related to sharks, with an entire skeleton made of cartilage.", wikiSlug: "Common_stingray" },
+    { name: "Red Lionfish", type: "fish", species: "Pterois volitans", info: "Strikingly beautiful but invasive, with highly venomous dorsal spines.", wikiSlug: "Red_lionfish" },
+    { name: "Box Jellyfish", type: "fish", species: "Chironex fleckeri", info: "Considered one of the most venomous marine creatures in the world.", wikiSlug: "Chironex_fleckeri" },
+    { name: "Peacock Mantis Shrimp", type: "fish", species: "Odontodactylus scyllarus", info: "Their punch accelerates faster than a bullet and can crack aquarium glass.", wikiSlug: "Peacock_mantis_shrimp" },
+    { name: "Common Cuttlefish", type: "fish", species: "Sepia officinalis", info: "Masters of disguise — can change color and skin texture in under a second.", wikiSlug: "Common_cuttlefish" },
+    { name: "Porcupinefish", type: "fish", species: "Diodon holocanthus", info: "Inflates itself into a spiky ball several times its normal size when threatened.", wikiSlug: "Porcupinefish" },
+    { name: "Giant Pacific Octopus", type: "fish", species: "Enteroctopus dofleini", info: "The largest octopus species — can open jars and recognise individual human faces.", wikiSlug: "Giant_Pacific_octopus" },
+    { name: "Giant Clam", type: "fish", species: "Tridacna gigas", info: "The largest bivalve mollusk — can live over 100 years and weigh 500 lbs.", wikiSlug: "Giant_clam" },
+    { name: "Swordfish", type: "fish", species: "Xiphias gladius", info: "Can heat its own eyes and brain to improve reaction time in cold deep water.", wikiSlug: "Swordfish" },
+    { name: "Atlantic Blue Marlin", type: "fish", species: "Makaira nigricans", info: "One of the fastest fish, famous for its spectacular acrobatic leaps.", wikiSlug: "Atlantic_blue_marlin" },
+
+    // --- NEW FISH & AQUATIC ---
+    { name: "Mola Mola", type: "fish", species: "Mola mola", info: "Also known as the ocean sunfish, it is the heaviest bony fish in the world.", wikiSlug: "Ocean_sunfish" },
+    { name: "Leafy Seadragon", type: "fish", species: "Phycodurus eques", info: "Its leaf-like protrusions serve as camouflage rather than propulsion.", wikiSlug: "Leafy_seadragon" },
+    { name: "Vampire Squid", type: "fish", species: "Vampyroteuthis infernalis", info: "Neither a squid nor an octopus, it lives in the pitch-black deep ocean.", wikiSlug: "Vampire_squid" },
+    { name: "Basking Shark", type: "fish", species: "Cetorhinus maximus", info: "The second-largest living fish, a slow-moving filter feeder.", wikiSlug: "Basking_shark" },
+    { name: "Napoleon Wrasse", type: "fish", species: "Cheilinus undulatus", info: "A huge reef fish known for the prominent hump on its forehead.", wikiSlug: "Humphead_wrasse" },
+    { name: "Giant Isopod", type: "fish", species: "Bathynomus giganteus", info: "A massive deep-sea crustacean related to the common woodlouse.", wikiSlug: "Giant_isopod" },
+    { name: "Nudibranch", type: "fish", species: "Nudibranchia", info: "Sea slugs known for their extraordinary colors and bizarre shapes.", wikiSlug: "Nudibranch" },
+    { name: "Barracuda", type: "fish", species: "Sphyraena", info: "A fierce predator known for its streamlined body and razor-sharp teeth.", wikiSlug: "Barracuda" },
+
+    // --- NEW: INSECTS & INVERTEBRATES ---
+    { name: "Monarch Butterfly", type: "insect", species: "Danaus plexippus", info: "Famous for its incredible 3,000-mile migration across North America.", wikiSlug: "Monarch_butterfly" },
+    { name: "Praying Mantis", type: "insect", species: "Mantodea", info: "The only insect that can turn its head 180 degrees to look over its shoulder.", wikiSlug: "Mantis" },
+    { name: "Atlas Moth", type: "insect", species: "Attacus atlas", info: "One of the largest moths in the world, with a wingspan of up to 10 inches.", wikiSlug: "Attacus_atlas" },
+    { name: "Hercules Beetle", type: "insect", species: "Dynastes hercules", info: "Can carry up to 850 times its own body weight.", wikiSlug: "Hercules_beetle" },
+    { name: "Honey Bee", type: "insect", species: "Apis mellifera", info: "Bees perform a 'waggle dance' to tell hive-mates where to find flowers.", wikiSlug: "Honey_bee" },
+    { name: "Dragonfly", type: "insect", species: "Anisoptera", info: "Among the fastest flying insects; they can fly straight up, down, or hover.", wikiSlug: "Dragonfly" },
+    { name: "Giant Weta", type: "insect", species: "Deinacrida", info: "One of the heaviest insects on Earth, found only in New Zealand.", wikiSlug: "Giant_weta" },
+    { name: "Leafcutter Ant", type: "insect", species: "Atta", info: "They don't eat the leaves they cut; they use them to farm fungus for food.", wikiSlug: "Leafcutter_ant" },
+    { name: "Giant Asian Hornet", type: "insect", species: "Vespa mandarinia", info: "The world's largest hornet, often called the 'murder hornet'.", wikiSlug: "Asian_giant_hornet" },
+    { name: "Luna Moth", type: "insect", species: "Actias luna", info: "An adult Luna Moth has no mouth and lives only for about a week to mate.", wikiSlug: "Luna_moth" },
+    { name: "Bullet Ant", type: "insect", species: "Paraponera clavata", info: "Named for its sting, which is said to be as painful as being shot by a bullet.", wikiSlug: "Paraponera_clavata" },
+    { name: "Stink Bug", type: "insect", species: "Halyomorpha halys", info: "Release a pungent odor from glands on their thorax when threatened.", wikiSlug: "Brown_marmorated_stink_bug" },
+    { name: "Goliath Beetle", type: "insect", species: "Goliathus", info: "Among the largest insects on Earth as both larvae and adults.", wikiSlug: "Goliathus" },
+    { name: "Blue Morpho Butterfly", type: "insect", species: "Morpho menelaus", info: "Their blue color comes from light reflecting off microscopic scales.", wikiSlug: "Menelaus_blue_morpho" },
+    { name: "Walking Stick", type: "insect", species: "Phasmatodea", info: "Experts at camouflage, perfectly mimicking twigs or branches.", wikiSlug: "Phasmatodea" },
+    { name: "Cicada", type: "insect", species: "Cicadoidea", info: "Some species spend 17 years underground before emerging for just a few weeks.", wikiSlug: "Cicada" },
+    { name: "Orb-weaver Spider", type: "insect", species: "Araneidae", info: "Famous for building the classic circular, wheel-shaped webs.", wikiSlug: "Orb-weaver_spider" },
+    { name: "Black Widow Spider", type: "insect", species: "Latrodectus", info: "Recognizable by the red hourglass shape on the underside of their abdomen.", wikiSlug: "Latrodectus" },
+    { name: "Goliath Birdeater", type: "insect", species: "Theraphosa blondi", info: "The largest spider in the world by mass and size.", wikiSlug: "Goliath_birdeater" },
+    { name: "Giant Centipede", type: "insect", species: "Scolopendra gigantea", info: "A venomous predator capable of catching bats in mid-air.", wikiSlug: "Scolopendra_gigantea" },
+    { name: "Scorpion", type: "insect", species: "Scorpiones", info: "Scorpions glow a vibrant blue-green under ultraviolet light.", wikiSlug: "Scorpion" },
+    { name: "Firefly", type: "insect", species: "Lampyridae", info: "Produce 'cold light' through a chemical reaction called bioluminescence.", wikiSlug: "Firefly" },
+    { name: "Ladybug", type: "insect", species: "Coccinellidae", info: "Farmers love them because they eat aphids and other garden pests.", wikiSlug: "Coccinellidae" },
+    { name: "Emerald Jewel Wasp", type: "insect", species: "Ampulex compressa", info: "Zombifies cockroaches to use them as a living nursery for its larvae.", wikiSlug: "Emerald_cockroach_wasp" },
+    { name: "Water Strider", type: "insect", species: "Gerridae", info: "Uses surface tension to walk on water without sinking.", wikiSlug: "Gerridae" },
+    { name: "Jewel Beetle", type: "insect", species: "Buprestidae", info: "Prized for their glossy, iridescent colors that look like gems.", wikiSlug: "Buprestidae" }
+];
+
+const imageCache = {};
+const FALLBACK = "https://placehold.co/500x350/1a1a2e/ffffff?text=Loading...";
+
+// Fetch image from Wikipedia REST summary API (CORS-enabled, no API key needed)
+async function getAnimalImage(wikiSlug) {
+    if (imageCache[wikiSlug]) return imageCache[wikiSlug];
+
+    try {
+        const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wikiSlug)}`;
+        const res = await fetch(url, {
+            headers: { 'Api-User-Agent': 'AnimalExplorer/1.0' }
+        });
+        if (!res.ok) throw new Error('Not found');
+        const data = await res.json();
+        const img = data?.thumbnail?.source || data?.originalimage?.source || null;
+        imageCache[wikiSlug] = img;
+        return img;
+    } catch {
+        imageCache[wikiSlug] = null;
+        return null;
+    }
+}
+
+// Lazy-load images as cards become visible
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(async (entry) => {
+        if (entry.isIntersecting) {
+            const card = entry.target;
+            const slug = card.dataset.slug;
+            const imgEl = card.querySelector('.card-img');
+            if (imgEl && imgEl.dataset.loaded !== 'true') {
+                imgEl.dataset.loaded = 'true';
+                const src = await getAnimalImage(slug);
+                if (src) {
+                    imgEl.src = src;
+                } else {
+                    imgEl.src = `https://placehold.co/500x350/2c3e50/ecf0f1?text=${encodeURIComponent(card.dataset.name)}`;
+                }
+                observer.unobserve(card);
+            }
+        }
+    });
+}, { rootMargin: '200px' });
+
+function displayAnimals(list) {
+    resultsGrid.innerHTML = '';
+
+    if (list.length === 0) {
+        resultsGrid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#666;padding:40px 0;">No animals found. Try a different search.</p>';
+        return;
+    }
+
+    list.forEach(animal => {
+        const card = document.createElement('div');
+        card.className = 'animal-card';
+        card.dataset.slug = animal.wikiSlug;
+        card.dataset.name = animal.name;
+
+        card.innerHTML = `
+            <img
+                src="https://placehold.co/500x350/ecf0f1/95a5a6?text=..."
+                alt="${animal.name}"
+                class="card-img"
+                data-loaded="false"
+            >
+            <h3>${animal.name}</h3>
+            <span class="tag">${animal.type}</span>
+        `;
+
+        card.onclick = async () => {
+            const imgSrc = imageCache[animal.wikiSlug] ||
+                `https://placehold.co/500x350/2c3e50/ecf0f1?text=${encodeURIComponent(animal.name)}`;
+
+            modalBody.innerHTML = `
+                <img src="${imgSrc}" alt="${animal.name}" class="modal-img"
+                     onerror="this.src='https://placehold.co/500x350/2c3e50/ecf0f1?text=${encodeURIComponent(animal.name)}'">
+                <div class="modal-text">
+                    <h2>${animal.name}</h2>
+                    <span class="scientific">${animal.species}</span>
+                    <p class="info-p">${animal.info}</p>
+                    <a href="https://en.wikipedia.org/wiki/${encodeURIComponent(animal.wikiSlug)}" target="_blank" class="wiki-link">Read on Wikipedia →</a>
+                </div>
+            `;
+            modal.style.display = 'block';
+
+            // Fetch full-res image for modal if not yet loaded
+            if (!imageCache[animal.wikiSlug]) {
+                const src = await getAnimalImage(animal.wikiSlug);
+                if (src) {
+                    const modalImg = modalBody.querySelector('.modal-img');
+                    if (modalImg) modalImg.src = src;
+                }
+            }
+        };
+
+        resultsGrid.appendChild(card);
+        observer.observe(card);
+    });
+}
+
+function updateDisplay() {
+    const search = searchInput.value.toLowerCase().trim();
+    const type = filterType.value;
+
+    const filtered = animals.filter(animal => {
+        const matchesSearch =
+            animal.name.toLowerCase().includes(search) ||
+            animal.species.toLowerCase().includes(search);
+        const matchesType = type === 'all' || animal.type === type;
+        return matchesSearch && matchesType;
+    });
+
+    displayAnimals(filtered);
+}
+
+closeBtn.onclick = () => { modal.style.display = 'none'; };
+window.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+searchInput.addEventListener('input', updateDisplay);
+filterType.addEventListener('change', updateDisplay);
+
+displayAnimals(animals);
+</script>
+</body>
+</html>

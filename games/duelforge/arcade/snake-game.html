@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PixelSprout Classic Snake</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chewy&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="snake-game.css" />
+</head>
+<body data-app="snake-game">
+  <main class="shell">
+    <header class="hero">
+      <p class="eyebrow">Classic Arcade Loop</p>
+      <h1>Snake</h1>
+      <p>Arrow keys/WASD to move. Eat food to grow. Avoid walls and your own body.</p>
+      <div class="row">
+        <a class="btn soft" href="all-ages-games.html">Back to All Ages Games</a>
+      </div>
+    </header>
+
+    <section class="card">
+      <h2>Play</h2>
+      <div class="row">
+        <span class="pill">Score: <strong data-snake-score>0</strong></span>
+        <span class="pill">Best: <strong data-snake-best>0</strong></span>
+        <button class="btn soft" type="button" data-snake-pause>Pause</button>
+        <button class="btn primary" type="button" data-snake-restart>Restart</button>
+      </div>
+      <p class="note" data-snake-status>Running.</p>
+      <div class="snake-board" data-snake-board aria-label="Snake game board"></div>
+
+      <div class="controls-pad">
+        <span class="spacer">.</span>
+        <button class="btn soft" type="button" data-snake-dir="up">Up</button>
+        <span class="spacer">.</span>
+        <button class="btn soft" type="button" data-snake-dir="left">Left</button>
+        <button class="btn soft" type="button" data-snake-dir="down">Down</button>
+        <button class="btn soft" type="button" data-snake-dir="right">Right</button>
+      </div>
+
+      <p class="note">Shortcuts: `Space` pause/resume, `R` restart.</p>
+    </section>
+  </main>
+
+  <script src="snake-core.js"></script>
+  <script src="snake-game.js"></script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+{
+  "duration": 157,
+  "chapters": [
+    {
+      "title": "1 · How to download",
+      "start": 0.8
+    },
+    {
+      "title": "2 · Open Claude Blocks",
+      "start": 34.2
+    },
+    {
+      "title": "3 · Your first script",
+      "start": 41.6
+    },
+    {
+      "title": "4 · Templates",
+      "start": 74.3
+    },
+    {
+      "title": "5 · Lessons",
+      "start": 90.3
+    },
+    {
+      "title": "6 · AI builds for you",
+      "start": 98.2
+    },
+    {
+      "title": "7 · Raspberry Pi emulator",
+      "start": 136.6
+    },
+    {
+      "title": "8 · Save your work",
+      "start": 149.2
+    }
+  ]
+}

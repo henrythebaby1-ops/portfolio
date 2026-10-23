@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CapSpin Championship | Admin</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="site-wrap">
+      <header class="topbar">
+        <a class="brand" href="index.html">CapSpin <span>Championship</span></a>
+        <nav class="nav" aria-label="Main navigation">
+          <a href="index.html">Home</a>
+          <a href="events.html">Events</a>
+          <a href="register.html">Register</a>
+          <a href="rules.html">Rules</a>
+          <a href="login.html">Login</a>
+          <a class="active" href="admin.html">Admin</a>
+        </nav>
+      </header>
+
+      <main>
+        <section class="hero">
+          <span class="pill">Owner Dashboard</span>
+          <h1>Admin</h1>
+          <p id="admin-status">
+            Login as uncapped to create events and view all team participation.
+          </p>
+          <div class="cta-row">
+            <a class="btn ghost" href="login.html">Go to Login</a>
+            <button class="btn ghost" id="admin-logout-btn" type="button">Logout</button>
+          </div>
+        </section>
+
+        <section class="card" id="admin-gate" style="margin-top: 1rem; display: none">
+          <h2>Access Restricted</h2>
+          <p>Only the <strong>uncapped</strong> admin account can access this tab.</p>
+        </section>
+
+        <section class="card" id="admin-panel" style="margin-top: 1rem; display: none">
+          <h2>Create Event</h2>
+          <form id="admin-create-event-form" novalidate>
+            <label for="admin-event-name">
+              Event Name
+              <input id="admin-event-name" name="eventName" required />
+            </label>
+            <label for="admin-event-campus">
+              Campus
+              <select id="admin-event-campus" name="eventCampus" required>
+                <option value="">Select campus</option>
+                <option>Sunnyvale</option>
+                <option>Strawberry Park</option>
+                <option>Campbell</option>
+              </select>
+            </label>
+            <label for="admin-event-time">
+              Time
+              <select id="admin-event-time" name="eventTime" required>
+                <option value="">Select time</option>
+                <option>11:20 AM (Lunch)</option>
+                <option>3:00 PM (After School)</option>
+              </select>
+            </label>
+            <button class="btn primary" type="submit">Create Event</button>
+          </form>
+        </section>
+
+        <section class="grid" id="admin-events-board" style="margin-top: 1rem"></section>
+
+        <section style="margin-top: 1rem">
+          <div id="admin-feedback" class="notice ok" role="status" aria-live="polite"></div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        Admin tab is reserved for Uncapped.
+      </footer>
+    </div>
+    <script src="auth-events.js"></script>
+  </body>
+</html>

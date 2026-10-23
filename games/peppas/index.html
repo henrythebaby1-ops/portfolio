@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Five Nights at Peppa's</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="game-shell">
+    <header class="hud">
+      <h1>FIVE NIGHTS AT PEPPA'S</h1>
+      <div class="stats">
+        <span id="clock">12 AM</span>
+        <span id="night">Night 1</span>
+        <span id="power">Power 100%</span>
+      </div>
+    </header>
+
+    <section id="office" class="room-view">
+      <img id="roomBg" src="assets/imported/rooms/lounge.png" alt="Room" />
+      <div class="static"></div>
+      <div id="leftDoor" class="door">LEFT DOOR</div>
+      <div id="rightDoor" class="door">RIGHT DOOR</div>
+      <div id="leftLight" class="light"></div>
+      <div id="rightLight" class="light"></div>
+      <p id="status">Keep the doors shut only when needed.</p>
+      <div id="jumpscare" class="hidden">
+        <img id="jumpscareImg" src="assets/imported/sprites/zombie-peppa.png" alt="Jumpscare" />
+        <p>YOU WERE SNORTED.</p>
+      </div>
+    </section>
+
+    <section class="controls">
+      <button id="toggleCam">Camera Tablet</button>
+      <button id="toggleLeftDoor">Left Door</button>
+      <button id="toggleRightDoor">Right Door</button>
+      <button id="flashLeft">Flash Left</button>
+      <button id="flashRight">Flash Right</button>
+      <button id="restart">Restart</button>
+    </section>
+
+    <section id="cameraPanel" class="camera hidden">
+      <div class="camera-header">
+        <h2>CAMERAS</h2>
+        <select id="cameraSelect">
+          <option value="bath">Bathroom</option>
+          <option value="kitchen">Kitchen</option>
+          <option value="bedroom">Bedroom</option>
+          <option value="computer">Computer Room</option>
+        </select>
+      </div>
+      <div class="camera-frame">
+        <img id="cameraBg" src="assets/imported/rooms/bath.png" alt="Camera Room" />
+        <div class="static"></div>
+        <div id="cameraSprites"></div>
+      </div>
+      <p class="tip">Watch camera movement and close the correct door right before contact.</p>
+    </section>
+
+    <footer>Peppa Pig &copy; 2026</footer>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>

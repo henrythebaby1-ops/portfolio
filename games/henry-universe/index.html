@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Henry Universe</title>
+<style>
+:root{--bg:#080d16;--p:#111b2e;--line:#2b4368;--t:#e6efff;--m:#9eb6dc;--a:#26c4ff;--b:#66f1c1}
+*{box-sizing:border-box}body{margin:0;font-family:Trebuchet MS,Segoe UI,sans-serif;color:var(--t);background:radial-gradient(circle at 12% 10%,#12345f,transparent 35%),radial-gradient(circle at 90% 15%,#154233,transparent 30%),linear-gradient(180deg,#050912,#08101c)}
+.wrap{max-width:1100px;margin:0 auto;padding:22px}.hero{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px}.hero h1{margin:0;font-size:1.5rem}.hero p{margin:4px 0 0;color:var(--m)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}.card{background:var(--p);border:1px solid var(--line);border-radius:14px;padding:14px}.card h3{margin:0 0 6px}.card p{margin:0 0 10px;color:var(--m);font-size:.92rem}
+.btn{display:inline-block;text-decoration:none;color:#032339;background:linear-gradient(90deg,var(--a),var(--b));padding:8px 12px;border-radius:10px;font-weight:900}
+.list{margin-top:16px;background:var(--p);border:1px solid var(--line);border-radius:14px;padding:14px}.list h3{margin:0 0 10px}.links{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px}.links a{color:#cce6ff;text-decoration:none;padding:8px;border:1px solid #2f4d75;border-radius:10px;background:#0e1729}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero"><div><h1>Henry Universe Hub</h1><p>All games in one folder: OG, Studio, Imperium, and online 3D multiplayer.</p></div></div>
+  <div class="grid">
+    <div class="card"><h3>OG Arcade</h3><p>Original Henry's with added 3D online multiplayer game entries.</p><a class="btn" href="./core/henrys-world.html">Open OG</a></div>
+    <div class="card"><h3>Studio</h3><p>Modern creator with make-mode and custom game tools.</p><a class="btn" href="./studio/henrys-world-modern.html">Open Studio</a></div>
+    <div class="card"><h3>Imperium</h3><p>War simulator integrated into the same site folder.</p><a class="btn" href="./imperium/imperium-war-simulator.html">Open Imperium</a></div>
+  </div>
+  <div class="list">
+    <h3>3D Online Multiplayer</h3>
+    <div class="links">
+      <a href="./games/arena-tag-3d-online.html">Arena Tag 3D Online</a>
+      <a href="./games/hover-race-3d-online.html">Hover Race 3D Online</a>
+      <a href="./games/sky-climb-3d-online.html">Sky Climb 3D Online</a>
+      <a href="./games/shockfront-3d-online-fps.html">Shockfront 3D Online FPS</a>
+      <a href="./games/pixelstrike-2d-online-fps.html">PixelStrike 2D Online FPS</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

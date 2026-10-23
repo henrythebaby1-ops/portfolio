@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kingside — Free Chess Courses</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream:#F5F0E8; --dark:#1A1410; --brown:#3D2B1F;
+  --gold:#C8973A; --gold-light:#E8B94A; --ivory:#FAF7F2;
+  --slate:#6B6056; --light-sq:#F0D9B5; --dark-sq:#B58863; --accent:#8B4513;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--cream);overflow-x:hidden;}
+
+/* NAV */
+nav{position:fixed;top:0;width:100%;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:18px 60px;background:rgba(26,20,16,0.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(200,151,58,0.15);}
+.logo{font-family:'Playfair Display',serif;font-size:24px;font-weight:900;color:var(--gold);cursor:pointer;}
+.logo span{color:var(--cream);}
+nav ul{list-style:none;display:flex;gap:32px;}
+nav ul a{color:rgba(245,240,232,0.7);text-decoration:none;font-size:14px;font-weight:500;transition:color .2s;}
+nav ul a:hover{color:var(--gold);}
+.nav-cta{background:var(--gold);color:var(--dark);padding:9px 22px;border-radius:6px;font-weight:700;font-size:14px;text-decoration:none;transition:background .2s;cursor:pointer;border:none;}
+.nav-cta:hover{background:var(--gold-light);}
+
+/* PAGES */
+#page-home{display:block;}
+#page-course{display:none;}
+
+/* HERO */
+.hero{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:80px;padding:140px 60px 80px;background:radial-gradient(ellipse 80% 60% at 0% 50%,rgba(61,43,31,0.6) 0%,transparent 60%),var(--dark);}
+.hero-text h1{font-family:'Playfair Display',serif;font-size:clamp(46px,5vw,76px);font-weight:900;line-height:1.05;margin-bottom:20px;}
+.hero-text h1 em{color:var(--gold);font-style:italic;}
+.hero-text p{font-size:17px;line-height:1.7;color:rgba(245,240,232,0.65);max-width:460px;margin-bottom:36px;}
+.hero-actions{display:flex;gap:16px;align-items:center;}
+.btn-primary{background:var(--gold);color:var(--dark);padding:15px 34px;border-radius:8px;font-weight:700;font-size:15px;text-decoration:none;display:inline-block;transition:all .2s;cursor:pointer;border:none;}
+.btn-primary:hover{background:var(--gold-light);transform:translateY(-2px);box-shadow:0 8px 30px rgba(200,151,58,0.35);}
+.btn-ghost{color:var(--cream);padding:15px 24px;font-weight:500;font-size:15px;opacity:.7;transition:opacity .2s;cursor:pointer;background:none;border:none;}
+.btn-ghost:hover{opacity:1;}
+.hero-stats{display:flex;gap:40px;margin-top:48px;padding-top:40px;border-top:1px solid rgba(200,151,58,0.2);}
+.stat-num{font-family:'Playfair Display',serif;font-size:34px;font-weight:700;color:var(--gold);display:block;margin-bottom:4px;}
+.stat-label{font-size:13px;color:rgba(245,240,232,0.5);font-weight:500;}
+
+/* BOARD */
+.hero-board{display:flex;flex-direction:column;align-items:center;}
+.board-wrap{position:relative;filter:drop-shadow(0 40px 80px rgba(0,0,0,0.6));}
+.board-badge{position:absolute;top:-14px;right:-14px;background:var(--gold);color:var(--dark);padding:7px 14px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;z-index:1;}
+.board-outer{display:flex;flex-direction:column;align-items:flex-start;}
+.board-with-ranks{display:flex;align-items:flex-start;}
+.board-ranks{display:flex;flex-direction:column;margin-right:6px;}
+.rank-label{width:14px;height:50px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:rgba(245,240,232,0.4);}
+.board-files{display:flex;margin-top:6px;margin-left:20px;}
+.file-label{width:50px;height:14px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:rgba(245,240,232,0.4);}
+.chessboard{display:grid;grid-template-columns:repeat(8,50px);grid-template-rows:repeat(8,50px);width:400px;height:400px;border:3px solid var(--brown);border-radius:4px;overflow:hidden;}
+.sq{width:50px;height:50px;display:flex;align-items:center;justify-content:center;cursor:default;position:relative;transition:background .15s;}
+.sq.light{background:var(--light-sq);}.sq.dark{background:var(--dark-sq);}
+.sq.highlight{background:rgba(200,151,58,0.65)!important;}
+.board-note{margin-top:16px;font-size:13px;color:rgba(245,240,232,0.35);font-style:italic;}
+
+/* SECTION */
+.section{padding:90px 60px;}
+.section-label{font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:14px;}
+.section-title{font-family:'Playfair Display',serif;font-size:clamp(34px,4vw,52px);font-weight:700;line-height:1.1;margin-bottom:14px;color:var(--cream);}
+.section-sub{font-size:16px;color:rgba(245,240,232,0.55);max-width:520px;line-height:1.7;margin-bottom:48px;}
+
+/* COURSES */
+.courses-section{background:var(--ivory);}
+.courses-section .section-title{color:var(--dark);}
+.courses-section .section-sub{color:rgba(26,20,16,0.55);}
+.courses-section .section-label{color:var(--accent);}
+.courses-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px;}
+
+.course-card{background:white;border-radius:14px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);transition:transform .25s,box-shadow .25s;cursor:pointer;display:flex;flex-direction:column;}
+.course-card:hover{transform:translateY(-6px);box-shadow:0 16px 40px rgba(0,0,0,0.14);}
+.course-thumb{height:180px;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;}
+.course-thumb img{width:100%;height:100%;object-fit:cover;object-position:center;transition:transform .4s;background:#eee;}
+.course-card:hover .course-thumb img{transform:scale(1.05);}
+.course-thumb-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(26,20,16,0.5) 0%,transparent 50%);}
+.course-thumb-badge{position:absolute;bottom:12px;left:12px;background:rgba(200,151,58,0.95);color:var(--dark);font-size:11px;font-weight:700;padding:4px 10px;border-radius:12px;letter-spacing:.5px;text-transform:uppercase;}
+.course-body{padding:22px;flex:1;display:flex;flex-direction:column;}
+.course-level{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:7px;}
+.course-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--dark);margin-bottom:9px;line-height:1.3;}
+.course-desc{font-size:14px;color:var(--slate);line-height:1.6;margin-bottom:18px;flex:1;}
+.course-footer{display:flex;align-items:center;justify-content:space-between;}
+.course-hours{font-size:13px;color:var(--slate);}
+.course-start-btn{background:var(--dark);color:var(--gold);padding:8px 18px;border-radius:6px;font-weight:700;font-size:13px;border:none;cursor:pointer;transition:background .2s;}
+.course-start-btn:hover{background:var(--brown);}
+
+/* FREE BANNER */
+.free-banner{background:var(--gold);text-align:center;padding:80px 60px;}
+.free-banner h2{font-family:'Playfair Display',serif;font-size:clamp(36px,5vw,68px);font-weight:900;color:var(--dark);line-height:1.05;margin-bottom:16px;}
+.free-banner h2 em{font-style:italic;}
+.free-banner p{font-size:17px;color:rgba(26,20,16,0.7);margin-bottom:36px;}
+
+/* TRAINING */
+.training-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.training-card{background:rgba(255,255,255,0.05);border:1px solid rgba(200,151,58,0.15);border-radius:12px;padding:30px;transition:all .25s;cursor:pointer;}
+.training-card:hover{border-color:rgba(200,151,58,0.5);transform:translateY(-4px);}
+.training-icon{font-size:38px;margin-bottom:18px;display:block;}
+.training-name{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:var(--cream);margin-bottom:9px;}
+.training-desc{font-size:14px;color:rgba(245,240,232,0.5);line-height:1.65;}
+.training-badge{display:inline-block;margin-top:14px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);}
+
+/* FOOTER */
+footer{background:#0F0B08;padding:60px;border-top:1px solid rgba(200,151,58,0.1);display:grid;grid-template-columns:2fr 1fr 1fr;gap:48px;}
+footer h4{font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:18px;}
+footer ul{list-style:none;}
+footer ul li{margin-bottom:10px;}
+footer ul a{color:rgba(245,240,232,0.5);text-decoration:none;font-size:14px;transition:color .2s;}
+footer ul a:hover{color:var(--cream);}
+.footer-brand p{font-size:14px;color:rgba(245,240,232,0.4);line-height:1.7;max-width:280px;margin-top:12px;}
+.footer-bottom{background:#0F0B08;padding:18px 60px;border-top:1px solid rgba(255,255,255,0.05);font-size:13px;color:rgba(245,240,232,0.3);display:flex;justify-content:space-between;}
+
+/* ═══ COURSE PAGE ═══ */
+#page-course{background:var(--dark);min-height:100vh;padding-top:72px;}
+.course-layout{display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 72px);}
+
+/* SIDEBAR */
+.course-sidebar{background:#110D0A;border-right:1px solid rgba(200,151,58,0.12);overflow-y:auto;padding:28px 0;position:sticky;top:72px;height:calc(100vh - 72px);}
+.sidebar-header{padding:0 24px 20px;border-bottom:1px solid rgba(255,255,255,0.06);}
+.sidebar-back{display:flex;align-items:center;gap:8px;color:var(--gold);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:16px;background:none;border:none;padding:0;}
+.sidebar-back:hover{opacity:.8;}
+.sidebar-course-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--cream);line-height:1.3;}
+.sidebar-level{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-top:6px;}
+.sidebar-chapters{padding:12px 0;}
+.chapter-title{padding:10px 24px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(245,240,232,0.3);}
+.lesson-item{display:flex;align-items:center;gap:10px;padding:11px 24px;cursor:pointer;transition:background .15s;border-left:2px solid transparent;}
+.lesson-item:hover{background:rgba(255,255,255,0.04);}
+.lesson-item.active{background:rgba(200,151,58,0.1);border-left-color:var(--gold);}
+.lesson-num{font-size:12px;color:rgba(245,240,232,0.3);width:20px;flex-shrink:0;font-weight:600;}
+.lesson-name{font-size:14px;color:rgba(245,240,232,0.7);line-height:1.35;flex:1;}
+.lesson-item.active .lesson-name{color:var(--cream);font-weight:600;}
+.lesson-dur{font-size:11px;color:rgba(245,240,232,0.25);flex-shrink:0;}
+.sidebar-progress{padding:16px 24px;border-top:1px solid rgba(255,255,255,0.06);margin-top:8px;}
+.progress-label{font-size:12px;color:rgba(245,240,232,0.4);margin-bottom:8px;display:flex;justify-content:space-between;}
+.progress-bar{background:rgba(255,255,255,0.08);border-radius:4px;height:5px;overflow:hidden;}
+.progress-fill{background:var(--gold);height:100%;border-radius:4px;transition:width .4s;}
+
+/* LESSON CONTENT */
+.course-content{padding:48px 56px;max-width:840px;}
+.lesson-header{margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid rgba(255,255,255,0.07);}
+.lesson-chapter-label{font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--gold);margin-bottom:10px;}
+.lesson-title{font-family:'Playfair Display',serif;font-size:clamp(26px,3vw,40px);font-weight:700;color:var(--cream);line-height:1.15;margin-bottom:10px;}
+.lesson-meta{font-size:13px;color:rgba(245,240,232,0.35);}
+
+.position-block{border-radius:12px;overflow:hidden;margin-bottom:32px;border:1px solid rgba(200,151,58,0.12);background:#111;}
+.position-image{width:100%;max-height:340px;object-fit:contain;display:block;background:#1e1814;}
+.position-caption{padding:12px 18px;font-size:13px;color:rgba(245,240,232,0.4);font-style:italic;border-top:1px solid rgba(255,255,255,0.05);}
+
+.lesson-body{font-size:16px;line-height:1.8;color:rgba(245,240,232,0.8);}
+.lesson-body h3{font-family:'Playfair Display',serif;font-size:21px;font-weight:700;color:var(--cream);margin:28px 0 12px;}
+.lesson-body p{margin-bottom:16px;}
+.lesson-body strong{color:var(--cream);font-weight:600;}
+.move{display:inline-block;background:rgba(200,151,58,0.15);color:var(--gold);padding:1px 7px;border-radius:4px;font-family:monospace;font-size:14px;font-weight:600;margin:0 2px;}
+
+.key-moves{background:rgba(200,151,58,0.07);border:1px solid rgba(200,151,58,0.2);border-radius:10px;padding:22px 26px;margin:24px 0;}
+.key-moves h4{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:14px;}
+.move-line{display:flex;align-items:baseline;gap:12px;margin-bottom:10px;font-size:15px;}
+.move-line .moves{font-family:monospace;color:var(--gold);font-weight:700;font-size:14px;flex-shrink:0;}
+.move-line .explanation{color:rgba(245,240,232,0.6);}
+
+.lesson-nav{display:flex;justify-content:space-between;align-items:center;margin-top:48px;padding-top:28px;border-top:1px solid rgba(255,255,255,0.07);}
+.lesson-nav-btn{display:flex;align-items:center;gap:8px;padding:12px 22px;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;transition:all .2s;border:none;}
+.btn-prev{background:rgba(255,255,255,0.06);color:var(--cream);}
+.btn-prev:hover:not(:disabled){background:rgba(255,255,255,0.1);}
+.btn-next{background:var(--gold);color:var(--dark);}
+.btn-next:hover:not(:disabled){background:var(--gold-light);transform:translateY(-1px);}
+.lesson-nav-btn:disabled{opacity:.3;cursor:default;}
+.complete-btn{background:rgba(200,151,58,0.1);border:1px solid rgba(200,151,58,0.25);color:var(--gold);padding:10px 20px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;transition:all .2s;}
+.complete-btn:hover{background:rgba(200,151,58,0.2);}
+.complete-btn.done{background:rgba(200,151,58,0.18);border-color:rgba(200,151,58,0.4);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fade-in{animation:fadeUp .3s ease both;}
+
+@media(max-width:900px){
+  nav{padding:16px 20px;}
+  nav ul{display:none;}
+  .hero{grid-template-columns:1fr;padding:110px 24px 60px;gap:40px;}
+  .hero-board{order:-1;}
+  .chessboard{grid-template-columns:repeat(8,38px);grid-template-rows:repeat(8,38px);width:304px;height:304px;}
+  .sq{width:38px;height:38px;}
+  .rank-label{height:38px;}
+  .file-label{width:38px;}
+  .section{padding:60px 24px;}
+  .courses-grid{grid-template-columns:1fr;}
+  .training-grid{grid-template-columns:1fr;}
+  footer{grid-template-columns:1fr;padding:40px 24px;gap:28px;}
+  .footer-bottom{padding:14px 24px;}
+  .course-layout{grid-template-columns:1fr;}
+  .course-sidebar{position:static;height:auto;}
+  .course-content{padding:28px 20px;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo" onclick="showHome()">King<span>side</span></div>
+  <ul>
+    <li><a href="#" onclick="showHome();return false;">Home</a></li>
+    <li><a href="#" onclick="showHome();setTimeout(()=>document.getElementById('courses').scrollIntoView({behavior:'smooth'}),80);return false;">Courses</a></li>
+    <li><a href="#" onclick="showHome();setTimeout(()=>document.getElementById('training').scrollIntoView({behavior:'smooth'}),80);return false;">Training</a></li>
+  </ul>
+  <button class="nav-cta" onclick="showHome();setTimeout(()=>document.getElementById('courses').scrollIntoView({behavior:'smooth'}),80);">Start Learning</button>
+</nav>
+
+<!-- ═══ HOME ═══ -->
+<div id="page-home">
+
+<section class="hero">
+  <div class="hero-text">
+    <div class="section-label">Free Chess Mastery</div>
+    <h1>Learn Chess<br>the <em>Right</em> Way</h1>
+    <p>Video courses, opening theory, and training games — completely free. Go from beginner to club player.</p>
+    <div class="hero-actions">
+      <button class="btn-primary" onclick="document.getElementById('courses').scrollIntoView({behavior:'smooth'})">Browse Courses</button>
+      <button class="btn-ghost" onclick="document.getElementById('training').scrollIntoView({behavior:'smooth'})">Try Training →</button>
+    </div>
+    <div class="hero-stats">
+      <div><span class="stat-num">70+</span><span class="stat-label">Courses</span></div>
+      <div><span class="stat-num">12K+</span><span class="stat-label">Students</span></div>
+      <div><span class="stat-num">$0</span><span class="stat-label">Forever</span></div>
+    </div>
+  </div>
+  <div class="hero-board">
+    <div class="board-wrap">
+      <div class="board-badge">♟ Live Board</div>
+      <div class="board-outer">
+        <div class="board-with-ranks">
+          <div class="board-ranks" id="ranks"></div>
+          <div class="chessboard" id="board"></div>
+        </div>
+        <div class="board-files" id="files"></div>
+      </div>
+    </div>
+    <p class="board-note">Hover to explore the position</p>
+  </div>
+</section>
+
+<section class="section courses-section" id="courses">
+  <div class="section-label">Structured Learning</div>
+  <div class="section-title">Pick Your Weapon</div>
+  <div class="section-sub">Click any course to start learning immediately — no signup, no payment, ever.</div>
+  <div class="courses-grid" id="courses-grid"></div>
+</section>
+
+<div class="free-banner">
+  <div style="max-width:640px;margin:0 auto;">
+    <div style="font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--brown);margin-bottom:14px;">No catch. No credit card.</div>
+    <h2>100% Free,<br><em>Forever.</em></h2>
+    <p>Every course, every training game, every lesson. Chess education should be accessible to everyone.</p>
+    <button class="btn-primary" onclick="document.getElementById('courses').scrollIntoView({behavior:'smooth'})">Start Learning Now</button>
+  </div>
+</div>
+
+<section class="section" id="training" style="background:radial-gradient(ellipse 70% 60% at 80% 50%,rgba(61,43,31,0.6) 0%,transparent 60%),var(--dark);">
+  <div class="section-label">Sharpen Your Skills</div>
+  <div class="section-title">Training Games</div>
+  <div class="section-sub">Novel exercises to build visualization, pattern recognition, and decision making.</div>
+  <div class="training-grid">
+    <div class="training-card"><span class="training-icon">🧠</span><div class="training-name">Flash Memory</div><div class="training-desc">A position flashes briefly. Can you remember every piece? Trains board vision.</div><span class="training-badge">Memory →</span></div>
+    <div class="training-card"><span class="training-icon">👁</span><div class="training-name">Visualization</div><div class="training-desc">See moves in notation. Animate them mentally on a blank board — then verify.</div><span class="training-badge">Calculation →</span></div>
+    <div class="training-card"><span class="training-icon">🎯</span><div class="training-name">Anti-Puzzle</div><div class="training-desc">Decide if a winning move exists. Not every position has a tactic — just like real games.</div><span class="training-badge">Tactics →</span></div>
+    <div class="training-card"><span class="training-icon">🛡</span><div class="training-name">Defense!</div><div class="training-desc">You're under attack. Limit your losses and survive under pressure.</div><span class="training-badge">Survival →</span></div>
+    <div class="training-card"><span class="training-icon">⚡</span><div class="training-name">Think Fast</div><div class="training-desc">Winning position, limited time. Make the right move before the clock runs out.</div><span class="training-badge">Speed →</span></div>
+    <div class="training-card"><span class="training-icon">🗺</span><div class="training-name">Coordinate Spotter</div><div class="training-desc">Find squares instantly. Board awareness is the foundation of everything.</div><span class="training-badge">Awareness →</span></div>
+  </div>
+</section>
+
+<footer id="about">
+  <div class="footer-brand">
+    <div class="logo">King<span>side</span></div>
+    <p>Free chess learning for everyone. Courses, training tools, and a community to help every player improve.</p>
+  </div>
+  <div><h4>Courses</h4><ul><li><a href="#">Fundamentals</a></li><li><a href="#">Openings</a></li><li><a href="#">Endgames</a></li><li><a href="#">Tactics</a></li></ul></div>
+  <div><h4>Train</h4><ul><li><a href="#">Flash Memory</a></li><li><a href="#">Visualization</a></li><li><a href="#">Anti-Puzzle</a></li><li><a href="#">Think Fast</a></li></ul></div>
+</footer>
+<div class="footer-bottom"><span>© 2025 Kingside. All rights reserved.</span><span>Privacy · Terms</span></div>
+
+</div>
+
+<!-- ═══ COURSE PAGE ═══ -->
+<div id="page-course">
+  <div class="course-layout">
+    <aside class="course-sidebar">
+      <div class="sidebar-header">
+        <button class="sidebar-back" onclick="showHome()">← All Courses</button>
+        <div class="sidebar-course-title" id="sidebar-title"></div>
+        <div class="sidebar-level" id="sidebar-level"></div>
+      </div>
+      <div class="sidebar-chapters" id="sidebar-chapters"></div>
+      <div class="sidebar-progress">
+        <div class="progress-label"><span>Your progress</span><span id="progress-pct">0%</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      </div>
+    </aside>
+    <main class="course-content" id="course-content"></main>
+  </div>
+</div>
+
+<script>
+// ── COURSE DATA ──
+const COURSES = [
+  {
+    id:'fundamentals', title:'Chess Fundamentals', level:'Beginner', levelColor:'#C8973A', hours:'6 hours',
+    desc:'Rules, tactics, piece values, and your first real strategies. The perfect starting point.',
+    image:'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Starting_position_of_a_chess_game.png/400px-Starting_position_of_a_chess_game.png',
+    thumbBg:'linear-gradient(135deg,#1A1410,#3D2B1F)',
+    chapters:[
+      { title:'Chapter 1: The Board & Pieces', lessons:[
+        { title:'The Chessboard', duration:'8 min',
+          image:'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Starting_position_of_a_chess_game.png/400px-Starting_position_of_a_chess_game.png',
+          imageCaption:'The starting position. White occupies rows 1–2, Black rows 7–8.',
+          chapterLabel:'Chapter 1: The Board & Pieces',
+          body:`<p>Chess is played on an <strong>8×8 board</strong> of 64 alternating light and dark squares. Always set up the board with a light square in your bottom-right corner — <em>"light on right."</em></p>
+<p><strong>Files</strong> (columns) run vertically, labeled <span class="move">a–h</span> left to right from White's perspective. <strong>Ranks</strong> (rows) run horizontally, labeled <span class="move">1–8</span> from White's side. Every square has a unique name — bottom-left is <span class="move">a1</span>, top-right is <span class="move">h8</span>.</p>
+<h3>Setting Up the Pieces</h3>
+<p>The queen always starts on her own color: <strong>White queen on d1</strong> (light square), Black queen on d8 (dark square). Remember — <em>"queen on her own color."</em> Kings go beside them on e1 and e8.</p>`,
+          keyMoves:null },
+        { title:'How the Pieces Move', duration:'12 min',
+          image:'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Starting_position_of_a_chess_game.png/400px-Starting_position_of_a_chess_game.png',
+          imageCaption:'The six piece types: king, queen, rook, bishop, knight, pawn.',
+          chapterLabel:'Chapter 1: The Board & Pieces',
+          body:`<p>Each piece moves differently. Mastering these rules is your first task.</p>
+<h3>King — One square any direction</h3><p>The most important piece. If your king is trapped (checkmate), you lose. Protect it carefully.</p>
+<h3>Queen — Any direction, any distance</h3><p>The most powerful piece. Combines the rook and bishop. Handle it with care — losing your queen early is usually fatal.</p>
+<h3>Rook — Horizontal and vertical</h3><p>Moves any number of squares along a rank or file. Two rooks cooperating control massive amounts of the board.</p>
+<h3>Bishop — Diagonal only</h3><p>Each bishop stays on one color. The light-squared and dark-squared bishops complement each other.</p>
+<h3>Knight — L-shape jump</h3><p>Moves two squares in one direction then one square perpendicular. The <strong>only piece that can jump</strong> over others. Its unusual movement makes it tricky to see.</p>
+<h3>Pawn — Forward one square</h3><p>Moves one square forward, or two squares from its starting position. <strong>Captures diagonally forward.</strong> Can promote to any piece upon reaching the last rank.</p>`,
+          keyMoves:null }
+      ]},
+      { title:'Chapter 2: Basic Tactics', lessons:[
+        { title:'The Fork', duration:'10 min',
+          image:'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Chess_Knight_Fork_example.svg/400px-Chess_Knight_Fork_example.svg.png',
+          imageCaption:'A knight fork: one piece attacks two enemies simultaneously, forcing a loss of material.',
+          chapterLabel:'Chapter 2: Basic Tactics',
+          body:`<p>A <strong>fork</strong> occurs when one of your pieces attacks two or more enemy pieces at the same time. Your opponent can only move or defend one, so you win the other.</p>
+<p>The <strong>knight fork</strong> is the most common and deadly type. Because knights move in an L-shape, they attack squares no other piece covers from the same position.</p>
+<h3>The Royal Fork</h3>
+<p>The ultimate fork simultaneously attacks the king and queen. Your opponent must get the king out of check — leaving the queen free for capture. This wins a queen for a knight, a massive material advantage.</p>`,
+          keyMoves:{ title:'Classic Knight Fork', lines:[
+            {moves:'1. Nd5!', explanation:'The knight leaps forward, attacking the queen on f6 AND the rook on c7 at the same time.'},
+            {moves:'1... Qe6', explanation:'The queen must escape the attack — she has no choice.'},
+            {moves:'2. Nxc7', explanation:'White captures the rook. Black lost a rook for nothing.'}
+          ]}},
+        { title:'The Pin', duration:'10 min',
+          image:'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Pin_example.png/400px-Pin_example.png',
+          imageCaption:'A pin: the bishop on b3 pins the knight on c4 against the king on e7.',
+          chapterLabel:'Chapter 2: Basic Tactics',
+          body:`<p>A <strong>pin</strong> is when a sliding piece (bishop, rook, or queen) attacks an enemy piece that shields a more valuable piece behind it.</p>
+<p>An <strong>absolute pin</strong> means the shielded piece is the king — the pinned piece literally cannot move, because moving it would expose the king to check (illegal).</p>
+<p>A <strong>relative pin</strong> means moving the piece would lose something valuable but is technically legal. These require more judgment to exploit.</p>
+<h3>Exploiting a Pin</h3>
+<p>Once a piece is pinned, pile pressure on it. Attack the pinned piece with pawns or other pieces that are worth less — eventually the opponent can't defend it any more.</p>`,
+          keyMoves:null }
+      ]}
+    ]
+  },
+  {
+    id:'kings-indian', title:"King's Indian Defense", level:'Intermediate', levelColor:'#4CAF50', hours:'9 hours',
+    desc:"One of Black's most ambitious responses to 1.d4. Rich in dynamic counterattacking play.",
+    image:'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Kings_Indian_Defence.PNG/400px-Kings_Indian_Defence.PNG',
+    thumbBg:'linear-gradient(135deg,#1E3A2F,#2D5A3E)',
+    chapters:[
+      { title:'Chapter 1: Introduction', lessons:[
+        { title:"What is the King's Indian?", duration:'9 min',
+          image:'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Kings_Indian_Defence.PNG/400px-Kings_Indian_Defence.PNG',
+          imageCaption:"The King's Indian position after 1.d4 Nf6 2.c4 g6 3.Nc3 Bg7 4.e4 d6 5.Nf3 0-0.",
+          chapterLabel:'Chapter 1: Introduction',
+          body:`<p>The <strong>King's Indian Defense</strong> begins with <span class="move">1.d4 Nf6 2.c4 g6</span>. Black deliberately allows White to build a large pawn center, then counterattacks it dynamically.</p>
+<p>This was a favorite of world champions <strong>Bobby Fischer</strong> and <strong>Garry Kasparov</strong> — players who thrived in sharp, double-edged positions where both sides had winning chances.</p>
+<h3>The Big Idea</h3>
+<p>Black fianchettoes the bishop to g7, creating a powerful diagonal aimed at White's queenside. After <span class="move">...e5</span>, Black fights for the center from the inside — undermining White's pawns rather than directly contesting them.</p>`,
+          keyMoves:{ title:"King's Indian Setup", lines:[
+            {moves:'1.d4 Nf6 2.c4 g6', explanation:'Preparing the fianchetto — the hallmark of the KID.'},
+            {moves:'3.Nc3 Bg7 4.e4 d6', explanation:'Black fianchettoes. The bishop on g7 will become Black\'s most powerful piece.'},
+            {moves:'5.Nf3 0-0', explanation:'Black completes development and castles. The KID structure is set.'},
+            {moves:'6.Be2 e5', explanation:'Black immediately fights back in the center — the game begins.'}
+          ]}},
+        { title:'The Mar del Plata Attack', duration:'14 min',
+          image:'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Kings_Indian_Defence.PNG/400px-Kings_Indian_Defence.PNG',
+          imageCaption:'After 7.0-0 Nc6 8.d5 Ne7 — the most famous King\'s Indian position.',
+          chapterLabel:'Chapter 1: Introduction',
+          body:`<p>The <strong>Mar del Plata Variation</strong> is the most famous and sharp KID line: <span class="move">7.0-0 Nc6 8.d5 Ne7</span>. White closes the center and attacks on the queenside; Black attacks on the kingside.</p>
+<p>These are two-sided, racing positions. White advances c4-c5, trying to open files on the queenside. Black launches <span class="move">...Nf6-h5-f4</span> and <span class="move">...g5-g4-g3</span>, trying to crash through to the White king.</p>
+<h3>Who Gets There First?</h3>
+<p>In practice, Black's kingside attack is often faster. Kasparov used this variation to crush many strong opponents, including in famous games against Karpov. Understanding this race is fundamental to the KID.</p>`,
+          keyMoves:{ title:'Mar del Plata Mainline', lines:[
+            {moves:'7.0-0 Nc6 8.d5', explanation:'White closes the center — both sides will attack on opposite wings now.'},
+            {moves:'8...Ne7 9.Ne1', explanation:'White maneuvers to support the c4-c5 queenside advance.'},
+            {moves:'9...Nd7 10.Nd3', explanation:'White continues the queenside build-up.'},
+            {moves:'10...f5!', explanation:'Black launches the kingside attack. The race is on.'}
+          ]}}
+      ]}
+    ]
+  },
+  {
+    id:'caro-kann', title:'Caro-Kann Defense', level:'Intermediate', levelColor:'#5B9BD5', hours:'7 hours',
+    desc:'Solid, principled, and dangerous. Learn the complete Caro-Kann repertoire for Black.',
+    image:'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Caro-Kann_Defence.png/400px-Caro-Kann_Defence.png',
+    thumbBg:'linear-gradient(135deg,#1A2535,#243650)',
+    chapters:[
+      { title:'Chapter 1: Introduction', lessons:[
+        { title:'The Caro-Kann Explained', duration:'10 min',
+          image:'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Caro-Kann_Defence.png/400px-Caro-Kann_Defence.png',
+          imageCaption:'After 1.e4 c6 — Black prepares ...d5 while keeping the c8-bishop\'s diagonal open.',
+          chapterLabel:'Chapter 1: Introduction',
+          body:`<p>The <strong>Caro-Kann Defense</strong> begins with <span class="move">1.e4 c6</span>, immediately preparing <span class="move">2...d5</span> to challenge the center. Unlike the French Defense, Black's c8-bishop is not locked in by a pawn on e6.</p>
+<p>World champions <strong>Anatoly Karpov</strong> and <strong>Tigran Petrosian</strong> made this opening famous. It suits players who prefer solid, well-structured positions over double-edged chaos — though it can lead to very rich play.</p>
+<h3>Why It Works</h3>
+<p>After <span class="move">1.e4 c6 2.d4 d5</span>, Black has immediately equalized the center. The position is symmetrical in pawn structure, but Black has good piece activity and no real weaknesses — a foundation for a long, healthy game.</p>`,
+          keyMoves:{ title:'Main Caro-Kann Line', lines:[
+            {moves:'1.e4 c6 2.d4 d5', explanation:'Black directly challenges the center.'},
+            {moves:'3.Nc3 dxe4 4.Nxe4', explanation:'The Classical variation — White recaptures with the knight.'},
+            {moves:'4...Bf5!', explanation:'The signature move. Black develops the bishop before the pawns lock up.'},
+            {moves:'5.Ng3 Bg6', explanation:'The bishop retreats but remains active on g6.'}
+          ]}},
+        { title:'The Classical Variation', duration:'13 min',
+          image:'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Caro-Kann_Defence.png/400px-Caro-Kann_Defence.png',
+          imageCaption:'After 4...Bf5 — the Classical Caro-Kann. Black\'s light-squared bishop is already active outside the pawn chain.',
+          chapterLabel:'Chapter 1: Introduction',
+          body:`<p>The <strong>Classical Variation</strong> is the most popular Caro-Kann line. After <span class="move">4...Bf5 5.Ng3 Bg6 6.h4 h6 7.Nf3</span>, play often continues <span class="move">7...Nd7 8.h5 Bh7 9.Bd3 Bxd3 10.Qxd3</span>.</p>
+<p>White gets the bishop pair, but Black has a very solid position. Karpov showed that Black can play <span class="move">...e6, ...Ngf6, ...Bd6</span> and develop harmoniously.</p>
+<h3>Karpov's Blueprint</h3>
+<p>The key plan: develop all pieces, exchange the bishop on h7 for a minor piece if needed, castle kingside, and then play for small advantages in the endgame. Methodical, precise, and extremely difficult to beat.</p>`,
+          keyMoves:{ title:'Classical Caro-Kann Mainline', lines:[
+            {moves:'5.Ng3 Bg6 6.h4 h6', explanation:'Black must prevent h5 which would trap the bishop.'},
+            {moves:'7.Nf3 Nd7 8.h5 Bh7', explanation:'The bishop retreats — a typical Caro-Kann bishop.'},
+            {moves:'9.Bd3 Bxd3 10.Qxd3', explanation:'White has the bishop pair; Black has solidity.'},
+            {moves:'10...e6 11.Bf4 Bd6', explanation:'Black develops harmoniously. Equality is reached.'}
+          ]}}
+      ]}
+    ]
+  },
+  {
+    id:'sicilian', title:'Sicilian Najdorf', level:'Advanced', levelColor:'#E57373', hours:'12 hours',
+    desc:'The sharpest and most theoretically rich opening in chess. For the ambitious player.',
+    image:'https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Sicilian_Najdorf.png/400px-Sicilian_Najdorf.png',
+    thumbBg:'linear-gradient(135deg,#35201A,#5A3020)',
+    chapters:[
+      { title:'Chapter 1: The Foundation', lessons:[
+        { title:'Why the Sicilian?', duration:'8 min',
+          image:'https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Sicilian_Najdorf.png/400px-Sicilian_Najdorf.png',
+          imageCaption:'The Najdorf after 5...a6 — the most played position in all of chess.',
+          chapterLabel:'Chapter 1: The Foundation',
+          body:`<p>The <strong>Sicilian Defense</strong> (<span class="move">1.e4 c5</span>) is the single most played chess opening at all levels. By playing <span class="move">1...c5</span>, Black fights for the center asymmetrically, ensuring a complex, unbalanced game from move one.</p>
+<p>The <strong>Najdorf Variation</strong> (<span class="move">1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 a6</span>) was Bobby Fischer's secret weapon and Garry Kasparov's lifelong companion.</p>
+<h3>The Secret of 5...a6</h3>
+<p>The move <span class="move">5...a6</span> looks passive but is deeply clever. It prevents <span class="move">Nb5</span> (a common White idea with tempo), prepares <span class="move">...b5</span> queenside expansion, and gives Black <strong>maximum flexibility</strong> to choose a plan on the next move.</p>`,
+          keyMoves:{ title:'Najdorf Move Order', lines:[
+            {moves:'1.e4 c5 2.Nf3 d6', explanation:'Black prepares ...Nf6 and will open the center.'},
+            {moves:'3.d4 cxd4 4.Nxd4', explanation:'White opens the center and gains space.'},
+            {moves:'4...Nf6 5.Nc3 a6', explanation:'The Najdorf. Flexible and rich in possibilities.'}
+          ]}},
+        { title:'The English Attack', duration:'16 min',
+          image:'https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Sicilian_Najdorf.png/400px-Sicilian_Najdorf.png',
+          imageCaption:'White plays f3, Be3, g4 — the aggressive English Attack against the Najdorf.',
+          chapterLabel:'Chapter 1: The Foundation',
+          body:`<p>The <strong>English Attack</strong> (<span class="move">6.Be3 e5 7.Nb3 Be6 8.f3</span>) is White's most aggressive system against the Najdorf. White builds up for a massive kingside pawn storm with g4-g5, while Black counterattacks on the queenside.</p>
+<p>Both sides typically castle on <strong>opposite wings</strong> — White queenside, Black kingside. This creates a direct attacking race. The player who breaks through first wins.</p>
+<h3>Black's Counterplay</h3>
+<p>Black's queenside attack uses the open c-file and the pawn lever <span class="move">...a5-a4</span> to open lines against the White king. Whoever's attack is faster typically wins — calculation and concrete knowledge of the position is essential.</p>`,
+          keyMoves:{ title:'English Attack Mainline', lines:[
+            {moves:'6.Be3 e5 7.Nb3', explanation:'The knight retreats to avoid exchanges.'},
+            {moves:'7...Be6 8.f3', explanation:'Preparing g4. White is committing to a kingside attack.'},
+            {moves:'8...h5!?', explanation:'Black prevents g4 immediately — a dynamic counter.'},
+            {moves:'9.Qd2 Nbd7 10.0-0-0', explanation:'Opposite-wing castling. Maximum tension. The race is on.'}
+          ]}}
+      ]}
+    ]
+  },
+  {
+    id:'endgames', title:'Endgame Mastery', level:'Intermediate', levelColor:'#AB47BC', hours:'8 hours',
+    desc:'From rook endings to king and pawn structures — learn to convert your winning positions.',
+    image:'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/KPKEndgame.png/400px-KPKEndgame.png',
+    thumbBg:'linear-gradient(135deg,#2A2035,#453060)',
+    chapters:[
+      { title:'Chapter 1: King & Pawn Endings', lessons:[
+        { title:'Activate Your King', duration:'11 min',
+          image:'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/KPKEndgame.png/400px-KPKEndgame.png',
+          imageCaption:'King and Pawn vs King — the most fundamental endgame in chess.',
+          chapterLabel:'Chapter 1: King & Pawn Endings',
+          body:`<p>In the endgame, the king stops hiding and becomes a <strong>powerful fighting piece</strong>. The most important endgame principle: <strong>activate your king immediately.</strong></p>
+<p>The King and Pawn vs King endgame is the foundation of all endgame knowledge. The key concept is <strong>opposition</strong> — when two kings face each other with one square between them, the player who is NOT to move has the opposition and the advantage.</p>
+<h3>The Rule of the Square</h3>
+<p>To see if a lone king can catch a passed pawn: draw an imaginary square from the pawn to its promotion square. If the defending king can step into that square on their turn, they catch the pawn. Otherwise, the pawn promotes.</p>`,
+          keyMoves:{ title:'Opposition in Practice', lines:[
+            {moves:'1.Ke5! Ke7', explanation:'White seizes the opposition — Black must give ground.'},
+            {moves:'2.d5 Kd7 3.Ke6!', explanation:'The key move — NOT 3.d6? which stalemates Black.'},
+            {moves:'3...Ke8 4.d6 Kf8', explanation:'Black is pushed back to the corner.'},
+            {moves:'5.d7 Kg7 6.Ke7', explanation:'The pawn promotes. White wins.'}
+          ]}}
+      ]}
+    ]
+  },
+  {
+    id:'tactics', title:'Tactical Patterns', level:'All Levels', levelColor:'#66BB6A', hours:'10 hours',
+    desc:'Forks, pins, skewers, discovered attacks — master the motifs that decide games.',
+    image:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Discovered_attack_example.png/400px-Discovered_attack_example.png',
+    thumbBg:'linear-gradient(135deg,#203025,#2E4835)',
+    chapters:[
+      { title:'Chapter 1: Winning Material', lessons:[
+        { title:'Discovered Attacks', duration:'10 min',
+          image:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Discovered_attack_example.png/400px-Discovered_attack_example.png',
+          imageCaption:'A discovered attack: moving one piece unveils a devastating attack by the piece behind it.',
+          chapterLabel:'Chapter 1: Winning Material',
+          body:`<p>A <strong>discovered attack</strong> happens when moving one piece reveals an attack by another piece that was behind it. The moved piece can create its own threat simultaneously, making it nearly impossible to defend both attacks at once.</p>
+<p>A <strong>discovered check</strong> is even more powerful — because the opponent must respond to the check first, the moving piece can go literally anywhere, even to a terrible square, since the opponent is forced to deal with the check.</p>
+<h3>The Windmill</h3>
+<p>The most spectacular version: a rook delivers check, the king moves, a bishop gives discovered check, the king moves again — and the rook captures piece after piece. One of the most beautiful themes in chess, seen in Carlsen vs. Karjakin and many other famous games.</p>`,
+          keyMoves:{ title:'Discovered Attack Pattern', lines:[
+            {moves:'1. Nf6+!', explanation:'The knight moves with check, unveiling the bishop on c1 attacking the queen.'},
+            {moves:'1... Kh8', explanation:'Black must escape the check — the queen is temporarily undefended.'},
+            {moves:'2. Nxd7', explanation:'Now White captures the queen. A piece won for free.'}
+          ]}}
+      ]}
+    ]
+  }
+];
+
+// ── STATE ──
+let currentCourse = null;
+let currentLessonIdx = 0;
+let completedLessons = {};
+
+function flatLessons(course){ return course.chapters.flatMap(ch => ch.lessons); }
+
+// ── PAGE ROUTING ──
+function showHome(){
+  document.getElementById('page-home').style.display='block';
+  document.getElementById('page-course').style.display='none';
+  window.scrollTo(0,0);
+}
+
+function showCourse(courseId, lessonIdx=0){
+  currentCourse = COURSES.find(c=>c.id===courseId);
+  currentLessonIdx = lessonIdx;
+  document.getElementById('page-home').style.display='none';
+  document.getElementById('page-course').style.display='block';
+  window.scrollTo(0,0);
+  renderSidebar();
+  renderLesson();
+}
+
+// ── SIDEBAR ──
+function renderSidebar(){
+  document.getElementById('sidebar-title').textContent = currentCourse.title;
+  document.getElementById('sidebar-level').textContent = currentCourse.level;
+  const flat = flatLessons(currentCourse);
+  const done = completedLessons[currentCourse.id]||{};
+  const pct = flat.length ? Math.round(Object.keys(done).length/flat.length*100) : 0;
+  document.getElementById('progress-pct').textContent = pct+'%';
+  document.getElementById('progress-fill').style.width = pct+'%';
+  let html='', idx=0;
+  currentCourse.chapters.forEach(ch=>{
+    html+=`<div><div class="chapter-title">${ch.title}</div>`;
+    ch.lessons.forEach(lesson=>{
+      const i=idx, active=i===currentLessonIdx, isDone=!!done[i];
+      html+=`<div class="lesson-item ${active?'active':''}" onclick="goToLesson(${i})">
+        <span class="lesson-num" style="${isDone?'color:var(--gold)':''}">${isDone?'✓':(i+1)}</span>
+        <span class="lesson-name">${lesson.title}</span>
+        <span class="lesson-dur">${lesson.duration}</span>
+      </div>`;
+      idx++;
+    });
+    html+='</div>';
+  });
+  document.getElementById('sidebar-chapters').innerHTML=html;
+}
+
+function goToLesson(idx){
+  currentLessonIdx=idx;
+  renderSidebar(); renderLesson();
+  window.scrollTo(0,0);
+}
+
+// ── LESSON ──
+function renderLesson(){
+  const flat=flatLessons(currentCourse);
+  const lesson=flat[currentLessonIdx];
+  const isDone=!!(completedLessons[currentCourse.id]||{})[currentLessonIdx];
+  let kmHTML='';
+  if(lesson.keyMoves){
+    kmHTML=`<div class="key-moves"><h4>📋 ${lesson.keyMoves.title}</h4>
+      ${lesson.keyMoves.lines.map(l=>`<div class="move-line"><span class="moves">${l.moves}</span><span class="explanation">${l.explanation}</span></div>`).join('')}
+    </div>`;
+  }
+  document.getElementById('course-content').innerHTML=`<div class="fade-in">
+    <div class="lesson-header">
+      <div class="lesson-chapter-label">${lesson.chapterLabel}</div>
+      <div class="lesson-title">${lesson.title}</div>
+      <div class="lesson-meta">${currentCourse.title} &nbsp;·&nbsp; ${lesson.duration}</div>
+    </div>
+    <div class="position-block">
+      <img class="position-image" src="${lesson.image}" alt="${lesson.title}" onerror="this.style.background='#1e1814';this.style.minHeight='200px';">
+      <div class="position-caption">${lesson.imageCaption||''}</div>
+    </div>
+    <div class="lesson-body">${lesson.body}${kmHTML}</div>
+    <div class="lesson-nav">
+      <button class="lesson-nav-btn btn-prev" onclick="prevLesson()" ${currentLessonIdx===0?'disabled':''}>← Previous</button>
+      <button class="complete-btn ${isDone?'done':''}" onclick="markComplete()">${isDone?'✓ Completed':'Mark Complete'}</button>
+      <button class="lesson-nav-btn btn-next" onclick="nextLesson()" ${currentLessonIdx===flat.length-1?'disabled':''}>Next →</button>
+    </div>
+  </div>`;
+}
+
+function markComplete(){
+  if(!completedLessons[currentCourse.id]) completedLessons[currentCourse.id]={};
+  completedLessons[currentCourse.id][currentLessonIdx]=true;
+  renderSidebar(); renderLesson();
+}
+function nextLesson(){
+  const flat=flatLessons(currentCourse);
+  if(currentLessonIdx<flat.length-1){ currentLessonIdx++; renderSidebar(); renderLesson(); window.scrollTo(0,0); }
+}
+function prevLesson(){
+  if(currentLessonIdx>0){ currentLessonIdx--; renderSidebar(); renderLesson(); window.scrollTo(0,0); }
+}
+
+// ── COURSES GRID ──
+function renderCoursesGrid(){
+  document.getElementById('courses-grid').innerHTML=COURSES.map(c=>`
+    <div class="course-card" onclick="showCourse('${c.id}')">
+      <div class="course-thumb" style="background:${c.thumbBg}">
+        <img src="${c.image}" alt="${c.title}" onerror="this.style.display='none'">
+        <div class="course-thumb-overlay"></div>
+        <div class="course-thumb-badge">${c.level}</div>
+      </div>
+      <div class="course-body">
+        <div class="course-level" style="color:${c.levelColor}">${c.level}</div>
+        <div class="course-title">${c.title}</div>
+        <div class="course-desc">${c.desc}</div>
+        <div class="course-footer">
+          <span class="course-hours">📹 ${c.hours}</span>
+          <button class="course-start-btn">Start Course →</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+// ── HERO BOARD ──
+const BASE='https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/';
+function pieceSVG(type,color){ return `<img src="${BASE}${color}${type}.svg" width="44" height="44" style="display:block;pointer-events:none;" draggable="false">`; }
+const INIT=['rnbqkbnr','pppppppp','        ','        ','    P   ','  N     ','PPPP PPP','R BQKBNR'];
+
+const ranksEl=document.getElementById('ranks');
+for(let r=8;r>=1;r--){const d=document.createElement('div');d.className='rank-label';d.textContent=r;ranksEl.appendChild(d);}
+const filesEl=document.getElementById('files');
+'abcdefgh'.split('').forEach(f=>{const d=document.createElement('div');d.className='file-label';d.textContent=f;filesEl.appendChild(d);});
+
+const boardEl=document.getElementById('board');
+let highlighted=[];
+function renderBoard(){
+  boardEl.innerHTML='';
+  for(let row=0;row<8;row++){
+    for(let col=0;col<8;col++){
+      const sq=document.createElement('div');
+      const isHL=highlighted.some(h=>h[0]===row&&h[1]===col);
+      sq.className=`sq ${(row+col)%2===0?'light':'dark'} ${isHL?'highlight':''}`;
+      const ch=INIT[row]?.[col];
+      if(ch&&ch!==' ') sq.innerHTML=pieceSVG(ch.toUpperCase(),ch===ch.toUpperCase()?'w':'b');
+      sq.addEventListener('mouseenter',()=>{ highlighted=[[row,col]]; if(row===4&&col===4) highlighted.push([3,4],[2,4],[3,3]); renderBoard(); });
+      boardEl.appendChild(sq);
+    }
+  }
+}
+boardEl.addEventListener('mouseleave',()=>{highlighted=[];renderBoard();});
+
+renderCoursesGrid();
+renderBoard();
+</script>
+</body>
+</html>

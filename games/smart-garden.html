@@ -1,0 +1,2222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Official — Smart Garden App</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap');
+
+    :root {
+      --forest: #0f2318;
+      --deep: #152d1f;
+      --moss: #1e4030;
+      --sage: #2d6045;
+      --fern: #4a8a60;
+      --leaf: #72b886;
+      --mint: #a8d4b4;
+      --mist: #d8eede;
+      --cream: #f4f0e8;
+      --gold: #c8a040;
+      --amber: #e8b850;
+      --sky: #6aaec0;
+      --petal: #d48080;
+      --red: #e06060;
+      --glass: rgba(255, 255, 255, 0.05);
+      --glass-2: rgba(255, 255, 255, 0.09);
+      --border: rgba(114, 184, 134, 0.15);
+      --border-2: rgba(114, 184, 134, 0.28);
+      --shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+      background: var(--forest);
+      color: var(--cream);
+      font-family: "DM Sans", sans-serif;
+    }
+
+    body {
+      overflow-x: hidden;
+    }
+
+    #bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 70% 50% at 15% 15%, rgba(45, 96, 69, 0.35) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 70% at 85% 85%, rgba(30, 64, 48, 0.4) 0%, transparent 55%),
+        var(--forest);
+    }
+
+    .leaf-float {
+      position: fixed;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.08;
+      animation: leaffall linear infinite;
+    }
+
+    @keyframes leaffall {
+      0% {
+        transform: translateY(-60px) rotate(0deg) translateX(0);
+        opacity: 0.06;
+      }
+      50% {
+        transform: translateY(52vh) rotate(180deg) translateX(26px);
+        opacity: 0.1;
+      }
+      100% {
+        transform: translateY(110vh) rotate(360deg) translateX(-18px);
+        opacity: 0;
+      }
+    }
+
+    #app {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 440px;
+      min-height: 100vh;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      background: rgba(15, 35, 24, 0.24);
+      backdrop-filter: blur(14px);
+    }
+
+    .screen {
+      display: none;
+      flex-direction: column;
+      min-height: 100vh;
+      animation: fadeUp 0.35s ease;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    #s-login {
+      justify-content: center;
+      align-items: center;
+      padding: 2rem 1.5rem;
+    }
+
+    .login-top {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .login-logo {
+      display: block;
+      font-size: 4.6rem;
+      margin-bottom: 0.6rem;
+      animation: breathe 4s ease-in-out infinite;
+    }
+
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+    }
+
+    .login-brand {
+      font-family: "DM Serif Display", serif;
+      font-style: italic;
+      font-size: 2.85rem;
+      color: var(--leaf);
+      line-height: 1;
+    }
+
+    .login-sub {
+      margin-top: 0.45rem;
+      font-size: 0.75rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--fern);
+      font-weight: 300;
+    }
+
+    .login-card,
+    .glass-card,
+    .plant-card,
+    .post-card,
+    .tool-card,
+    .about-card,
+    .achievement-card,
+    .doctor-card {
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      backdrop-filter: blur(20px);
+      box-shadow: var(--shadow);
+    }
+
+    .login-card {
+      width: 100%;
+      padding: 1.7rem 1.4rem;
+    }
+
+    .lbl {
+      display: block;
+      margin-bottom: 0.38rem;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--fern);
+      font-weight: 500;
+    }
+
+    .inp,
+    .note-area {
+      width: 100%;
+      margin-bottom: 0.95rem;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--cream);
+      padding: 0.82rem 1rem;
+      font: inherit;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .inp::placeholder,
+    .note-area::placeholder {
+      color: rgba(244, 240, 232, 0.28);
+    }
+
+    .inp:focus,
+    .note-area:focus {
+      border-color: var(--fern);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .note-area {
+      min-height: 88px;
+      resize: vertical;
+    }
+
+    .btn-primary,
+    .btn-ghost,
+    .mini-btn {
+      width: 100%;
+      border: none;
+      border-radius: 14px;
+      padding: 0.9rem;
+      font: inherit;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.2s, background 0.2s;
+    }
+
+    .btn-primary {
+      color: var(--cream);
+      background: linear-gradient(135deg, var(--sage), var(--moss));
+      box-shadow: 0 4px 22px rgba(45, 96, 69, 0.45);
+    }
+
+    .btn-primary:hover,
+    .mini-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn-ghost {
+      color: var(--leaf);
+      background: transparent;
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover {
+      background: rgba(114, 184, 134, 0.1);
+      border-color: var(--leaf);
+    }
+
+    .or-div,
+    .login-note {
+      text-align: center;
+      color: var(--fern);
+    }
+
+    .or-div {
+      margin: 0.8rem 0;
+      font-size: 0.75rem;
+      opacity: 0.55;
+    }
+
+    .login-note {
+      margin-top: 1.2rem;
+      font-size: 0.74rem;
+      opacity: 0.65;
+    }
+
+    .app-hdr {
+      padding: 0.95rem 1.2rem 0.55rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .hdr-brand {
+      font-family: "DM Serif Display", serif;
+      font-style: italic;
+      font-size: 1.55rem;
+      color: var(--leaf);
+      letter-spacing: -0.02em;
+    }
+
+    .hdr-icons {
+      display: flex;
+      gap: 0.45rem;
+    }
+
+    .hdr-btn {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border-radius: 11px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      cursor: pointer;
+    }
+
+    .hdr-btn:hover {
+      background: var(--glass-2);
+    }
+
+    .tab-body {
+      flex: 1;
+      overflow-y: auto;
+      padding-bottom: 6rem;
+    }
+
+    .tab-body::-webkit-scrollbar {
+      width: 3px;
+    }
+
+    .tab-body::-webkit-scrollbar-thumb {
+      background: rgba(114, 184, 134, 0.24);
+      border-radius: 3px;
+    }
+
+    .greeting,
+    .section,
+    .weather-card,
+    .hero-card,
+    .stats-row,
+    .actions-grid,
+    .plants-row,
+    .reminders,
+    .garden-grid,
+    .community-list,
+    .more-grid,
+    .achievements,
+    .about-wrap,
+    .profile-block {
+      padding-left: 1.2rem;
+      padding-right: 1.2rem;
+    }
+
+    .greeting {
+      padding-top: 0.2rem;
+    }
+
+    .g-sub,
+    .eyebrow {
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--fern);
+    }
+
+    .g-name,
+    .section-title,
+    .hero-title {
+      font-family: "DM Serif Display", serif;
+      color: var(--cream);
+    }
+
+    .g-name {
+      margin-top: 0.15rem;
+      font-size: 1.9rem;
+      line-height: 1.1;
+    }
+
+    .hero-card {
+      margin: 0.9rem 1.2rem 0;
+      padding: 1rem 1rem 1.05rem;
+      background: linear-gradient(135deg, rgba(45, 96, 69, 0.34), rgba(30, 64, 48, 0.24));
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    .hero-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.8rem;
+    }
+
+    .hero-title {
+      font-size: 1.38rem;
+    }
+
+    .hero-copy {
+      margin-top: 0.28rem;
+      color: var(--mint);
+      font-size: 0.8rem;
+      line-height: 1.55;
+    }
+
+    .hero-badge {
+      padding: 0.28rem 0.7rem;
+      border-radius: 999px;
+      background: rgba(200, 160, 64, 0.16);
+      border: 1px solid rgba(200, 160, 64, 0.24);
+      color: var(--gold);
+      font-size: 0.68rem;
+      white-space: nowrap;
+    }
+
+    .weather-card {
+      margin-top: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.95rem;
+      background: linear-gradient(135deg, rgba(106, 174, 192, 0.16), rgba(74, 138, 96, 0.18));
+      border: 1px solid rgba(106, 174, 192, 0.22);
+      border-radius: 18px;
+      padding-top: 1rem;
+      padding-bottom: 1rem;
+    }
+
+    .w-icon {
+      font-size: 2.5rem;
+    }
+
+    .w-temp {
+      font-family: "DM Serif Display", serif;
+      font-size: 1.65rem;
+      color: var(--sky);
+    }
+
+    .w-desc {
+      margin-top: 0.1rem;
+      color: var(--mint);
+      font-size: 0.74rem;
+      line-height: 1.45;
+    }
+
+    .w-badge {
+      padding: 0.28rem 0.72rem;
+      border-radius: 20px;
+      background: rgba(200, 160, 64, 0.17);
+      border: 1px solid rgba(200, 160, 64, 0.28);
+      color: var(--gold);
+      font-size: 0.68rem;
+      white-space: nowrap;
+    }
+
+    .section {
+      margin: 1.15rem 0 0.7rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .section-title {
+      font-size: 1.05rem;
+    }
+
+    .section-link {
+      color: var(--fern);
+      font-size: 0.74rem;
+      cursor: pointer;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 0.65rem;
+      margin-top: 0.15rem;
+    }
+
+    .stat-box {
+      flex: 1;
+      padding: 0.82rem 0.7rem;
+      text-align: center;
+      border-radius: 15px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+    }
+
+    .stat-num {
+      font-family: "DM Serif Display", serif;
+      font-size: 1.55rem;
+      color: var(--leaf);
+      line-height: 1;
+    }
+
+    .stat-lbl {
+      margin-top: 0.22rem;
+      color: var(--fern);
+      font-size: 0.66rem;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    .actions-grid,
+    .more-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.72rem;
+    }
+
+    .tool-card {
+      padding: 1rem 0.95rem;
+      cursor: pointer;
+      transition: transform 0.2s, background 0.2s, border-color 0.2s;
+    }
+
+    .tool-card:hover,
+    .plant-card:hover,
+    .post-card:hover,
+    .achievement-card:hover {
+      transform: translateY(-3px);
+      background: var(--glass-2);
+      border-color: var(--border-2);
+    }
+
+    .tool-icon {
+      display: block;
+      font-size: 1.72rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .tool-name {
+      font-size: 0.83rem;
+      font-weight: 500;
+      margin-bottom: 0.14rem;
+      color: var(--cream);
+    }
+
+    .tool-sub {
+      color: var(--fern);
+      font-size: 0.69rem;
+      line-height: 1.4;
+    }
+
+    .plants-row,
+    .achievements {
+      display: flex;
+      gap: 0.75rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .plants-row::-webkit-scrollbar,
+    .achievements::-webkit-scrollbar {
+      display: none;
+    }
+
+    .plant-card,
+    .achievement-card {
+      min-width: 128px;
+      flex-shrink: 0;
+      padding: 0.95rem 0.85rem;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .pc-emoji,
+    .ach-icon {
+      display: block;
+      text-align: center;
+      margin-bottom: 0.35rem;
+    }
+
+    .pc-emoji {
+      font-size: 2.25rem;
+    }
+
+    .pc-name,
+    .ach-name {
+      text-align: center;
+      color: var(--cream);
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .pc-status,
+    .ach-desc,
+    .mini-copy {
+      margin-top: 0.22rem;
+      color: var(--fern);
+      font-size: 0.68rem;
+      text-align: center;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      display: inline-block;
+      border-radius: 50%;
+      background: var(--leaf);
+      margin-right: 0.25rem;
+    }
+
+    .dot.warn {
+      background: var(--amber);
+    }
+
+    .dot.danger {
+      background: var(--red);
+    }
+
+    .moisture-bar {
+      height: 3px;
+      margin-top: 0.48rem;
+      background: rgba(114, 184, 134, 0.15);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .moisture-fill {
+      height: 100%;
+      border-radius: inherit;
+    }
+
+    .reminders {
+      display: grid;
+      gap: 0.56rem;
+    }
+
+    .rem-item,
+    .profile-block,
+    .doctor-card {
+      border-radius: 15px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+    }
+
+    .rem-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.82rem 0.92rem;
+    }
+
+    .rem-icon {
+      font-size: 1.3rem;
+      flex-shrink: 0;
+    }
+
+    .rem-info {
+      flex: 1;
+    }
+
+    .rem-task {
+      font-size: 0.85rem;
+      color: var(--cream);
+      font-weight: 500;
+    }
+
+    .rem-time {
+      margin-top: 0.08rem;
+      color: var(--fern);
+      font-size: 0.7rem;
+    }
+
+    .rem-badge,
+    .mini-badge {
+      padding: 0.18rem 0.55rem;
+      border-radius: 8px;
+      font-size: 0.65rem;
+      font-weight: 500;
+      color: var(--gold);
+      background: rgba(200, 160, 64, 0.15);
+      border: 1px solid rgba(200, 160, 64, 0.22);
+    }
+
+    .rem-badge.red {
+      color: var(--red);
+      background: rgba(224, 96, 96, 0.15);
+      border-color: rgba(224, 96, 96, 0.22);
+    }
+
+    .cam-zone {
+      margin: 0 1.2rem;
+      border: 2px dashed var(--border-2);
+      border-radius: 22px;
+      background: var(--glass);
+      padding: 2.4rem 1.2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.72rem;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .cam-zone:hover {
+      background: var(--glass-2);
+      border-color: var(--leaf);
+    }
+
+    .cam-zone.live {
+      padding: 1rem;
+      align-items: stretch;
+      cursor: default;
+    }
+
+    .cam-ring {
+      width: 92px;
+      height: 92px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      border: 3px solid var(--border-2);
+      font-size: 2.7rem;
+      animation: ringPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes ringPulse {
+      0%, 100% { transform: scale(1); border-color: var(--border-2); }
+      50% { transform: scale(1.06); border-color: var(--leaf); }
+    }
+
+    .cam-label {
+      color: var(--mint);
+      font-size: 0.84rem;
+      font-weight: 500;
+    }
+
+    .cam-sub {
+      color: var(--fern);
+      text-align: center;
+      font-size: 0.72rem;
+      line-height: 1.5;
+    }
+
+    .camera-preview-wrap {
+      width: 100%;
+      display: none;
+      overflow: hidden;
+      border-radius: 18px;
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid var(--border);
+      aspect-ratio: 3 / 4;
+    }
+
+    .camera-preview-wrap.show {
+      display: block;
+    }
+
+    .camera-preview,
+    .capture-preview {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+      background: rgba(0, 0, 0, 0.28);
+    }
+
+    .capture-preview {
+      border-radius: 16px;
+      max-height: 240px;
+      border: 1px solid var(--border);
+    }
+
+    .camera-actions {
+      width: 100%;
+      display: flex;
+      gap: 0.6rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .camera-actions .mini-btn,
+    .camera-actions .btn-ghost {
+      width: auto;
+      min-width: 132px;
+      margin-top: 0;
+    }
+
+    .identify-result,
+    .doctor-card,
+    .profile-block {
+      margin: 0.9rem 1.2rem 0;
+      padding: 1.1rem 1rem;
+    }
+
+    .identify-result {
+      background: linear-gradient(135deg, rgba(45, 96, 69, 0.3), rgba(30, 64, 48, 0.3));
+      border: 1px solid var(--border-2);
+      border-radius: 20px;
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .identify-result.hidden {
+      display: none;
+    }
+
+    .search-card {
+      margin: 0.9rem 1.2rem 0;
+      padding: 1rem;
+      border-radius: 18px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .search-card .inp {
+      margin-bottom: 0;
+    }
+
+    .search-help {
+      color: var(--fern);
+      font-size: 0.72rem;
+      line-height: 1.45;
+    }
+
+    .image-grid {
+      margin: 0.9rem 1.2rem 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.72rem;
+    }
+
+    .image-card {
+      border-radius: 18px;
+      overflow: hidden;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s, background 0.2s;
+    }
+
+    .image-card:hover,
+    .image-card.active {
+      transform: translateY(-3px);
+      border-color: var(--border-2);
+      background: var(--glass-2);
+    }
+
+    .image-thumb {
+      aspect-ratio: 1 / 1;
+      display: grid;
+      place-items: center;
+      font-size: 3.2rem;
+      background: linear-gradient(135deg, rgba(45, 96, 69, 0.5), rgba(22, 45, 31, 0.85));
+    }
+
+    .image-body {
+      padding: 0.78rem 0.8rem 0.85rem;
+    }
+
+    .image-name {
+      color: var(--cream);
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    .image-meta {
+      color: var(--fern);
+      font-size: 0.7rem;
+      margin-top: 0.16rem;
+      line-height: 1.45;
+    }
+
+    .empty-state {
+      margin: 0.9rem 1.2rem 0;
+      padding: 1rem;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px dashed var(--border);
+      color: var(--fern);
+      font-size: 0.76rem;
+      text-align: center;
+      display: none;
+    }
+
+    .empty-state.show {
+      display: block;
+    }
+
+    .garden-list {
+      display: flex;
+      gap: 0.75rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-left: 1.2rem;
+      padding-right: 1.2rem;
+    }
+
+    .garden-list::-webkit-scrollbar {
+      display: none;
+    }
+
+    .idr-top {
+      display: flex;
+      gap: 0.95rem;
+      align-items: center;
+    }
+
+    .idr-emoji {
+      font-size: 2.9rem;
+    }
+
+    .idr-common {
+      font-family: "Playfair Display", serif;
+      font-size: 1.22rem;
+    }
+
+    .idr-latin {
+      color: var(--fern);
+      font-size: 0.74rem;
+      font-style: italic;
+      margin-top: 0.1rem;
+    }
+
+    .idr-conf {
+      display: inline-block;
+      margin-top: 0.38rem;
+      padding: 0.22rem 0.68rem;
+      border-radius: 999px;
+      color: var(--leaf);
+      font-size: 0.68rem;
+      background: rgba(114, 184, 134, 0.18);
+      border: 1px solid rgba(114, 184, 134, 0.25);
+    }
+
+    .detail-copy,
+    .diag-text,
+    .about-bio,
+    .post-text,
+    .profile-copy {
+      color: var(--mint);
+      font-size: 0.79rem;
+      line-height: 1.55;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+
+    .chip {
+      padding: 0.3rem 0.72rem;
+      border-radius: 999px;
+      color: var(--mint);
+      font-size: 0.72rem;
+      background: var(--glass);
+      border: 1px solid var(--border);
+    }
+
+    .garden-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.72rem;
+    }
+
+    .garden-plant {
+      padding: 1rem 0.92rem;
+      border-radius: 18px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+    }
+
+    .garden-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.55rem;
+    }
+
+    .garden-emoji {
+      font-size: 2.35rem;
+    }
+
+    .garden-badge {
+      padding: 0.14rem 0.42rem;
+      border-radius: 8px;
+      font-size: 0.62rem;
+      font-weight: 600;
+      color: var(--leaf);
+      background: rgba(114, 184, 134, 0.15);
+      border: 1px solid rgba(114, 184, 134, 0.2);
+    }
+
+    .garden-badge.warn {
+      color: var(--amber);
+      background: rgba(232, 184, 80, 0.15);
+      border-color: rgba(232, 184, 80, 0.24);
+    }
+
+    .garden-name {
+      color: var(--cream);
+      font-size: 0.86rem;
+      font-weight: 600;
+    }
+
+    .garden-species,
+    .post-time,
+    .about-role {
+      color: var(--fern);
+      font-size: 0.7rem;
+    }
+
+    .garden-species {
+      margin: 0.14rem 0 0.55rem;
+      font-style: italic;
+    }
+
+    .bar-label {
+      display: flex;
+      justify-content: space-between;
+      color: var(--fern);
+      font-size: 0.64rem;
+      margin-bottom: 0.22rem;
+    }
+
+    .growth-chart {
+      margin: 0.85rem 1.2rem 0;
+      padding: 1.1rem 1rem;
+      border-radius: 19px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+    }
+
+    .chart-title {
+      color: var(--mint);
+      font-size: 0.81rem;
+      font-weight: 500;
+      margin-bottom: 0.9rem;
+    }
+
+    .chart-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 0.45rem;
+      height: 86px;
+    }
+
+    .cbar {
+      flex: 1;
+      border-radius: 6px 6px 0 0;
+      background: linear-gradient(to top, var(--sage), var(--leaf));
+    }
+
+    .chart-labels {
+      display: flex;
+      gap: 0.45rem;
+      margin-top: 0.45rem;
+    }
+
+    .clbl {
+      flex: 1;
+      text-align: center;
+      color: var(--fern);
+      font-size: 0.62rem;
+    }
+
+    .community-tabs {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0 1.2rem 0.35rem;
+      margin-top: 0.25rem;
+    }
+
+    .ctab {
+      padding: 0.32rem 0.82rem;
+      border-radius: 999px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      color: var(--fern);
+      font-size: 0.74rem;
+      cursor: pointer;
+    }
+
+    .ctab.active {
+      background: rgba(114, 184, 134, 0.2);
+      border-color: var(--border-2);
+      color: var(--leaf);
+    }
+
+    .community-list {
+      display: grid;
+      gap: 0.86rem;
+    }
+
+    .post-card {
+      overflow: hidden;
+    }
+
+    .post-header {
+      display: flex;
+      align-items: center;
+      gap: 0.68rem;
+      padding: 0.9rem 0.95rem 0.65rem;
+    }
+
+    .post-av {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--sage), var(--fern));
+      font-size: 1.03rem;
+      flex-shrink: 0;
+    }
+
+    .post-user {
+      color: var(--cream);
+      font-size: 0.84rem;
+      font-weight: 500;
+    }
+
+    .post-img {
+      height: 160px;
+      display: grid;
+      place-items: center;
+      font-size: 4.7rem;
+      background: linear-gradient(135deg, rgba(30, 64, 48, 0.5), rgba(15, 35, 24, 0.5));
+    }
+
+    .post-body {
+      padding: 0.82rem 0.95rem 0.95rem;
+    }
+
+    .post-actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 0.7rem;
+      flex-wrap: wrap;
+    }
+
+    .post-act {
+      background: none;
+      border: none;
+      color: var(--fern);
+      font: inherit;
+      font-size: 0.74rem;
+      cursor: pointer;
+    }
+
+    .post-act.liked {
+      color: var(--petal);
+    }
+
+    .composer-card {
+      margin: 0 1.2rem 0.85rem;
+      padding: 1rem;
+      border-radius: 18px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      display: grid;
+      gap: 0.7rem;
+    }
+
+    .composer-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.6rem;
+      align-items: center;
+    }
+
+    .composer-row .inp {
+      margin-bottom: 0;
+    }
+
+    .comments {
+      margin-top: 0.75rem;
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .comment {
+      padding: 0.58rem 0.65rem;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(114, 184, 134, 0.1);
+      color: var(--mint);
+      font-size: 0.73rem;
+      line-height: 1.45;
+    }
+
+    .comment strong {
+      color: var(--cream);
+    }
+
+    .doctor-card h3,
+    .profile-block h3,
+    .about-name {
+      font-family: "Playfair Display", serif;
+      color: var(--cream);
+    }
+
+    .doctor-card h3,
+    .profile-block h3 {
+      font-size: 1.1rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .symptom-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.46rem;
+      margin-top: 0.85rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .symp {
+      padding: 0.32rem 0.78rem;
+      border-radius: 999px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      color: var(--fern);
+      font-size: 0.73rem;
+      cursor: pointer;
+    }
+
+    .symp.sel {
+      background: rgba(114, 184, 134, 0.2);
+      border-color: var(--border-2);
+      color: var(--leaf);
+    }
+
+    .diag-result {
+      margin-top: 0.9rem;
+      padding: 0.95rem 0.92rem;
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(45, 96, 69, 0.3), rgba(30, 64, 48, 0.2));
+      border: 1px solid var(--border-2);
+    }
+
+    .diag-title {
+      color: var(--leaf);
+      font-size: 0.81rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+    }
+
+    .profile-meta {
+      display: grid;
+      gap: 0.48rem;
+      margin-top: 0.8rem;
+    }
+
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.6rem;
+      color: var(--fern);
+      font-size: 0.72rem;
+    }
+
+    .meta-row strong {
+      color: var(--cream);
+      font-weight: 500;
+      text-align: right;
+    }
+
+    .mini-btn {
+      padding: 0.72rem;
+      margin-top: 0.82rem;
+      color: var(--cream);
+      background: linear-gradient(135deg, var(--sage), var(--moss));
+    }
+
+    .about-wrap {
+      display: grid;
+      gap: 0.82rem;
+      padding-bottom: 0.2rem;
+    }
+
+    .about-card {
+      padding: 1.18rem 1rem;
+      background: linear-gradient(135deg, rgba(45, 96, 69, 0.25), rgba(15, 35, 24, 0.25));
+    }
+
+    .about-role {
+      margin-bottom: 0.35rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    .about-name {
+      font-size: 1.14rem;
+      margin-bottom: 0.38rem;
+    }
+
+    .achievement-card {
+      text-align: center;
+    }
+
+    .achievement-card.unlocked {
+      border-color: rgba(200, 160, 64, 0.3);
+      background: rgba(200, 160, 64, 0.06);
+    }
+
+    .bottom-nav {
+      position: fixed;
+      left: 50%;
+      bottom: 0;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      padding: 0.45rem 0 0.65rem;
+      background: rgba(15, 35, 24, 0.92);
+      backdrop-filter: blur(22px);
+      border-top: 1px solid var(--border);
+      z-index: 100;
+    }
+
+    .nb {
+      flex: 1;
+      border: none;
+      background: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.16rem;
+      padding: 0.34rem 0;
+      cursor: pointer;
+    }
+
+    .nb-icon {
+      font-size: 1.24rem;
+    }
+
+    .nb-lbl {
+      color: var(--fern);
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 500;
+    }
+
+    .nb.active .nb-lbl {
+      color: var(--leaf);
+    }
+
+    .nb.active .nb-icon {
+      transform: scale(1.12);
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 6rem;
+      transform: translateX(-50%) translateY(18px);
+      padding: 0.55rem 1.15rem;
+      border-radius: 999px;
+      background: var(--moss);
+      border: 1px solid var(--border-2);
+      color: var(--mint);
+      font-size: 0.81rem;
+      opacity: 0;
+      transition: opacity 0.28s, transform 0.28s;
+      z-index: 200;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 380px) {
+      .actions-grid,
+      .more-grid,
+      .garden-grid,
+      .stats-row {
+        grid-template-columns: 1fr;
+        display: grid;
+      }
+
+      .stats-row {
+        gap: 0.55rem;
+      }
+
+      .weather-card {
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="bg"></div>
+  <div class="leaf-float" style="left: 8%; animation-duration: 19s; animation-delay: 0s; font-size: 1.7rem;">🍃</div>
+  <div class="leaf-float" style="left: 24%; animation-duration: 23s; animation-delay: 4s; font-size: 1.2rem;">🌿</div>
+  <div class="leaf-float" style="left: 46%; animation-duration: 17s; animation-delay: 2s; font-size: 2rem;">🍂</div>
+  <div class="leaf-float" style="left: 68%; animation-duration: 22s; animation-delay: 7s; font-size: 1.4rem;">🍃</div>
+  <div class="leaf-float" style="left: 88%; animation-duration: 18s; animation-delay: 11s; font-size: 1.5rem;">🌱</div>
+
+  <div id="app">
+    <section id="s-login" class="screen active">
+      <div class="login-top">
+        <span class="login-logo">🌿</span>
+        <div class="login-brand">The Official</div>
+        <div class="login-sub">Smart Garden Companion</div>
+      </div>
+      <div class="login-card">
+        <label class="lbl" for="inp-user">Username</label>
+        <input class="inp" id="inp-user" type="text" placeholder="your.garden.name" />
+        <label class="lbl" for="inp-pass">Password</label>
+        <input class="inp" id="inp-pass" type="password" placeholder="••••••••" />
+        <button class="btn-primary" type="button" onclick="doLogin()">Sign In 🌱</button>
+        <div class="or-div">— or —</div>
+        <button class="btn-ghost" type="button" onclick="doLogin()">Create a New Garden Account</button>
+      </div>
+      <div class="login-note">🌎 Your garden grows with you · Made by Henry &amp; Karthik</div>
+    </section>
+
+    <section id="s-app" class="screen">
+      <header class="app-hdr">
+        <div class="hdr-brand">The Official</div>
+        <div class="hdr-icons">
+          <div class="hdr-btn" onclick="showToast('🔔 Notifications updated')">🔔</div>
+          <div class="hdr-btn" onclick="showToast('⚙️ Settings coming soon')">⚙️</div>
+        </div>
+      </header>
+
+      <div id="tab-home" class="tab-body">
+        <div class="greeting">
+          <div class="g-sub">Good morning</div>
+          <div class="g-name" id="display-name">Gardener 🌿</div>
+        </div>
+
+        <div class="hero-card">
+          <div class="hero-top">
+            <div>
+              <div class="eyebrow">Expanded Features</div>
+              <div class="hero-title">Your smart garden in one place</div>
+              <div class="hero-copy">Track care, scan plants, monitor moisture, sync weather, and stay connected to the community without leaving the app.</div>
+            </div>
+            <div class="hero-badge">72% Healthy</div>
+          </div>
+        </div>
+
+        <div class="weather-card">
+          <div class="w-icon">⛅</div>
+          <div>
+            <div class="w-temp">72°F</div>
+            <div class="w-desc">Partly cloudy · Humidity 58% · Care suggestions adjusted for late afternoon sun.</div>
+          </div>
+          <div class="w-badge">🌦 Sync On</div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Garden Snapshot</div>
+          <div class="section-link" onclick="switchTab('garden')">View details →</div>
+        </div>
+        <div class="stats-row">
+          <div class="stat-box">
+            <div class="stat-num" id="stat-plants">0</div>
+            <div class="stat-lbl">Plant Profiles</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num" id="stat-tasks">0</div>
+            <div class="stat-lbl">Tasks Due</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num" id="stat-badges">0</div>
+            <div class="stat-lbl">Badges</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Quick Actions</div>
+        </div>
+        <div class="actions-grid">
+          <div class="tool-card" onclick="switchTab('identify')">
+            <span class="tool-icon">📸</span>
+            <div class="tool-name">Identify Plant</div>
+            <div class="tool-sub">Camera scan with care instructions</div>
+          </div>
+          <div class="tool-card" onclick="switchTab('community')">
+            <span class="tool-icon">🌍</span>
+            <div class="tool-name">Community Garden</div>
+            <div class="tool-sub">Posts, likes, comments, and tips</div>
+          </div>
+          <div class="tool-card" onclick="showToast('💧 Moisture sensors synced')">
+            <span class="tool-icon">💧</span>
+            <div class="tool-name">Smart Watering</div>
+            <div class="tool-sub">Sensor-guided hydration alerts</div>
+          </div>
+          <div class="tool-card" onclick="switchTab('more')">
+            <span class="tool-icon">🧠</span>
+            <div class="tool-name">AI Plant Doctor</div>
+            <div class="tool-sub">Instant issue diagnosis</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">My Plants</div>
+          <div class="section-link" onclick="switchTab('garden')">See all →</div>
+        </div>
+        <div id="home-plants-empty" class="empty-state show">Your garden starts empty. Pick a plant from Identify first, then it can show up here.</div>
+        <div id="home-plants-list" class="garden-list" style="display: none;"></div>
+
+        <div class="section">
+          <div class="section-title">Today's Reminders</div>
+          <div class="section-link" onclick="showToast('📋 Reminder list opened')">View all →</div>
+        </div>
+        <div id="home-reminders-empty" class="empty-state show">No reminders yet because you have not added any plants.</div>
+        <div id="home-reminders-list" class="reminders" style="display: none;"></div>
+      </div>
+
+      <div id="tab-identify" class="tab-body" style="display: none;">
+        <div class="section">
+          <div class="section-title">Identify a Plant</div>
+        </div>
+        <div class="search-card">
+          <input class="inp" id="plant-search" type="text" placeholder="Search keywords like monstera, succulent, flower, indoor, tropical..." />
+          <div class="search-help">Browse the plant image gallery and choose the one that matches what you see. Search filters by name, type, and care keywords.</div>
+        </div>
+
+        <div id="image-grid" class="image-grid"></div>
+        <div id="empty-state" class="empty-state">No plants matched that search. Try broader keywords like <strong>flower</strong>, <strong>indoor</strong>, or <strong>succulent</strong>.</div>
+
+        <div id="identify-result" class="identify-result hidden">
+          <div class="idr-top">
+            <div class="idr-emoji">🌿</div>
+            <div>
+              <div class="idr-common" id="identify-name">Choose a Plant Card</div>
+              <div class="idr-latin" id="identify-latin">Searchable image gallery</div>
+              <div class="idr-conf" id="identify-confidence">🔎 Waiting for selection</div>
+            </div>
+          </div>
+          <div id="capture-image" class="capture-preview" style="display: grid; place-items: center; font-size: 4rem; background: linear-gradient(135deg, rgba(45, 96, 69, 0.5), rgba(22, 45, 31, 0.85));">🌿</div>
+          <div class="detail-copy" id="identify-copy">Pick a plant from the gallery to see its species-style label, tags, and care guidance here.</div>
+          <div class="chip-row">
+            <div class="chip" id="chip-1">🌿 Searchable</div>
+            <div class="chip" id="chip-2">🔎 Keyword match</div>
+            <div class="chip" id="chip-3">🪴 Plant type</div>
+            <div class="chip" id="chip-4">💧 Care hint</div>
+          </div>
+          <button class="mini-btn" id="use-plant-btn" type="button">Use This Plant</button>
+        </div>
+
+        <div class="doctor-card">
+          <h3>AI Plant Doctor</h3>
+          <div class="profile-copy">Noticing yellow leaves, spots, droop, or curling? Select symptoms and get a quick diagnosis.</div>
+          <div class="symptom-chips">
+            <button class="symp sel" type="button">Yellow leaves</button>
+            <button class="symp" type="button">Brown tips</button>
+            <button class="symp" type="button">Leaf spots</button>
+            <button class="symp" type="button">Drooping</button>
+          </div>
+          <textarea class="note-area" placeholder="Describe what you’re seeing..."></textarea>
+          <div class="diag-result">
+            <div class="diag-title">Likely issue</div>
+            <div class="diag-text">Signs point to inconsistent watering with mild humidity stress. Reduce direct vent exposure, check drainage, and water only when the top inch of soil is dry.</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-garden" class="tab-body" style="display: none;">
+        <div class="section">
+          <div class="section-title">My Garden</div>
+        </div>
+        <div id="garden-empty" class="empty-state show">No plants in your garden yet. Use the Identify tab and choose a plant first.</div>
+        <div id="garden-grid-live" class="garden-grid" style="display: none;"></div>
+
+        <div class="growth-chart">
+          <div class="chart-title">Growth Tracking · Starts after your first plant</div>
+          <div class="chart-bars">
+            <div class="cbar" style="height: 10%; opacity: 0.18;"></div>
+            <div class="cbar" style="height: 10%; opacity: 0.18;"></div>
+            <div class="cbar" style="height: 10%; opacity: 0.18;"></div>
+            <div class="cbar" style="height: 10%; opacity: 0.18;"></div>
+            <div class="cbar" style="height: 10%; opacity: 0.18;"></div>
+            <div class="cbar" style="height: 10%; opacity: 0.18;"></div>
+          </div>
+          <div class="chart-labels">
+            <div class="clbl">W1</div>
+            <div class="clbl">W2</div>
+            <div class="clbl">W3</div>
+            <div class="clbl">W4</div>
+            <div class="clbl">W5</div>
+            <div class="clbl">W6</div>
+          </div>
+        </div>
+
+        <div class="profile-block">
+          <h3>Personalized Plant Profile</h3>
+          <div class="profile-copy">Keep notes, photos, care history, and growth milestones together for every plant in your collection. This panel will unlock after you add your first plant.</div>
+          <div class="profile-meta">
+            <div class="meta-row"><span>Last photo update</span><strong>None yet</strong></div>
+            <div class="meta-row"><span>Next watering reminder</span><strong>None yet</strong></div>
+            <div class="meta-row"><span>Care history</span><strong>Empty</strong></div>
+          </div>
+          <button class="mini-btn" type="button" onclick="switchTab('identify')">Go Choose a Plant</button>
+        </div>
+      </div>
+
+      <div id="tab-community" class="tab-body" style="display: none;">
+        <div class="section">
+          <div class="section-title">Community Garden</div>
+        </div>
+        <div class="community-tabs">
+          <button class="ctab active" type="button">Following</button>
+          <button class="ctab" type="button">Trending</button>
+          <button class="ctab" type="button">Tips</button>
+        </div>
+        <div class="composer-card">
+          <div class="search-help">Share a garden update, a care tip, or a question for other growers.</div>
+          <input class="inp" id="community-author" type="text" placeholder="Your name" />
+          <input class="inp" id="community-plant" type="text" placeholder="Plant or topic (example: Monstera, seed swap, orchids)" />
+          <textarea class="note-area" id="community-post-text" placeholder="Write your update..."></textarea>
+          <div class="composer-row">
+            <input class="inp" id="community-emoji" type="text" maxlength="4" placeholder="Emoji" />
+            <button class="mini-btn" id="community-post-btn" type="button">Post</button>
+          </div>
+        </div>
+        <div id="community-list" class="community-list"></div>
+      </div>
+
+      <div id="tab-more" class="tab-body" style="display: none;">
+        <div class="section">
+          <div class="section-title">More Tools</div>
+        </div>
+        <div class="more-grid">
+          <div class="tool-card" onclick="showToast('🛒 Shop suggestions refreshed')">
+            <span class="tool-icon">🛒</span>
+            <div class="tool-name">Garden Shop</div>
+            <div class="tool-sub">Recommended pots, tools, and supplies</div>
+          </div>
+          <div class="tool-card" onclick="showToast('🌎 Eco mode tips loaded')">
+            <span class="tool-icon">🌎</span>
+            <div class="tool-name">Eco Mode</div>
+            <div class="tool-sub">Water-saving and sustainable gardening tips</div>
+          </div>
+          <div class="tool-card" onclick="showToast('🔔 Notification center opened')">
+            <span class="tool-icon">🔔</span>
+            <div class="tool-name">Smart Notifications</div>
+            <div class="tool-sub">Weather alerts, care updates, and comments</div>
+          </div>
+          <div class="tool-card" onclick="showToast('🏆 Reward board opened')">
+            <span class="tool-icon">🏆</span>
+            <div class="tool-name">Rewards</div>
+            <div class="tool-sub">Unlock badges for milestones and sharing</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Achievements</div>
+        </div>
+        <div class="empty-state show">Zero achievements yet. Add plants, complete care tasks, and join the community to start unlocking badges.</div>
+
+        <div class="section">
+          <div class="section-title">About</div>
+        </div>
+        <div class="about-wrap">
+          <div class="about-card">
+            <div class="about-role">About the Innovator</div>
+            <div class="about-name">Henry</div>
+            <div class="about-bio">Henry is the creative mind behind the smart gardening system, using recycled materials and moisture sensors to give plants the right amount of water with less waste and less guesswork.</div>
+          </div>
+          <div class="about-card">
+            <div class="about-role">About the SuperVisor</div>
+            <div class="about-name">Karthik</div>
+            <div class="about-bio">Karthik helped Henry shape how everything should be built and where each piece belongs. He loves animals and plants and enjoys helping spread the word.</div>
+          </div>
+          <div class="about-card">
+            <div class="about-role">Support</div>
+            <div class="about-name">Help the project grow</div>
+            <div class="about-bio">Your support helps Henry take the Smart Gardening Machine to new heights and keep building more practical, greener tools for plant care.</div>
+          </div>
+        </div>
+      </div>
+
+      <nav class="bottom-nav">
+        <button class="nb active" type="button" data-tab="home" onclick="switchTab('home')">
+          <span class="nb-icon">🏡</span>
+          <span class="nb-lbl">Home</span>
+        </button>
+        <button class="nb" type="button" data-tab="identify" onclick="switchTab('identify')">
+          <span class="nb-icon">📸</span>
+          <span class="nb-lbl">Identify</span>
+        </button>
+        <button class="nb" type="button" data-tab="garden" onclick="switchTab('garden')">
+          <span class="nb-icon">🪴</span>
+          <span class="nb-lbl">Garden</span>
+        </button>
+        <button class="nb" type="button" data-tab="community" onclick="switchTab('community')">
+          <span class="nb-icon">🌍</span>
+          <span class="nb-lbl">Community</span>
+        </button>
+        <button class="nb" type="button" data-tab="more" onclick="switchTab('more')">
+          <span class="nb-icon">✨</span>
+          <span class="nb-lbl">More</span>
+        </button>
+      </nav>
+    </section>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const tabs = ["home", "identify", "garden", "community", "more"];
+    const toast = document.getElementById("toast");
+    const identifyResult = document.getElementById("identify-result");
+    const captureImage = document.getElementById("capture-image");
+    const identifyName = document.getElementById("identify-name");
+    const identifyLatin = document.getElementById("identify-latin");
+    const identifyConfidence = document.getElementById("identify-confidence");
+    const identifyCopy = document.getElementById("identify-copy");
+    const searchInput = document.getElementById("plant-search");
+    const imageGrid = document.getElementById("image-grid");
+    const emptyState = document.getElementById("empty-state");
+    const chip1 = document.getElementById("chip-1");
+    const chip2 = document.getElementById("chip-2");
+    const chip3 = document.getElementById("chip-3");
+    const chip4 = document.getElementById("chip-4");
+    const statPlants = document.getElementById("stat-plants");
+    const statTasks = document.getElementById("stat-tasks");
+    const statBadges = document.getElementById("stat-badges");
+    const homePlantsEmpty = document.getElementById("home-plants-empty");
+    const homePlantsList = document.getElementById("home-plants-list");
+    const homeRemindersEmpty = document.getElementById("home-reminders-empty");
+    const homeRemindersList = document.getElementById("home-reminders-list");
+    const gardenEmpty = document.getElementById("garden-empty");
+    const gardenGridLive = document.getElementById("garden-grid-live");
+    const usePlantBtn = document.getElementById("use-plant-btn");
+    const communityList = document.getElementById("community-list");
+    const communityAuthor = document.getElementById("community-author");
+    const communityPlant = document.getElementById("community-plant");
+    const communityPostText = document.getElementById("community-post-text");
+    const communityEmoji = document.getElementById("community-emoji");
+    const communityPostBtn = document.getElementById("community-post-btn");
+    let selectedPlantId = null;
+    const myPlants = [];
+    const plantLibrary = [
+      {
+        id: "monstera",
+        emoji: "🌿",
+        name: "Monstera Deliciosa",
+        latin: "Monstera deliciosa",
+        meta: "Indoor tropical · Split leaves",
+        confidence: "🔎 Keyword match: tropical foliage",
+        description: "A popular indoor tropical plant that likes bright indirect light, moderate watering, and a bit of humidity.",
+        tags: ["indoor", "tropical", "leafy", "green", "split leaves"],
+        status: "Needs water",
+        moisture: 18,
+        reminder: "Water today"
+      },
+      {
+        id: "snake",
+        emoji: "🪴",
+        name: "Snake Plant",
+        latin: "Dracaena trifasciata",
+        meta: "Indoor hardy · Low light friendly",
+        confidence: "🔎 Keyword match: hardy succulent-like houseplant",
+        description: "A durable plant that tolerates lower light and prefers drying out between waterings.",
+        tags: ["indoor", "hardy", "low light", "upright", "succulent"],
+        status: "Healthy",
+        moisture: 44,
+        reminder: "Rotate next week"
+      },
+      {
+        id: "cactus",
+        emoji: "🌵",
+        name: "Cactus",
+        latin: "Cactaceae family",
+        meta: "Desert plant · Dry soil lover",
+        confidence: "🔎 Keyword match: desert succulent",
+        description: "Cacti prefer bright light, excellent drainage, and infrequent watering.",
+        tags: ["cactus", "succulent", "desert", "spiky", "dry"],
+        status: "Stable",
+        moisture: 31,
+        reminder: "Check soil next week"
+      },
+      {
+        id: "rose",
+        emoji: "🌹",
+        name: "Rose",
+        latin: "Rosa",
+        meta: "Flowering shrub · Outdoor favorite",
+        confidence: "🔎 Keyword match: flower bloom",
+        description: "Roses like strong light, steady feeding, airflow, and regular pruning for healthy blooms.",
+        tags: ["flower", "rose", "bloom", "outdoor", "petals"],
+        status: "Blooming",
+        moisture: 75,
+        reminder: "Prune this week"
+      },
+      {
+        id: "sunflower",
+        emoji: "🌻",
+        name: "Sunflower",
+        latin: "Helianthus annuus",
+        meta: "Tall flower · Sun loving",
+        confidence: "🔎 Keyword match: sun flower",
+        description: "Sunflowers love direct sun, warm weather, and steady moisture while actively growing.",
+        tags: ["flower", "sun", "yellow", "outdoor", "tall"],
+        status: "Growing fast",
+        moisture: 63,
+        reminder: "Water tomorrow"
+      },
+      {
+        id: "orchid",
+        emoji: "🌸",
+        name: "Orchid",
+        latin: "Orchidaceae family",
+        meta: "Elegant bloom · Bright indirect light",
+        confidence: "🔎 Keyword match: delicate bloom",
+        description: "Orchids prefer bright filtered light, careful watering, and airflow around their roots.",
+        tags: ["orchid", "flower", "indoor", "delicate", "bloom"],
+        status: "Delicate care",
+        moisture: 52,
+        reminder: "Mist in 2 days"
+      },
+      {
+        id: "lavender",
+        emoji: "💜",
+        name: "Lavender",
+        latin: "Lavandula",
+        meta: "Fragrant herb · Sunny spot",
+        confidence: "🔎 Keyword match: herb flower",
+        description: "Lavender likes sun, lean soil, and drying slightly between waterings.",
+        tags: ["herb", "lavender", "fragrant", "purple", "sunny"],
+        status: "Blooming",
+        moisture: 62,
+        reminder: "Trim after flowering"
+      },
+      {
+        id: "fern",
+        emoji: "🌿",
+        name: "Fern",
+        latin: "Polypodiopsida",
+        meta: "Shade loving · Humidity fan",
+        confidence: "🔎 Keyword match: shade foliage",
+        description: "Ferns often prefer indirect light, even moisture, and higher humidity.",
+        tags: ["fern", "shade", "humidity", "indoor", "foliage"],
+        status: "Humidity lover",
+        moisture: 67,
+        reminder: "Mist tonight"
+      },
+      {
+        id: "pothos",
+        emoji: "🌱",
+        name: "Pothos",
+        latin: "Epipremnum aureum",
+        meta: "Trailing vine · Easy indoor grower",
+        confidence: "🔎 Keyword match: vine houseplant",
+        description: "Pothos is forgiving, adapts to many indoor spots, and likes watering after partial soil drying.",
+        tags: ["vine", "indoor", "easy", "trailing", "green"],
+        status: "Trailing well",
+        moisture: 49,
+        reminder: "Trim vines this week"
+      },
+      {
+        id: "aloe",
+        emoji: "🪴",
+        name: "Aloe Vera",
+        latin: "Aloe vera",
+        meta: "Medicinal succulent · Bright light",
+        confidence: "🔎 Keyword match: aloe succulent",
+        description: "Aloe prefers bright conditions, sharp drainage, and drying completely between waterings.",
+        tags: ["aloe", "succulent", "bright light", "spiky", "dry"],
+        status: "Healthy",
+        moisture: 27,
+        reminder: "Check again next weekend"
+      },
+      {
+        id: "peace-lily",
+        emoji: "🕊️",
+        name: "Peace Lily",
+        latin: "Spathiphyllum",
+        meta: "Indoor bloom · Moist soil",
+        confidence: "🔎 Keyword match: peace lily",
+        description: "Peace lilies like medium light, more frequent watering, and will droop visibly when thirsty.",
+        tags: ["peace lily", "indoor", "bloom", "shade", "moist"],
+        status: "Thirsty soon",
+        moisture: 24,
+        reminder: "Water tonight"
+      },
+      {
+        id: "basil",
+        emoji: "🌿",
+        name: "Basil",
+        latin: "Ocimum basilicum",
+        meta: "Kitchen herb · Warm and sunny",
+        confidence: "🔎 Keyword match: edible herb",
+        description: "Basil likes warmth, frequent harvesting, and evenly moist soil without sogginess.",
+        tags: ["herb", "basil", "edible", "sunny", "kitchen"],
+        status: "Ready to harvest",
+        moisture: 58,
+        reminder: "Pinch tops tomorrow"
+      },
+      {
+        id: "mint",
+        emoji: "🍃",
+        name: "Mint",
+        latin: "Mentha",
+        meta: "Spreading herb · Moist soil",
+        confidence: "🔎 Keyword match: mint herb",
+        description: "Mint grows fast, likes moisture, and needs pruning to stay controlled.",
+        tags: ["mint", "herb", "edible", "moist", "fragrant"],
+        status: "Growing fast",
+        moisture: 71,
+        reminder: "Harvest stems today"
+      },
+      {
+        id: "fiddle-leaf",
+        emoji: "🌳",
+        name: "Fiddle Leaf Fig",
+        latin: "Ficus lyrata",
+        meta: "Statement tree · Bright indirect light",
+        confidence: "🔎 Keyword match: large glossy leaves",
+        description: "Fiddle leaf figs want stable light, careful watering, and minimal environmental stress.",
+        tags: ["ficus", "tree", "indoor", "large leaves", "bright"],
+        status: "Needs stability",
+        moisture: 36,
+        reminder: "Rotate pot in 3 days"
+      },
+      {
+        id: "jade",
+        emoji: "💚",
+        name: "Jade Plant",
+        latin: "Crassula ovata",
+        meta: "Woody succulent · Bright windowsill",
+        confidence: "🔎 Keyword match: jade succulent",
+        description: "Jade plants like bright light and infrequent watering with long drying periods.",
+        tags: ["jade", "succulent", "bright", "woody", "compact"],
+        status: "Stable",
+        moisture: 29,
+        reminder: "Skip watering for now"
+      },
+      {
+        id: "philodendron",
+        emoji: "🍀",
+        name: "Philodendron",
+        latin: "Philodendron hederaceum",
+        meta: "Trailing foliage · Indoor tropical",
+        confidence: "🔎 Keyword match: heart leaf vine",
+        description: "Philodendrons enjoy indirect light, moderate humidity, and evenly timed watering.",
+        tags: ["philodendron", "vine", "indoor", "tropical", "heart leaf"],
+        status: "Thriving",
+        moisture: 54,
+        reminder: "Wipe leaves tomorrow"
+      }
+    ];
+    const communityPosts = [
+      {
+        id: 1,
+        author: "Alicia Bloom",
+        initials: "AL",
+        time: "2 hours ago",
+        emoji: "🍅",
+        topic: "Tomatoes",
+        text: "Weather sync warned me about tonight’s cold drop, so I moved my balcony tomatoes inside early. No wilt this morning.",
+        likes: 42,
+        liked: true,
+        comments: ["Mika: That weather alert saved mine too.", "Rae: Smart move before the cold snap."]
+      },
+      {
+        id: 2,
+        author: "Jamal Terris",
+        initials: "JT",
+        time: "Yesterday",
+        emoji: "🪴",
+        topic: "Propagation",
+        text: "Tracked six weeks of growth and finally got my cutting to root. The chart view makes progress easy to spot.",
+        likes: 27,
+        liked: false,
+        comments: ["Lena: Which rooting mix did you use?"]
+      },
+      {
+        id: 3,
+        author: "Seed Swap Circle",
+        initials: "SK",
+        time: "Trending",
+        emoji: "🌱",
+        topic: "Seed Swap",
+        text: "Looking for mint cuttings and offering basil starts. Comment if you want to trade or share eco-friendly growing tips.",
+        likes: 67,
+        liked: false,
+        comments: ["Omar: I can trade mint for basil.", "Nia: Try rain barrel water for starts."]
+      }
+    ];
+
+    function doLogin() {
+      const name = document.getElementById("inp-user").value.trim();
+      document.getElementById("display-name").textContent = name ? `${name} 🌿` : "Gardener 🌿";
+      document.getElementById("s-login").classList.remove("active");
+      document.getElementById("s-app").classList.add("active");
+      switchTab("home");
+      showToast("🌱 Welcome back to The Official");
+    }
+
+    function switchTab(tab) {
+      tabs.forEach((name) => {
+        const panel = document.getElementById(`tab-${name}`);
+        if (panel) {
+          panel.style.display = name === tab ? "block" : "none";
+        }
+      });
+
+      document.querySelectorAll(".nb").forEach((button) => {
+        button.classList.toggle("active", button.dataset.tab === tab);
+      });
+    }
+
+    function renderPlantCards(query = "") {
+      const normalized = query.trim().toLowerCase();
+      const filtered = plantLibrary.filter((plant) => {
+        if (!normalized) return true;
+        const haystack = [plant.name, plant.latin, plant.meta, plant.description, ...plant.tags].join(" ").toLowerCase();
+        return haystack.includes(normalized);
+      });
+
+      imageGrid.innerHTML = "";
+      emptyState.style.display = filtered.length ? "none" : "block";
+
+      filtered.forEach((plant) => {
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "image-card";
+        card.dataset.id = plant.id;
+        card.innerHTML = `
+          <div class="image-thumb">${plant.emoji}</div>
+          <div class="image-body">
+            <div class="image-name">${plant.name}</div>
+            <div class="image-meta">${plant.meta}</div>
+          </div>
+        `;
+        card.addEventListener("click", () => selectPlant(plant.id));
+        imageGrid.appendChild(card);
+      });
+    }
+
+    function selectPlant(id) {
+      const plant = plantLibrary.find((item) => item.id === id);
+      if (!plant) return;
+      selectedPlantId = id;
+
+      document.querySelectorAll(".image-card").forEach((card) => {
+        card.classList.toggle("active", card.dataset.id === id);
+      });
+
+      identifyResult.classList.remove("hidden");
+      identifyName.textContent = plant.name;
+      identifyLatin.textContent = plant.latin;
+      identifyConfidence.textContent = plant.confidence;
+      identifyCopy.textContent = plant.description;
+      captureImage.textContent = plant.emoji;
+      chip1.textContent = `🌿 ${plant.tags[0] || "plant"}`;
+      chip2.textContent = `🔎 ${plant.tags[1] || "match"}`;
+      chip3.textContent = `🪴 ${plant.tags[2] || "type"}`;
+      chip4.textContent = `💧 ${plant.tags[3] || "care"}`;
+      showToast(`${plant.name} selected`);
+    }
+
+    function renderMyGarden() {
+      statPlants.textContent = String(myPlants.length);
+      statTasks.textContent = String(myPlants.length);
+      statBadges.textContent = "0";
+
+      homePlantsEmpty.classList.toggle("show", myPlants.length === 0);
+      homePlantsList.style.display = myPlants.length ? "flex" : "none";
+      gardenEmpty.classList.toggle("show", myPlants.length === 0);
+      gardenGridLive.style.display = myPlants.length ? "grid" : "none";
+      homeRemindersEmpty.classList.toggle("show", myPlants.length === 0);
+      homeRemindersList.style.display = myPlants.length ? "grid" : "none";
+
+      homePlantsList.innerHTML = myPlants.map((plant) => `
+        <div class="plant-card">
+          <span class="pc-emoji">${plant.emoji}</span>
+          <div class="pc-name">${plant.name}</div>
+          <div class="pc-status"><span class="dot${plant.moisture < 25 ? " warn" : ""}"></span>${plant.status}</div>
+          <div class="moisture-bar"><div class="moisture-fill" style="width: ${plant.moisture}%; background: ${plant.moisture < 25 ? "linear-gradient(90deg, var(--red), #e88040)" : "linear-gradient(90deg, var(--sage), var(--leaf))"};"></div></div>
+        </div>
+      `).join("");
+
+      homeRemindersList.innerHTML = myPlants.map((plant) => `
+        <div class="rem-item">
+          <div class="rem-icon">${plant.moisture < 25 ? "💧" : "🪴"}</div>
+          <div class="rem-info">
+            <div class="rem-task">${plant.reminder}</div>
+            <div class="rem-time">${plant.name} · ${plant.latin}</div>
+          </div>
+          <div class="rem-badge${plant.moisture < 25 ? " red" : ""}">${plant.moisture < 25 ? "Soon" : "Tracked"}</div>
+        </div>
+      `).join("");
+
+      gardenGridLive.innerHTML = myPlants.map((plant) => `
+        <div class="garden-plant">
+          <div class="garden-top">
+            <div class="garden-emoji">${plant.emoji}</div>
+            <div class="garden-badge${plant.moisture < 25 ? " warn" : ""}">${plant.status}</div>
+          </div>
+          <div class="garden-name">${plant.name}</div>
+          <div class="garden-species">${plant.latin}</div>
+          <div class="bar-label"><span>Moisture</span><span>${plant.moisture}%</span></div>
+          <div class="moisture-bar"><div class="moisture-fill" style="width: ${plant.moisture}%; background: ${plant.moisture < 25 ? "linear-gradient(90deg, var(--red), #e88040)" : "linear-gradient(90deg, var(--sage), var(--leaf))"};"></div></div>
+        </div>
+      `).join("");
+    }
+
+    function renderCommunity() {
+      communityList.innerHTML = communityPosts.map((post) => `
+        <article class="post-card" data-post-id="${post.id}">
+          <div class="post-header">
+            <div class="post-av">${post.initials}</div>
+            <div>
+              <div class="post-user">${post.author}</div>
+              <div class="post-time">${post.time} · ${post.topic}</div>
+            </div>
+          </div>
+          <div class="post-img">${post.emoji}</div>
+          <div class="post-body">
+            <div class="post-text">${post.text}</div>
+            <div class="post-actions">
+              <button class="post-act${post.liked ? " liked" : ""}" type="button" data-action="like" data-post-id="${post.id}">❤️ ${post.likes}</button>
+              <button class="post-act" type="button" data-action="comment" data-post-id="${post.id}">💬 ${post.comments.length}</button>
+              <button class="post-act" type="button" data-action="share" data-post-id="${post.id}">↗ Share</button>
+            </div>
+            <div class="comments">
+              ${post.comments.map((comment) => `<div class="comment">${comment}</div>`).join("")}
+            </div>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function addCommunityPost() {
+      const author = communityAuthor.value.trim() || "Gardener";
+      const topic = communityPlant.value.trim() || "Garden Update";
+      const text = communityPostText.value.trim();
+      const emoji = communityEmoji.value.trim() || "🌿";
+
+      if (!text) {
+        showToast("Write a post first");
+        return;
+      }
+
+      const initials = author.split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase() || "").join("") || "GD";
+      communityPosts.unshift({
+        id: Date.now(),
+        author,
+        initials,
+        time: "Just now",
+        emoji,
+        topic,
+        text,
+        likes: 0,
+        liked: false,
+        comments: []
+      });
+
+      communityPostText.value = "";
+      communityPlant.value = "";
+      communityEmoji.value = "";
+      renderCommunity();
+      showToast("Post shared to the community");
+    }
+
+    function handleCommunityClick(event) {
+      const button = event.target.closest("[data-action]");
+      if (!button) return;
+
+      const postId = Number(button.dataset.postId);
+      const action = button.dataset.action;
+      const post = communityPosts.find((item) => item.id === postId);
+      if (!post) return;
+
+      if (action === "like") {
+        post.liked = !post.liked;
+        post.likes += post.liked ? 1 : -1;
+        renderCommunity();
+        return;
+      }
+
+      if (action === "comment") {
+        const comment = window.prompt("Add a comment");
+        if (comment && comment.trim()) {
+          post.comments.push(`You: ${comment.trim()}`);
+          renderCommunity();
+          showToast("Comment added");
+        }
+        return;
+      }
+
+      if (action === "share") {
+        showToast(`Shared ${post.topic}`);
+      }
+    }
+
+    function addSelectedPlant() {
+      if (!selectedPlantId) {
+        showToast("Choose a plant card first");
+        return;
+      }
+
+      const plant = plantLibrary.find((item) => item.id === selectedPlantId);
+      if (!plant) return;
+
+      if (myPlants.some((item) => item.id === plant.id)) {
+        showToast(`${plant.name} is already in your garden`);
+        return;
+      }
+
+      myPlants.push({ ...plant });
+      renderMyGarden();
+      showToast(`${plant.name} added to your garden`);
+      switchTab("garden");
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => {
+        toast.classList.remove("show");
+      }, 2200);
+    }
+
+    document.querySelectorAll(".symp").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        chip.classList.toggle("sel");
+      });
+    });
+    searchInput.addEventListener("input", (event) => {
+      renderPlantCards(event.target.value);
+    });
+    usePlantBtn.addEventListener("click", addSelectedPlant);
+    communityPostBtn.addEventListener("click", addCommunityPost);
+    communityList.addEventListener("click", handleCommunityClick);
+    renderPlantCards();
+    renderMyGarden();
+    renderCommunity();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GrammarQuest</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0f0e17; --surface:#1a1928; --surface2:#252438;
+  --accent:#e8c547; --accent2:#ff6b6b; --accent3:#6bcfff; --accent4:#a8ff78;
+  --text:#fffffe; --text-muted:#a7a9be; --border:rgba(255,255,255,0.08);
+  --success:#a8ff78; --error:#ff6b6b; --warning:#e8c547;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+.page{display:none;min-height:100vh;}
+.page.active{display:flex;flex-direction:column;}
+
+/* HOME */
+#page-home{background:radial-gradient(ellipse at 20% 50%,#1e1b4b 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,#1a1f4b 0%,transparent 50%),var(--bg);align-items:center;justify-content:center;text-align:center;padding:2rem;}
+.home-logo{font-family:'Playfair Display',serif;font-size:clamp(3rem,8vw,6rem);font-weight:900;letter-spacing:-2px;}
+.home-logo span{color:var(--accent);}
+.home-sub{font-size:1.1rem;color:var(--text-muted);margin:1rem 0 3rem;letter-spacing:.05em;}
+.home-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.2rem;max-width:1000px;width:100%;margin:0 auto 2.5rem;}
+.home-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:1.8rem 1.4rem;cursor:pointer;transition:all .3s;position:relative;overflow:hidden;}
+.home-card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .3s;}
+.home-card.gold::before{background:linear-gradient(135deg,rgba(232,197,71,.15),transparent);}
+.home-card.blue::before{background:linear-gradient(135deg,rgba(107,207,255,.15),transparent);}
+.home-card.green::before{background:linear-gradient(135deg,rgba(168,255,120,.15),transparent);}
+.home-card.red::before{background:linear-gradient(135deg,rgba(255,107,107,.15),transparent);}
+.home-card.purple::before{background:linear-gradient(135deg,rgba(180,130,255,.15),transparent);}
+.home-card:hover{transform:translateY(-4px);border-color:rgba(255,255,255,.2);}
+.home-card:hover::before{opacity:1;}
+.card-icon{font-size:2.2rem;margin-bottom:.8rem;}
+.card-title{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;margin-bottom:.4rem;}
+.card-desc{font-size:.82rem;color:var(--text-muted);line-height:1.5;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.8rem 1.8rem;border-radius:12px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.95rem;cursor:pointer;border:none;transition:all .2s;text-decoration:none;}
+.btn-primary{background:var(--accent);color:#0f0e17;}
+.btn-primary:hover{background:#f0d060;transform:translateY(-1px);}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+.btn-secondary:hover{background:var(--surface);}
+.btn-danger{background:var(--accent2);color:#fff;}
+.btn-danger:hover{background:#ff8585;}
+.btn-success{background:var(--accent4);color:#0f0e17;}
+.btn-ghost{background:transparent;color:var(--text-muted);border:1px solid var(--border);}
+.btn-ghost:hover{color:var(--text);border-color:rgba(255,255,255,.3);}
+.btn-sm{padding:.5rem 1rem;font-size:.8rem;border-radius:8px;}
+.btn-icon{padding:.6rem;border-radius:8px;}
+
+/* NAV */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;background:rgba(15,14,23,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+.nav-logo{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;cursor:pointer;}
+.nav-logo span{color:var(--accent);}
+.nav-right{display:flex;gap:.75rem;align-items:center;}
+
+/* FORMS */
+.form-group{margin-bottom:1.4rem;}
+.form-label{display:block;font-weight:600;font-size:.85rem;margin-bottom:.5rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;}
+.form-select,.form-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:.8rem 1rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.95rem;outline:none;transition:border-color .2s;}
+.form-select:focus,.form-input:focus{border-color:var(--accent);}
+textarea.form-input{resize:vertical;min-height:70px;}
+
+/* SETUP */
+#page-setup{align-items:center;justify-content:center;padding:2rem;}
+.setup-box{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:2.5rem;max-width:680px;width:100%;}
+.setup-title{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;margin-bottom:.4rem;}
+.setup-sub{color:var(--text-muted);margin-bottom:2rem;}
+.difficulty-pills{display:flex;gap:.75rem;flex-wrap:wrap;}
+.pill{padding:.6rem 1.2rem;border-radius:100px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-size:.85rem;font-weight:500;transition:all .2s;}
+.pill.active{background:var(--accent);color:#0f0e17;border-color:var(--accent);}
+.pill:hover:not(.active){border-color:rgba(255,255,255,.3);}
+.topic-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;}
+.topic-check{display:flex;align-items:center;gap:.5rem;padding:.6rem .8rem;border-radius:8px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:.85rem;transition:all .2s;}
+.topic-check.checked{border-color:var(--accent);background:rgba(232,197,71,.1);}
+.topic-check input{display:none;}
+.check-box{width:16px;height:16px;border:2px solid var(--border);border-radius:4px;flex-shrink:0;display:grid;place-items:center;transition:all .2s;}
+.topic-check.checked .check-box{background:var(--accent);border-color:var(--accent);}
+.check-box::after{content:'✓';font-size:10px;color:#0f0e17;opacity:0;}
+.topic-check.checked .check-box::after{opacity:1;}
+.timer-toggle{display:flex;align-items:center;gap:1rem;}
+.toggle-switch{position:relative;width:48px;height:26px;}
+.toggle-switch input{display:none;}
+.toggle-track{position:absolute;inset:0;background:var(--surface2);border:1px solid var(--border);border-radius:100px;cursor:pointer;transition:all .2s;}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:18px;height:18px;background:var(--text-muted);border-radius:50%;transition:all .2s;}
+.toggle-switch input:checked+.toggle-track{background:var(--accent);border-color:var(--accent);}
+.toggle-switch input:checked~.toggle-thumb{left:25px;background:#0f0e17;}
+
+/* QUIZ */
+#page-quiz{background:var(--bg);}
+.quiz-header{padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
+.quiz-progress-bar{height:4px;background:var(--surface2);flex:1;border-radius:2px;margin:0 1.5rem;overflow:hidden;}
+.quiz-progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s;}
+.quiz-meta{display:flex;gap:1rem;align-items:center;}
+.quiz-stat{font-family:'DM Mono',monospace;font-size:.85rem;color:var(--text-muted);}
+.quiz-stat span{color:var(--text);font-weight:600;}
+.timer-display{font-family:'DM Mono',monospace;font-size:1.1rem;font-weight:600;padding:.4rem .8rem;background:var(--surface2);border-radius:8px;min-width:60px;text-align:center;}
+.timer-display.warning{color:var(--warning);background:rgba(232,197,71,.1);}
+.timer-display.danger{color:var(--error);background:rgba(255,107,107,.1);animation:pulse .5s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.quiz-body{flex:1;display:flex;align-items:center;justify-content:center;padding:2rem;}
+.question-card{max-width:720px;width:100%;}
+.q-category{display:inline-block;padding:.3rem .8rem;background:rgba(232,197,71,.15);border:1px solid rgba(232,197,71,.3);border-radius:100px;font-size:.75rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-bottom:1.5rem;}
+.q-text{font-family:'Playfair Display',serif;font-size:clamp(1.2rem,3vw,1.7rem);font-weight:700;line-height:1.4;margin-bottom:2rem;}
+.q-text em{color:var(--accent);font-style:normal;text-decoration:underline;text-underline-offset:4px;}
+.options-grid{display:grid;gap:.75rem;}
+.option-btn{display:flex;align-items:center;gap:1rem;padding:1rem 1.2rem;background:var(--surface);border:2px solid var(--border);border-radius:14px;cursor:pointer;text-align:left;transition:all .2s;font-family:'DM Sans',sans-serif;font-size:.95rem;color:var(--text);position:relative;overflow:hidden;width:100%;}
+.option-btn:hover:not(:disabled){border-color:rgba(255,255,255,.3);background:var(--surface2);}
+.option-btn.selected{border-color:var(--accent);background:rgba(232,197,71,.1);}
+.option-btn.correct{border-color:var(--success);background:rgba(168,255,120,.1);}
+.option-btn.wrong{border-color:var(--error);background:rgba(255,107,107,.1);}
+.option-btn.reveal-correct{border-color:var(--success);background:rgba(168,255,120,.05);}
+.option-btn:disabled{cursor:default;}
+.option-letter{width:28px;height:28px;border-radius:8px;background:var(--surface2);display:grid;place-items:center;font-family:'DM Mono',monospace;font-size:.8rem;font-weight:600;flex-shrink:0;transition:all .2s;}
+.option-btn.selected .option-letter{background:var(--accent);color:#0f0e17;}
+.option-btn.correct .option-letter{background:var(--success);color:#0f0e17;}
+.option-btn.wrong .option-letter{background:var(--error);color:#fff;}
+.result-badge{position:absolute;right:1rem;font-size:1.4rem;}
+.feedback-bar{margin-top:1.5rem;padding:1rem 1.2rem;border-radius:12px;font-size:.9rem;display:none;}
+.feedback-bar.show{display:block;}
+.feedback-bar.correct{background:rgba(168,255,120,.1);border:1px solid rgba(168,255,120,.3);color:var(--success);}
+.feedback-bar.wrong{background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.3);color:var(--error);}
+.feedback-bar.timeout{background:rgba(232,197,71,.1);border:1px solid rgba(232,197,71,.3);color:var(--warning);}
+.feedback-title{font-weight:700;margin-bottom:.25rem;}
+.feedback-exp{color:var(--text-muted);font-size:.85rem;margin-top:.3rem;}
+.quiz-footer{padding:1.5rem 2rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.score-inline{display:flex;gap:1rem;}
+.score-pill{display:flex;align-items:center;gap:.4rem;padding:.4rem .8rem;border-radius:8px;font-size:.85rem;font-weight:600;}
+.score-pill.correct{background:rgba(168,255,120,.1);color:var(--success);}
+.score-pill.wrong{background:rgba(255,107,107,.1);color:var(--error);}
+.score-pill.timeout{background:rgba(232,197,71,.1);color:var(--warning);}
+
+/* RESULTS */
+#page-results{align-items:center;justify-content:center;padding:2rem;}
+.results-box{max-width:680px;width:100%;}
+.results-hero{text-align:center;margin-bottom:2rem;}
+.results-grade{font-family:'Playfair Display',serif;font-size:5rem;font-weight:900;line-height:1;}
+.results-grade.A{color:var(--success);}
+.results-grade.B{color:var(--accent3);}
+.results-grade.C{color:var(--warning);}
+.results-grade.D,.results-grade.F{color:var(--error);}
+.results-title{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:700;margin:.5rem 0;}
+.results-sub{color:var(--text-muted);}
+.results-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:1.5rem 0;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.2rem;text-align:center;}
+.stat-num{font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;}
+.stat-label{font-size:.8rem;color:var(--text-muted);margin-top:.25rem;}
+.results-breakdown{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:1.5rem;}
+.breakdown-header{padding:1rem 1.2rem;border-bottom:1px solid var(--border);font-weight:600;}
+.breakdown-item{display:flex;align-items:center;gap:1rem;padding:.8rem 1.2rem;border-bottom:1px solid var(--border);}
+.breakdown-item:last-child{border-bottom:none;}
+.breakdown-icon{font-size:1.2rem;flex-shrink:0;}
+.breakdown-q{flex:1;font-size:.85rem;color:var(--text-muted);}
+.breakdown-q strong{color:var(--text);display:block;}
+.breakdown-answer{font-size:.8rem;font-family:'DM Mono',monospace;}
+.breakdown-answer.correct{color:var(--success);}
+.breakdown-answer.wrong{color:var(--error);}
+.results-actions{display:flex;gap:1rem;flex-wrap:wrap;}
+
+/* LEADERBOARD */
+#page-leaderboard{padding:2rem;}
+.lb-wrap{max-width:700px;margin:0 auto;}
+.lb-title{font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:900;margin-bottom:.4rem;}
+.lb-sub{color:var(--text-muted);margin-bottom:2rem;}
+.lb-filters{display:flex;gap:.6rem;margin-bottom:1.5rem;flex-wrap:wrap;}
+.lb-table{background:var(--surface);border:1px solid var(--border);border-radius:20px;overflow:hidden;}
+.lb-head{display:grid;grid-template-columns:48px 1fr 80px 80px 80px 90px;gap:.5rem;padding:.9rem 1.2rem;border-bottom:1px solid var(--border);font-size:.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;}
+.lb-row{display:grid;grid-template-columns:48px 1fr 80px 80px 80px 90px;gap:.5rem;padding:1rem 1.2rem;border-bottom:1px solid var(--border);align-items:center;transition:background .15s;}
+.lb-row:last-child{border-bottom:none;}
+.lb-row:hover{background:var(--surface2);}
+.lb-row.top1{background:rgba(232,197,71,.07);}
+.lb-row.top2{background:rgba(192,192,192,.05);}
+.lb-row.top3{background:rgba(205,127,50,.05);}
+.lb-rank{font-family:'DM Mono',monospace;font-weight:700;font-size:1rem;text-align:center;}
+.lb-rank.r1{color:#ffd700;}
+.lb-rank.r2{color:#c0c0c0;}
+.lb-rank.r3{color:#cd7f32;}
+.lb-name{font-weight:600;font-size:.95rem;}
+.lb-name small{display:block;font-size:.72rem;color:var(--text-muted);font-weight:400;}
+.lb-score{font-family:'DM Mono',monospace;font-weight:700;color:var(--accent);font-size:.95rem;text-align:center;}
+.lb-pct{font-family:'DM Mono',monospace;font-size:.85rem;color:var(--success);text-align:center;}
+.lb-diff{font-size:.72rem;padding:.2rem .6rem;border-radius:100px;text-align:center;font-weight:600;}
+.lb-diff.easy{background:rgba(168,255,120,.15);color:var(--success);}
+.lb-diff.medium{background:rgba(232,197,71,.15);color:var(--warning);}
+.lb-diff.hard{background:rgba(255,107,107,.15);color:var(--error);}
+.lb-diff.all{background:rgba(107,207,255,.15);color:var(--accent3);}
+.lb-date{font-size:.75rem;color:var(--text-muted);text-align:right;}
+.lb-empty{text-align:center;padding:4rem 2rem;color:var(--text-muted);}
+.lb-empty .e-icon{font-size:3rem;margin-bottom:1rem;}
+.lb-your-score{background:rgba(232,197,71,.07);border:1px solid rgba(232,197,71,.25);border-radius:16px;padding:1.2rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;}
+.lb-your-rank{font-family:'Playfair Display',serif;font-size:2.5rem;font-weight:900;color:var(--accent);}
+.name-entry{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:2rem;text-align:center;margin-bottom:1.5rem;}
+.name-entry h3{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;margin-bottom:.5rem;}
+.name-entry p{color:var(--text-muted);font-size:.9rem;margin-bottom:1.2rem;}
+.name-input-row{display:flex;gap:.75rem;max-width:360px;margin:0 auto;}
+
+/* MANAGE */
+#page-manage{padding:2rem;}
+.games-panel,.questions-panel{background:var(--surface);border:1px solid var(--border);border-radius:20px;overflow:hidden;}
+.panel-header{padding:1.2rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.panel-title{font-weight:700;font-size:1rem;}
+.panel-body{padding:1.2rem 1.5rem;max-height:70vh;overflow-y:auto;}
+.game-card{padding:1rem;border:1px solid var(--border);border-radius:12px;margin-bottom:.75rem;cursor:pointer;transition:all .2s;}
+.game-card:hover,.game-card.active{border-color:var(--accent);background:rgba(232,197,71,.05);}
+.game-card-name{font-weight:600;margin-bottom:.25rem;}
+.game-card-meta{font-size:.8rem;color:var(--text-muted);display:flex;gap:1rem;}
+.question-row{display:flex;align-items:flex-start;gap:.75rem;padding:.8rem;border:1px solid var(--border);border-radius:10px;margin-bottom:.5rem;}
+.question-row-text{flex:1;font-size:.85rem;}
+.question-row-cat{font-size:.7rem;color:var(--accent);font-weight:600;display:block;margin-bottom:.2rem;text-transform:uppercase;}
+.add-question-form,.add-game-form{background:var(--surface2);border-radius:12px;padding:1rem;margin-top:1rem;}
+.add-q-title{font-weight:600;margin-bottom:1rem;font-size:.9rem;}
+.option-input-row{display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;}
+.option-input-row label{font-size:.75rem;font-family:'DM Mono',monospace;width:16px;flex-shrink:0;color:var(--accent);}
+.correct-select{display:flex;gap:.5rem;flex-wrap:wrap;}
+.correct-btn{padding:.3rem .6rem;border-radius:6px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:.75rem;font-family:'DM Mono',monospace;color:var(--text);transition:all .2s;}
+.correct-btn.active{background:var(--success);border-color:var(--success);color:#0f0e17;}
+
+/* MISTAKES */
+#page-mistakes{padding:2rem;}
+.mistakes-wrap{max-width:800px;margin:0 auto;}
+.mistakes-title{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;margin-bottom:.5rem;}
+.mistakes-sub{color:var(--text-muted);margin-bottom:2rem;}
+.mistake-card{background:var(--surface);border:1px solid rgba(255,107,107,.2);border-radius:16px;padding:1.2rem;margin-bottom:1rem;}
+.mistake-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem;}
+.mistake-cat{font-size:.7rem;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.05em;}
+.mistake-q{font-weight:600;margin-bottom:.5rem;}
+.mistake-answers{display:flex;gap:1.5rem;font-size:.85rem;flex-wrap:wrap;}
+.your-answer{color:var(--error);}
+.right-answer{color:var(--success);}
+.mistake-exp{font-size:.8rem;color:var(--text-muted);margin-top:.5rem;padding-top:.5rem;border-top:1px solid var(--border);}
+.empty-state{text-align:center;padding:4rem 2rem;color:var(--text-muted);}
+.empty-icon{font-size:3rem;margin-bottom:1rem;}
+
+/* CHESS */
+#page-chess{padding:2rem;align-items:center;}
+.chess-layout{display:grid;grid-template-columns:1fr 280px;gap:1.5rem;max-width:800px;width:100%;margin:0 auto;}
+.chess-board-wrap{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:1.5rem;}
+#chess-board{display:grid;grid-template-columns:repeat(8,1fr);aspect-ratio:1;border-radius:8px;overflow:hidden;border:2px solid var(--border);}
+.chess-sq{display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:background .1s;}
+.chess-sq.light{background:#f0d9b5;}
+.chess-sq.dark{background:#b58863;}
+.chess-sq.selected{background:#7fc97f !important;}
+.chess-sq.possible{background:rgba(127,201,127,.55) !important;}
+.chess-sq.last-move{background:#cdd16f !important;}
+.chess-piece{font-size:clamp(1.2rem,4vw,2rem);cursor:pointer;user-select:none;line-height:1;}
+.chess-side{display:flex;flex-direction:column;gap:1rem;}
+.chess-info{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.2rem;}
+.chess-info-title{font-weight:700;margin-bottom:.75rem;}
+.chess-turn{display:flex;align-items:center;gap:.5rem;padding:.6rem .8rem;border-radius:8px;background:var(--surface2);font-size:.85rem;margin-bottom:.75rem;}
+.turn-dot{width:10px;height:10px;border-radius:50%;}
+.turn-dot.white{background:#f0d9b5;border:1px solid rgba(0,0,0,.2);}
+.turn-dot.black{background:#333;border:1px solid rgba(255,255,255,.2);}
+.chess-history-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.2rem;flex:1;}
+.history-list{font-family:'DM Mono',monospace;font-size:.75rem;color:var(--text-muted);max-height:200px;overflow-y:auto;}
+.history-row{display:flex;gap:.5rem;margin-bottom:.2rem;}
+.history-num{color:var(--text-muted);width:24px;}
+.history-white{color:var(--text);flex:1;}
+.history-black{color:var(--text-muted);flex:1;}
+.chess-status{padding:.8rem;border-radius:10px;font-size:.85rem;font-weight:600;text-align:center;}
+.chess-status.playing{background:rgba(168,255,120,.1);color:var(--success);}
+.chess-status.check{background:rgba(232,197,71,.1);color:var(--warning);}
+.chess-status.mate{background:rgba(255,107,107,.1);color:var(--error);}
+
+/* BREAK OVERLAY */
+.break-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);backdrop-filter:blur(12px);z-index:1000;display:none;align-items:center;justify-content:center;text-align:center;flex-direction:column;}
+.break-overlay.show{display:flex;}
+.break-icon{font-size:4rem;margin-bottom:1rem;}
+.break-title{font-family:'Playfair Display',serif;font-size:2.5rem;font-weight:900;margin-bottom:.5rem;}
+.break-sub{color:var(--text-muted);margin-bottom:2rem;max-width:400px;}
+.break-timer{font-family:'DM Mono',monospace;font-size:4rem;font-weight:700;color:var(--accent);margin-bottom:2rem;}
+
+/* TOAST */
+.toast{position:fixed;bottom:2rem;right:2rem;padding:1rem 1.5rem;border-radius:12px;background:var(--surface2);border:1px solid var(--border);font-size:.9rem;transform:translateY(100px);opacity:0;transition:all .3s;z-index:200;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{border-color:var(--success);}
+.toast.error{border-color:var(--error);}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:500;display:none;align-items:center;justify-content:center;padding:1rem;}
+.modal-overlay.show{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:2rem;max-width:500px;width:100%;}
+.modal-title{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;margin-bottom:.5rem;}
+.modal-sub{color:var(--text-muted);margin-bottom:1.5rem;font-size:.9rem;}
+.modal-footer{display:flex;gap:.75rem;margin-top:1.5rem;justify-content:flex-end;}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<!-- BREAK OVERLAY -->
+<div class="break-overlay" id="break-overlay">
+  <div class="break-icon">☕</div>
+  <div class="break-title">Time for a Break!</div>
+  <div class="break-sub">You have been studying for 10 minutes. Rest your eyes for 1 minute, or play chess!</div>
+  <div class="break-timer" id="break-countdown">1:00</div>
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;">
+    <button class="btn btn-primary" onclick="goBreakChess()">&#9822; Play Chess Instead</button>
+    <button class="btn btn-ghost" id="skip-break-btn" style="display:none;" onclick="endBreak()">Skip Break</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ======== HOME ======== -->
+<div id="page-home" class="page active">
+  <div style="text-align:center;max-width:1100px;margin:0 auto;padding:2rem;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;">
+    <div class="home-logo">Grammar<span>Quest</span></div>
+    <p class="home-sub">Master English Grammar &middot; One Question at a Time</p>
+    <div class="home-cards">
+      <div class="home-card gold" onclick="goTo('page-setup')">
+        <div class="card-icon">&#128218;</div>
+        <div class="card-title">Start Quiz</div>
+        <div class="card-desc">Choose difficulty, topics, and test your grammar knowledge</div>
+      </div>
+      <div class="home-card blue" onclick="goTo('page-manage')">
+        <div class="card-icon">&#9881;&#65039;</div>
+        <div class="card-title">Manage Games</div>
+        <div class="card-desc">Create custom games, add or delete your own questions</div>
+      </div>
+      <div class="home-card green" onclick="goTo('page-mistakes')">
+        <div class="card-icon">&#128221;</div>
+        <div class="card-title">Mistake Pad</div>
+        <div class="card-desc">Review all your wrong answers and learn from them</div>
+      </div>
+      <div class="home-card purple" onclick="goTo('page-leaderboard')">
+        <div class="card-icon">&#127942;</div>
+        <div class="card-title">Leaderboard</div>
+        <div class="card-desc">See top scores and compete with your best results</div>
+      </div>
+      <div class="home-card red" onclick="goTo('page-chess')">
+        <div class="card-icon">&#9822;&#65039;</div>
+        <div class="card-title">Relax &amp; Chess</div>
+        <div class="card-desc">Take a break and play chess against a bot</div>
+      </div>
+    </div>
+    <p style="font-size:.8rem;color:var(--text-muted);">Every 10 minutes of studying, you will get a 1-minute break reminder</p>
+  </div>
+</div>
+
+<!-- ======== SETUP ======== -->
+<div id="page-setup" class="page">
+  <nav class="nav">
+    <div class="nav-logo" onclick="goTo('page-home')">Grammar<span>Quest</span></div>
+    <div class="nav-right"><button class="btn btn-ghost btn-sm" onclick="goTo('page-home')">&larr; Home</button></div>
+  </nav>
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:2rem;">
+    <div class="setup-box">
+      <div class="setup-title">Quiz Settings</div>
+      <p class="setup-sub">Customize your grammar challenge</p>
+      <div class="form-group">
+        <label class="form-label">Game / Set</label>
+        <select class="form-select" id="setup-game-select">
+          <option value="default">All Questions (Default)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Difficulty</label>
+        <div class="difficulty-pills">
+          <div class="pill active" data-diff="easy" onclick="selectDiff(this)">&#129001; Easy</div>
+          <div class="pill" data-diff="medium" onclick="selectDiff(this)">&#129000; Medium</div>
+          <div class="pill" data-diff="hard" onclick="selectDiff(this)">&#128997; Hard</div>
+          <div class="pill" data-diff="all" onclick="selectDiff(this)">&#11088; All</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Topics</label>
+        <div class="topic-grid" id="topic-grid">
+          <div class="topic-check checked" onclick="toggleTopic(this,'direct-indirect')"><input type="checkbox" checked><div class="check-box"></div>Direct / Indirect Speech</div>
+          <div class="topic-check checked" onclick="toggleTopic(this,'direct-indirect-obj')"><input type="checkbox" checked><div class="check-box"></div>Direct vs Indirect Objects</div>
+          <div class="topic-check checked" onclick="toggleTopic(this,'sentence-editing')"><input type="checkbox" checked><div class="check-box"></div>Sentence Editing</div>
+          <div class="topic-check checked" onclick="toggleTopic(this,'subject-verb')"><input type="checkbox" checked><div class="check-box"></div>Subject-Verb Agreement</div>
+          <div class="topic-check checked" onclick="toggleTopic(this,'tenses')"><input type="checkbox" checked><div class="check-box"></div>Tenses</div>
+          <div class="topic-check checked" onclick="toggleTopic(this,'punctuation')"><input type="checkbox" checked><div class="check-box"></div>Punctuation</div>
+          <div class="topic-check checked" onclick="toggleTopic(this,'articles')"><input type="checkbox" checked><div class="check-box"></div>Articles</div>
+          <div class="topic-check checked" onclick="toggleTopic(this,'pronouns')"><input type="checkbox" checked><div class="check-box"></div>Pronouns</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Number of Questions</label>
+        <select class="form-select" id="setup-count">
+          <option value="5">5 questions</option>
+          <option value="10" selected>10 questions</option>
+          <option value="15">15 questions</option>
+          <option value="20">20 questions</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Timed Mode</label>
+        <div class="timer-toggle">
+          <label class="toggle-switch">
+            <input type="checkbox" id="timed-toggle" onchange="toggleTimedMode(this)">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+          <span style="font-size:.9rem;color:var(--text-muted);">Add time pressure per question</span>
+        </div>
+        <div id="timer-options" style="margin-top:.75rem;display:none;">
+          <select class="form-select" id="timer-seconds">
+            <option value="10">10 seconds per question</option>
+            <option value="20" selected>20 seconds per question</option>
+            <option value="30">30 seconds per question</option>
+            <option value="45">45 seconds per question</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:1rem;" onclick="startQuiz()">Start Quiz &rarr;</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======== QUIZ ======== -->
+<div id="page-quiz" class="page">
+  <div class="quiz-header">
+    <button class="btn btn-ghost btn-sm" onclick="confirmQuit()">&times; Quit</button>
+    <div class="quiz-progress-bar"><div class="quiz-progress-fill" id="q-progress"></div></div>
+    <div class="quiz-meta">
+      <div class="quiz-stat">Q <span id="q-num">1</span>/<span id="q-total">10</span></div>
+      <div class="timer-display" id="q-timer" style="display:none;">20s</div>
+    </div>
+  </div>
+  <div class="quiz-body">
+    <div class="question-card">
+      <div class="q-category" id="q-category">Grammar</div>
+      <div class="q-text" id="q-text">Loading...</div>
+      <div class="options-grid" id="q-options"></div>
+      <div class="feedback-bar" id="q-feedback">
+        <div class="feedback-title" id="fb-title"></div>
+        <div class="feedback-exp" id="fb-exp"></div>
+      </div>
+    </div>
+  </div>
+  <div class="quiz-footer">
+    <div class="score-inline">
+      <div class="score-pill correct">&#10003; <span id="score-correct">0</span></div>
+      <div class="score-pill wrong">&#10007; <span id="score-wrong">0</span></div>
+      <div class="score-pill timeout">? <span id="score-timeout">0</span></div>
+    </div>
+    <button class="btn btn-primary" id="q-next-btn" onclick="nextQuestion()" style="display:none;">Next Question &rarr;</button>
+  </div>
+</div>
+
+<!-- ======== RESULTS ======== -->
+<div id="page-results" class="page">
+  <nav class="nav">
+    <div class="nav-logo" onclick="goTo('page-home')">Grammar<span>Quest</span></div>
+  </nav>
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:2rem;">
+    <div class="results-box">
+      <div class="results-hero">
+        <div class="results-grade" id="r-grade">A</div>
+        <div class="results-title" id="r-title">Excellent Work!</div>
+        <div class="results-sub" id="r-sub">You scored 9/10 questions correct</div>
+      </div>
+      <div class="results-stats">
+        <div class="stat-card"><div class="stat-num" id="r-correct" style="color:var(--success)">0</div><div class="stat-label">Correct</div></div>
+        <div class="stat-card"><div class="stat-num" id="r-wrong" style="color:var(--error)">0</div><div class="stat-label">Wrong</div></div>
+        <div class="stat-card"><div class="stat-num" id="r-timeout" style="color:var(--warning)">0</div><div class="stat-label">Timed Out</div></div>
+      </div>
+      <!-- Name entry for leaderboard -->
+      <div class="name-entry" id="name-entry-box">
+        <h3>&#127942; Save to Leaderboard</h3>
+        <p>Enter your name to save this score</p>
+        <div class="name-input-row">
+          <input class="form-input" id="lb-name-input" placeholder="Your name..." maxlength="24" style="flex:1;">
+          <button class="btn btn-primary" onclick="saveToLeaderboard()">Save</button>
+        </div>
+      </div>
+      <div class="results-breakdown">
+        <div class="breakdown-header">Question Breakdown</div>
+        <div id="r-breakdown"></div>
+      </div>
+      <div class="results-actions">
+        <button class="btn btn-primary" onclick="goTo('page-setup')">Play Again</button>
+        <button class="btn btn-secondary" onclick="goTo('page-leaderboard')">&#127942; Leaderboard</button>
+        <button class="btn btn-secondary" onclick="goTo('page-mistakes')">&#128221; Mistakes</button>
+        <button class="btn btn-ghost" onclick="goTo('page-home')">Home</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======== LEADERBOARD ======== -->
+<div id="page-leaderboard" class="page">
+  <nav class="nav">
+    <div class="nav-logo" onclick="goTo('page-home')">Grammar<span>Quest</span></div>
+    <div class="nav-right">
+      <button class="btn btn-danger btn-sm" onclick="clearLeaderboard()">&#128465; Clear All</button>
+      <button class="btn btn-ghost btn-sm" onclick="goTo('page-home')">&larr; Home</button>
+    </div>
+  </nav>
+  <div style="flex:1;padding:2rem;">
+    <div class="lb-wrap">
+      <div class="lb-title">&#127942; Leaderboard</div>
+      <p class="lb-sub">Top scores across all quiz attempts</p>
+      <div class="lb-filters" id="lb-filters">
+        <div class="pill active" data-lbf="all" onclick="filterLB(this,'all')">All Difficulties</div>
+        <div class="pill" data-lbf="easy" onclick="filterLB(this,'easy')">Easy</div>
+        <div class="pill" data-lbf="medium" onclick="filterLB(this,'medium')">Medium</div>
+        <div class="pill" data-lbf="hard" onclick="filterLB(this,'hard')">Hard</div>
+      </div>
+      <div class="lb-table" id="lb-table"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======== MANAGE ======== -->
+<div id="page-manage" class="page">
+  <nav class="nav">
+    <div class="nav-logo" onclick="goTo('page-home')">Grammar<span>Quest</span></div>
+    <div class="nav-right"><button class="btn btn-ghost btn-sm" onclick="goTo('page-home')">&larr; Home</button></div>
+  </nav>
+  <div style="padding:2rem;">
+    <div style="max-width:1000px;margin:0 auto;">
+      <div style="margin-bottom:1.5rem;">
+        <h1 style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;">Manage Games &amp; Questions</h1>
+        <p style="color:var(--text-muted);">Create custom question sets and add your own questions</p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:1.5rem;">
+        <div class="games-panel">
+          <div class="panel-header">
+            <div class="panel-title">&#128230; Game Sets</div>
+            <button class="btn btn-primary btn-sm" onclick="showAddGame()">+ New Game</button>
+          </div>
+          <div class="panel-body">
+            <div id="games-list-manage"></div>
+            <div class="add-game-form" id="add-game-form" style="display:none;">
+              <div class="add-q-title">Create New Game Set</div>
+              <input class="form-input" id="new-game-name" placeholder="Game name" style="margin-bottom:.5rem;">
+              <input class="form-input" id="new-game-desc" placeholder="Description (optional)">
+              <div style="display:flex;gap:.5rem;margin-top:.75rem;">
+                <button class="btn btn-success btn-sm" onclick="createGame()">Create</button>
+                <button class="btn btn-ghost btn-sm" onclick="hideAddGame()">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="questions-panel">
+          <div class="panel-header">
+            <div class="panel-title" id="questions-panel-title">&#10067; Questions</div>
+            <button class="btn btn-primary btn-sm" id="add-q-btn" onclick="showAddQuestion()" style="display:none;">+ Add Question</button>
+          </div>
+          <div class="panel-body">
+            <div id="questions-list-manage">
+              <div class="empty-state"><div class="empty-icon">&#128072;</div><p>Select a game to view its questions</p></div>
+            </div>
+            <div class="add-question-form" id="add-question-form" style="display:none;">
+              <div class="add-q-title">Add New Question</div>
+              <select class="form-select" id="new-q-category" style="margin-bottom:.5rem;">
+                <option value="direct-indirect">Direct / Indirect Speech</option>
+                <option value="direct-indirect-obj">Direct vs Indirect Objects</option>
+                <option value="sentence-editing">Sentence Editing</option>
+                <option value="subject-verb">Subject-Verb Agreement</option>
+                <option value="tenses">Tenses</option>
+                <option value="punctuation">Punctuation</option>
+                <option value="articles">Articles</option>
+                <option value="pronouns">Pronouns</option>
+              </select>
+              <select class="form-select" id="new-q-diff" style="margin-bottom:.5rem;">
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+              <textarea class="form-input" id="new-q-text" placeholder="Enter question text..." style="margin-bottom:.5rem;"></textarea>
+              <div style="margin-bottom:.5rem;">
+                <div class="option-input-row"><label>A</label><input class="form-input" id="opt-a" placeholder="Option A"></div>
+                <div class="option-input-row"><label>B</label><input class="form-input" id="opt-b" placeholder="Option B"></div>
+                <div class="option-input-row"><label>C</label><input class="form-input" id="opt-c" placeholder="Option C"></div>
+                <div class="option-input-row"><label>D</label><input class="form-input" id="opt-d" placeholder="Option D"></div>
+              </div>
+              <div style="margin-bottom:.75rem;">
+                <div style="font-size:.8rem;color:var(--text-muted);margin-bottom:.4rem;">Correct Answer:</div>
+                <div class="correct-select">
+                  <button class="correct-btn" data-ans="0" onclick="selectCorrect(this)">A</button>
+                  <button class="correct-btn" data-ans="1" onclick="selectCorrect(this)">B</button>
+                  <button class="correct-btn" data-ans="2" onclick="selectCorrect(this)">C</button>
+                  <button class="correct-btn" data-ans="3" onclick="selectCorrect(this)">D</button>
+                </div>
+              </div>
+              <input class="form-input" id="new-q-exp" placeholder="Explanation (why this answer is correct)" style="margin-bottom:.75rem;">
+              <div style="display:flex;gap:.5rem;">
+                <button class="btn btn-success btn-sm" onclick="addQuestion()">Add Question</button>
+                <button class="btn btn-ghost btn-sm" onclick="hideAddQuestion()">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======== MISTAKES ======== -->
+<div id="page-mistakes" class="page">
+  <nav class="nav">
+    <div class="nav-logo" onclick="goTo('page-home')">Grammar<span>Quest</span></div>
+    <div class="nav-right">
+      <button class="btn btn-danger btn-sm" onclick="clearMistakes()">&#128465; Clear All</button>
+      <button class="btn btn-ghost btn-sm" onclick="goTo('page-home')">&larr; Home</button>
+    </div>
+  </nav>
+  <div style="flex:1;padding:2rem;">
+    <div class="mistakes-wrap">
+      <div class="mistakes-title">&#128221; Mistake Pad</div>
+      <p class="mistakes-sub">Review every question you got wrong or timed out on</p>
+      <div id="mistakes-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======== CHESS ======== -->
+<div id="page-chess" class="page">
+  <nav class="nav">
+    <div class="nav-logo" onclick="goTo('page-home')">Grammar<span>Quest</span></div>
+    <div class="nav-right"><button class="btn btn-ghost btn-sm" onclick="goTo('page-home')">&larr; Home</button></div>
+  </nav>
+  <div style="flex:1;padding:2rem;display:flex;align-items:flex-start;justify-content:center;">
+    <div style="width:100%;">
+      <div style="text-align:center;margin-bottom:1.5rem;">
+        <div style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;">&#9822; Relax &amp; Play Chess</div>
+        <p style="color:var(--text-muted);">Play against the bot &mdash; you are White</p>
+      </div>
+      <div class="chess-layout">
+        <div class="chess-board-wrap">
+          <div id="chess-board"></div>
+          <div style="display:flex;justify-content:space-around;padding-top:.5rem;" id="chess-files"></div>
+        </div>
+        <div class="chess-side">
+          <div class="chess-info">
+            <div class="chess-info-title">Game Info</div>
+            <div class="chess-turn" id="chess-turn-display">
+              <div class="turn-dot white"></div> <span>White's turn (You)</span>
+            </div>
+            <div class="chess-status playing" id="chess-status">Game in progress</div>
+            <div style="display:flex;gap:.5rem;margin-top:1rem;">
+              <button class="btn btn-secondary btn-sm" onclick="initChess()">&#8635; New Game</button>
+            </div>
+          </div>
+          <div class="chess-history-box">
+            <div style="font-weight:600;margin-bottom:.5rem;font-size:.9rem;">Move History</div>
+            <div class="history-list" id="chess-history-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM QUIT MODAL -->
+<div class="modal-overlay" id="quit-modal">
+  <div class="modal">
+    <div class="modal-title">Quit Quiz?</div>
+    <p class="modal-sub">Your progress will be lost. Are you sure?</p>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('quit-modal')">Keep Going</button>
+      <button class="btn btn-danger" onclick="quitQuiz()">Quit</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===================== QUESTIONS DATA =====================
+var CATEGORY_LABELS = {
+  'direct-indirect':'Direct / Indirect Speech',
+  'direct-indirect-obj':'Direct vs Indirect Objects',
+  'sentence-editing':'Sentence Editing',
+  'subject-verb':'Subject-Verb Agreement',
+  'tenses':'Tenses',
+  'punctuation':'Punctuation',
+  'articles':'Articles',
+  'pronouns':'Pronouns'
+};
+
+var PREBUILT = [
+  {id:1,category:'direct-indirect',difficulty:'easy',text:'She said, <em>"I am happy."</em> &mdash; Convert to indirect speech.',options:['She said that she was happy.','She said that I am happy.','She told that she was happy.','She said that she is happy.'],correct:0,explanation:'In indirect speech, "I" becomes "she" and "am" becomes "was" (tense backshift).'},
+  {id:2,category:'direct-indirect',difficulty:'easy',text:'He said, <em>"I will come tomorrow."</em> &mdash; Which is the correct indirect form?',options:['He said he will come the next day.','He said he would come the next day.','He told he would come tomorrow.','He said that he would come tomorrow.'],correct:1,explanation:'"will" becomes "would" and "tomorrow" becomes "the next day" in indirect speech.'},
+  {id:3,category:'direct-indirect',difficulty:'medium',text:'The teacher said, <em>"Students must submit their assignments by Friday."</em> &mdash; Convert to indirect speech.',options:['The teacher said students must submit their assignments by Friday.','The teacher said that students had to submit their assignments by that Friday.','The teacher told that students must submit assignments on Friday.','The teacher said students should submit their assignments by Friday.'],correct:1,explanation:'"must" becomes "had to" and "Friday" becomes "that Friday" in tense backshift.'},
+  {id:4,category:'direct-indirect',difficulty:'hard',text:'She asked him, <em>"Have you ever visited Paris?"</em> &mdash; Which indirect form is correct?',options:['She asked him if he has ever visited Paris.','She asked him whether he had ever visited Paris.','She asked him that had he ever visited Paris.','She inquired him if he ever visited Paris.'],correct:1,explanation:'Yes/no questions use "whether/if" in indirect speech. "have" becomes "had" (tense backshift).'},
+  {id:5,category:'direct-indirect',difficulty:'medium',text:'The coach said, <em>"Run faster!"</em> &mdash; Convert this command to indirect speech.',options:['The coach said to run faster.','The coach told to run faster.','The coach said that run faster.','The coach ordered to run faster.'],correct:0,explanation:'Commands in indirect speech use "said/told + infinitive (to + verb)".'},
+  {id:6,category:'direct-indirect-obj',difficulty:'easy',text:'In the sentence <em>"She gave him a book"</em>, what is the DIRECT object?',options:['She','him','a book','gave'],correct:2,explanation:'The direct object receives the action directly. "A book" is what was given.'},
+  {id:7,category:'direct-indirect-obj',difficulty:'easy',text:'In <em>"The teacher sent the students a reminder"</em>, what is the INDIRECT object?',options:['the teacher','the students','a reminder','sent'],correct:1,explanation:'The indirect object is the recipient. "The students" received the reminder.'},
+  {id:8,category:'direct-indirect-obj',difficulty:'medium',text:'Which sentence has BOTH a direct and indirect object?',options:['The dog barked loudly.','She runs every morning.','He bought his sister flowers.','They arrived late.'],correct:2,explanation:'"Flowers" is the direct object; "his sister" is the indirect object.'},
+  {id:9,category:'direct-indirect-obj',difficulty:'hard',text:'Identify the indirect object in: <em>"My professor emailed our class a study guide."</em>',options:['my professor','our class','a study guide','emailed'],correct:1,explanation:'"Our class" is the indirect object -- it received the study guide.'},
+  {id:10,category:'sentence-editing',difficulty:'easy',text:'Which sentence is grammatically correct?',options:['Him and me went to the store.','He and I went to the store.','Him and I went to the store.','He and me went to the store.'],correct:1,explanation:'Use subject pronouns (He, I) for subjects of sentences.'},
+  {id:11,category:'sentence-editing',difficulty:'easy',text:'Choose the correct sentence:',options:['Their going to the park.','There going to the park.','They are going to the park.','Theyre going to the park.'],correct:2,explanation:'"They are" is the full form; "Their" shows possession; "There" is a place.'},
+  {id:12,category:'sentence-editing',difficulty:'medium',text:'Which is the corrected version of: <em>"Running through the park, the rain began to fall."</em>',options:['Running through the park, the rain began to fall.','As I was running through the park, the rain began to fall.','Running, the rain through the park began to fall.','The rain, running through the park, began to fall.'],correct:1,explanation:'The original has a dangling modifier -- "running" must refer to a person, not the rain.'},
+  {id:13,category:'sentence-editing',difficulty:'hard',text:'Which sentence avoids a comma splice?',options:['The concert was amazing, we stayed until midnight.','The concert was amazing; we stayed until midnight.','The concert was amazing, and, we stayed until midnight.','The concert was amazing staying until midnight.'],correct:1,explanation:'A semicolon correctly joins two independent clauses without a comma splice.'},
+  {id:14,category:'sentence-editing',difficulty:'medium',text:'Edit: <em>"Between you and I, the exam was difficult."</em>',options:['Between you and I, the exam was difficult.','Between you and me, the exam was difficult.','Between you and myself, the exam was difficult.','Between I and you, the exam was difficult.'],correct:1,explanation:'After prepositions like "between," use object pronouns (me, him, her).'},
+  {id:15,category:'subject-verb',difficulty:'easy',text:'Choose the correct verb: <em>"The team ___ playing well."</em>',options:['are','were','is','have'],correct:2,explanation:'"Team" is a collective noun treated as singular in American English.'},
+  {id:16,category:'subject-verb',difficulty:'easy',text:'Which is correct? <em>"Neither the students nor the teacher ___ ready."</em>',options:['are','were','is','have been'],correct:2,explanation:'With "neither...nor," the verb agrees with the nearer subject -- "teacher" (singular).'},
+  {id:17,category:'subject-verb',difficulty:'medium',text:'Select the correct verb: <em>"The news ___ disturbing."</em>',options:['are','were','is','have been'],correct:2,explanation:'"News" looks plural but is always singular -- it takes a singular verb.'},
+  {id:18,category:'subject-verb',difficulty:'medium',text:'Which sentence is correct?',options:['Each of the students have a book.','Each of the students has a book.','Each of the students are having a book.','Each of the students were having a book.'],correct:1,explanation:'"Each" is always singular and takes a singular verb.'},
+  {id:19,category:'subject-verb',difficulty:'hard',text:'Correct the agreement: <em>"A number of students was absent."</em>',options:['A number of students was absent.','A number of students were absent.','The number of students were absent.','A number of students are absent.'],correct:1,explanation:'"A number of" means "several" and takes a plural verb.'},
+  {id:20,category:'tenses',difficulty:'easy',text:'Fill in the blank: <em>"By the time she arrived, the show ___ already started."</em>',options:['has','have','had','was'],correct:2,explanation:'Use past perfect (had + past participle) for an action completed before another past action.'},
+  {id:21,category:'tenses',difficulty:'easy',text:'Choose the correct tense: <em>"I ___ for three hours when you called."</em>',options:['studied','was studying','had been studying','have studied'],correct:2,explanation:'Past perfect continuous shows a continuous action that was interrupted in the past.'},
+  {id:22,category:'tenses',difficulty:'medium',text:'Identify the tense: <em>"She will have finished the project by Monday."</em>',options:['Future simple','Future perfect','Future continuous','Present perfect'],correct:1,explanation:'"Will have + past participle" is the future perfect tense.'},
+  {id:23,category:'tenses',difficulty:'hard',text:'Choose the correct sentence for a real condition:',options:['If I would study harder, I will pass.','If I study harder, I will pass.','If I studied harder, I would have passed.','If I would have studied harder, I would pass.'],correct:1,explanation:'For real conditions (first conditional), use "if + present simple, will + base verb".'},
+  {id:24,category:'punctuation',difficulty:'easy',text:'Which sentence uses the apostrophe correctly?',options:['The dogs tail wagged happily.','The dogs tails wagged happily.','The dog\'s tail wagged happily.','The dogs\' tail wagged happily.'],correct:2,explanation:'Singular possessive uses apostrophe + s (dog\'s tail = the tail belonging to one dog).'},
+  {id:25,category:'punctuation',difficulty:'medium',text:'Choose the correctly punctuated sentence:',options:['However, I disagree with your point.','However I disagree with your point.','However I, disagree with your point.','However; I disagree with your point.'],correct:0,explanation:'Transitional words like "however" are followed by a comma when starting a clause.'},
+  {id:26,category:'punctuation',difficulty:'hard',text:'Which use of the semicolon is correct?',options:['She loves cats; but she is allergic.','I visited Paris; London; and Rome.','He studied hard; however, he still failed.','Buy milk; eggs and bread.'],correct:2,explanation:'Semicolons connect independent clauses, especially with conjunctive adverbs like "however".'},
+  {id:27,category:'articles',difficulty:'easy',text:'Fill in the blank: <em>"She is ___ engineer."</em>',options:['a','an','the','(none)'],correct:1,explanation:'Use "an" before words beginning with vowel sounds (engineer starts with "e").'},
+  {id:28,category:'articles',difficulty:'easy',text:'Choose correctly: <em>"He went to ___ hospital after the accident."</em>',options:['a','an','the','(none)'],correct:2,explanation:'"The hospital" -- a specific hospital that both speakers know about.'},
+  {id:29,category:'articles',difficulty:'medium',text:'Which sentence is correct?',options:['She plays a piano beautifully.','She plays piano beautifully.','She plays the piano beautifully.','She plays an piano beautifully.'],correct:2,explanation:'Use "the" with musical instruments (play the piano, the guitar, etc.).'},
+  {id:30,category:'articles',difficulty:'hard',text:'Fill in: <em>"___ Mount Everest is ___ highest mountain in ___ world."</em>',options:['The / the / the','(none) / the / the','The / a / a','(none) / the / a'],correct:1,explanation:'Proper names of mountains do not use articles. "The highest" and "the world" use "the".'},
+  {id:31,category:'pronouns',difficulty:'easy',text:'Choose the correct pronoun: <em>"___ called?" / "___ is at the door?"</em>',options:['Who','Whom','Whose','Which'],correct:0,explanation:'"Who" is a subject pronoun -- it is asking who performed an action.'},
+  {id:32,category:'pronouns',difficulty:'medium',text:'Which is correct? <em>"Give it to ___ you trust."</em>',options:['who','whom','whoever','whomever'],correct:3,explanation:'"Whomever" is an object pronoun used as the object of "trust." The whole clause is the object of "to."'},
+  {id:33,category:'pronouns',difficulty:'hard',text:'Choose the correct pronoun: <em>"Between her and ___, there are no secrets."</em>',options:['I','me','she','he'],correct:1,explanation:'"Between" is a preposition so it requires an object pronoun. "Me" is correct.'}
+];
+
+// ===================== STATE =====================
+var games = JSON.parse(localStorage.getItem('gq_games')||'[]');
+var customQs = JSON.parse(localStorage.getItem('gq_custom_qs')||'[]');
+var mistakes = JSON.parse(localStorage.getItem('gq_mistakes')||'[]');
+var leaderboard = JSON.parse(localStorage.getItem('gq_leaderboard')||'[]');
+var quizState = {};
+var selectedCorrectIdx = -1;
+var activeGameId = null;
+var selectedDiff = 'easy';
+var selectedTopics = ['direct-indirect','direct-indirect-obj','sentence-editing','subject-verb','tenses','punctuation','articles','pronouns'];
+var studyTimer = null;
+var studySeconds = 0;
+var breakTimer = null;
+var breakSecondsLeft = 60;
+var lbFilter = 'all';
+
+// ===================== NAV =====================
+function goTo(pageId){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  document.getElementById(pageId).classList.add('active');
+  if(pageId==='page-manage') renderManage();
+  if(pageId==='page-mistakes') renderMistakes();
+  if(pageId==='page-chess') initChess();
+  if(pageId==='page-setup') populateSetupGames();
+  if(pageId==='page-leaderboard') renderLeaderboard();
+}
+
+function toast(msg,type){
+  var t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show '+(type||'');
+  setTimeout(function(){t.className='toast';},2600);
+}
+function openModal(id){document.getElementById(id).classList.add('show');}
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+
+// ===================== SETUP =====================
+function selectDiff(el){
+  document.querySelectorAll('.pill[data-diff]').forEach(function(p){p.classList.remove('active');});
+  el.classList.add('active');
+  selectedDiff=el.dataset.diff;
+}
+function toggleTopic(el,topic){
+  el.classList.toggle('checked');
+  if(el.classList.contains('checked')){if(!selectedTopics.includes(topic))selectedTopics.push(topic);}
+  else{selectedTopics=selectedTopics.filter(function(t){return t!==topic;});}
+}
+function toggleTimedMode(cb){document.getElementById('timer-options').style.display=cb.checked?'block':'none';}
+function populateSetupGames(){
+  var sel=document.getElementById('setup-game-select');
+  sel.innerHTML='<option value="default">All Questions (Default)</option>';
+  games.forEach(function(g){var o=document.createElement('option');o.value=g.id;o.textContent=g.name;sel.appendChild(o);});
+}
+
+// ===================== QUIZ =====================
+function startQuiz(){
+  if(selectedTopics.length===0){toast('Please select at least one topic!','error');return;}
+  var count=parseInt(document.getElementById('setup-count').value);
+  var gameId=document.getElementById('setup-game-select').value;
+  var timed=document.getElementById('timed-toggle').checked;
+  var secs=parseInt(document.getElementById('timer-seconds').value);
+  var pool=PREBUILT.concat(customQs);
+  if(gameId!=='default'){
+    var g=games.find(function(g){return g.id===gameId;});
+    if(g) pool=pool.filter(function(q){return g.questionIds.includes(q.id);});
+  }
+  pool=pool.filter(function(q){
+    return (selectedDiff==='all'||q.difficulty===selectedDiff) && selectedTopics.includes(q.category);
+  });
+  if(pool.length===0){toast('No questions match your filters!','error');return;}
+  pool=shuffle(pool).slice(0,Math.min(count,pool.length));
+  quizState={questions:pool,current:0,answers:[],correct:0,wrong:0,timeout:0,timed:timed,timerSecs:secs,timerInterval:null,answered:false,difficulty:selectedDiff};
+  startStudyTimer();
+  goTo('page-quiz');
+  renderQuestion();
+}
+
+function renderQuestion(){
+  var q=quizState.questions[quizState.current];
+  var total=quizState.questions.length;
+  quizState.answered=false;
+  document.getElementById('q-num').textContent=quizState.current+1;
+  document.getElementById('q-total').textContent=total;
+  document.getElementById('q-progress').style.width=((quizState.current/total)*100)+'%';
+  document.getElementById('q-category').textContent=CATEGORY_LABELS[q.category]||q.category;
+  document.getElementById('q-text').innerHTML=q.text;
+  document.getElementById('q-next-btn').style.display='none';
+  document.getElementById('q-feedback').className='feedback-bar';
+  document.getElementById('score-correct').textContent=quizState.correct;
+  document.getElementById('score-wrong').textContent=quizState.wrong;
+  document.getElementById('score-timeout').textContent=quizState.timeout;
+  var optEl=document.getElementById('q-options');
+  optEl.innerHTML='';
+  q.options.forEach(function(opt,i){
+    var btn=document.createElement('button');
+    btn.className='option-btn';
+    btn.innerHTML='<div class="option-letter">'+('ABCD'[i])+'</div><span>'+opt+'</span>';
+    btn.onclick=function(){selectAnswer(i);};
+    optEl.appendChild(btn);
+  });
+  if(quizState.timed){
+    clearInterval(quizState.timerInterval);
+    var remaining=quizState.timerSecs;
+    var timerEl=document.getElementById('q-timer');
+    timerEl.style.display='block';
+    timerEl.className='timer-display';
+    timerEl.textContent=remaining+'s';
+    quizState.timerInterval=setInterval(function(){
+      remaining--;
+      timerEl.textContent=remaining+'s';
+      if(remaining<=5)timerEl.className='timer-display danger';
+      else if(remaining<=10)timerEl.className='timer-display warning';
+      if(remaining<=0){clearInterval(quizState.timerInterval);timeOut();}
+    },1000);
+  } else {
+    document.getElementById('q-timer').style.display='none';
+  }
+}
+
+function selectAnswer(idx){
+  if(quizState.answered)return;
+  quizState.answered=true;
+  clearInterval(quizState.timerInterval);
+  var q=quizState.questions[quizState.current];
+  var correct=q.correct===idx;
+  var btns=document.querySelectorAll('.option-btn');
+  btns.forEach(function(btn,i){
+    btn.disabled=true;
+    if(i===idx){btn.classList.add(correct?'correct':'wrong');}
+    if(i===q.correct&&!correct){btn.classList.add('reveal-correct');}
+    var badge=document.createElement('span');
+    badge.className='result-badge';
+    if(i===idx)badge.textContent=correct?'✅':'❌';
+    else if(i===q.correct&&!correct)badge.textContent='✅';
+    btn.appendChild(badge);
+  });
+  var fb=document.getElementById('q-feedback');
+  var fbTitle=document.getElementById('fb-title');
+  var fbExp=document.getElementById('fb-exp');
+  if(correct){
+    quizState.correct++;
+    fb.className='feedback-bar show correct';
+    fbTitle.textContent='✓ Correct!';
+  } else {
+    quizState.wrong++;
+    fb.className='feedback-bar show wrong';
+    fbTitle.textContent='✗ Incorrect. Correct answer: '+q.options[q.correct];
+    saveMistake(q,q.options[idx],'wrong');
+  }
+  fbExp.textContent=q.explanation||'';
+  quizState.answers.push({q:q,chosen:idx,result:correct?'correct':'wrong'});
+  document.getElementById('score-correct').textContent=quizState.correct;
+  document.getElementById('score-wrong').textContent=quizState.wrong;
+  document.getElementById('q-next-btn').style.display='flex';
+}
+
+function timeOut(){
+  if(quizState.answered)return;
+  quizState.answered=true;
+  var q=quizState.questions[quizState.current];
+  document.querySelectorAll('.option-btn').forEach(function(btn,i){
+    btn.disabled=true;
+    if(i===q.correct){btn.classList.add('reveal-correct');var b=document.createElement('span');b.className='result-badge';b.textContent='✅';btn.appendChild(b);}
+  });
+  quizState.timeout++;
+  document.getElementById('score-timeout').textContent=quizState.timeout;
+  var fb=document.getElementById('q-feedback');
+  fb.className='feedback-bar show timeout';
+  document.getElementById('fb-title').textContent='⏰ Time\'s Up! Correct: '+q.options[q.correct];
+  document.getElementById('fb-exp').textContent=q.explanation||'';
+  quizState.answers.push({q:q,chosen:-1,result:'timeout'});
+  saveMistake(q,'Timed out','timeout');
+  document.getElementById('q-next-btn').style.display='flex';
+}
+
+function nextQuestion(){
+  quizState.current++;
+  if(quizState.current>=quizState.questions.length){showResults();}
+  else{renderQuestion();}
+}
+
+function showResults(){
+  clearInterval(quizState.timerInterval);
+  stopStudyTimer();
+  var total=quizState.questions.length;
+  var pct=Math.round((quizState.correct/total)*100);
+  var grade,title;
+  if(pct>=90){grade='A';title='Excellent Work! 🎉';}
+  else if(pct>=80){grade='B';title='Great Job! 👏';}
+  else if(pct>=70){grade='C';title='Good Effort! Keep Practicing';}
+  else if(pct>=60){grade='D';title='Needs Improvement';}
+  else{grade='F';title='Keep Studying -- You\'ve Got This!';}
+  var grEl=document.getElementById('r-grade');
+  grEl.textContent=grade; grEl.className='results-grade '+grade;
+  document.getElementById('r-title').textContent=title;
+  document.getElementById('r-sub').textContent='You scored '+quizState.correct+'/'+total+' ('+pct+'%)';
+  document.getElementById('r-correct').textContent=quizState.correct;
+  document.getElementById('r-wrong').textContent=quizState.wrong;
+  document.getElementById('r-timeout').textContent=quizState.timeout;
+  document.getElementById('name-entry-box').style.display='block';
+  document.getElementById('lb-name-input').value='';
+  var bd=document.getElementById('r-breakdown');
+  bd.innerHTML=quizState.answers.map(function(a,i){
+    var icon=a.result==='correct'?'✅':a.result==='timeout'?'⏰':'❌';
+    var cls=a.result==='correct'?'correct':'wrong';
+    var ya=a.chosen===-1?'Timed out':a.q.options[a.chosen];
+    var ra=a.q.options[a.q.correct];
+    return '<div class="breakdown-item"><div class="breakdown-icon">'+icon+'</div><div class="breakdown-q"><strong>Q'+(i+1)+': '+a.q.text.replace(/<[^>]+>/g,'').substring(0,55)+'...</strong>Your answer: '+ya+'</div><div class="breakdown-answer '+cls+'">'+(a.result==='correct'?'Correct':ra)+'</div></div>';
+  }).join('');
+  saveMistakesToStorage();
+  goTo('page-results');
+}
+
+// temp store current quiz result for leaderboard saving
+function saveToLeaderboard(){
+  var name=document.getElementById('lb-name-input').value.trim();
+  if(!name){toast('Please enter your name','error');return;}
+  var total=quizState.questions.length;
+  var pct=Math.round((quizState.correct/total)*100);
+  var entry={
+    name:name,
+    score:quizState.correct,
+    total:total,
+    pct:pct,
+    difficulty:quizState.difficulty||'all',
+    date:new Date().toLocaleDateString(),
+    ts:Date.now()
+  };
+  leaderboard.push(entry);
+  leaderboard.sort(function(a,b){return b.pct-a.pct||b.score-a.score;});
+  if(leaderboard.length>100) leaderboard=leaderboard.slice(0,100);
+  localStorage.setItem('gq_leaderboard',JSON.stringify(leaderboard));
+  document.getElementById('name-entry-box').style.display='none';
+  toast('Score saved to leaderboard! 🏆','success');
+}
+
+function confirmQuit(){openModal('quit-modal');}
+function quitQuiz(){closeModal('quit-modal');clearInterval(quizState.timerInterval);stopStudyTimer();goTo('page-home');}
+
+// ===================== LEADERBOARD =====================
+function renderLeaderboard(){
+  var filtered=lbFilter==='all'?leaderboard:leaderboard.filter(function(e){return e.difficulty===lbFilter;});
+  filtered.sort(function(a,b){return b.pct-a.pct||b.score-a.score;});
+  var el=document.getElementById('lb-table');
+  if(filtered.length===0){
+    el.innerHTML='<div class="lb-empty"><div class="e-icon">🏆</div><p>No scores yet. Complete a quiz to appear here!</p></div>';
+    return;
+  }
+  var html='<div class="lb-head"><div>Rank</div><div>Player</div><div style="text-align:center">Score</div><div style="text-align:center">%</div><div style="text-align:center">Mode</div><div style="text-align:right">Date</div></div>';
+  filtered.slice(0,50).forEach(function(e,i){
+    var rank=i+1;
+    var rankTxt=rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'#'+rank;
+    var rowCls=rank===1?'top1':rank===2?'top2':rank===3?'top3':'';
+    html+='<div class="lb-row '+rowCls+'"><div class="lb-rank r'+(rank<=3?rank:'x')+'">'+rankTxt+'</div><div class="lb-name">'+esc(e.name)+'<small>'+e.score+'/'+e.total+' questions</small></div><div class="lb-score">'+e.score+'</div><div class="lb-pct">'+e.pct+'%</div><div><span class="lb-diff '+e.difficulty+'">'+e.difficulty+'</span></div><div class="lb-date">'+e.date+'</div></div>';
+  });
+  el.innerHTML=html;
+}
+
+function filterLB(el,f){
+  lbFilter=f;
+  document.querySelectorAll('#lb-filters .pill').forEach(function(p){p.classList.remove('active');});
+  el.classList.add('active');
+  renderLeaderboard();
+}
+
+function clearLeaderboard(){
+  if(!confirm('Clear the entire leaderboard?'))return;
+  leaderboard=[];
+  localStorage.setItem('gq_leaderboard',JSON.stringify(leaderboard));
+  renderLeaderboard();
+  toast('Leaderboard cleared');
+}
+
+function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+
+// ===================== STUDY TIMER =====================
+function startStudyTimer(){
+  stopStudyTimer();
+  studySeconds=0;
+  studyTimer=setInterval(function(){
+    studySeconds++;
+    if(studySeconds>=600){studySeconds=0;triggerBreak();}
+  },1000);
+}
+function stopStudyTimer(){clearInterval(studyTimer);studyTimer=null;}
+function triggerBreak(){
+  breakSecondsLeft=60;
+  document.getElementById('break-overlay').classList.add('show');
+  document.getElementById('skip-break-btn').style.display='none';
+  updateBreakCountdown();
+  breakTimer=setInterval(function(){
+    breakSecondsLeft--;
+    updateBreakCountdown();
+    if(breakSecondsLeft<=30)document.getElementById('skip-break-btn').style.display='inline-flex';
+    if(breakSecondsLeft<=0)endBreak();
+  },1000);
+}
+function updateBreakCountdown(){
+  var m=Math.floor(breakSecondsLeft/60),s=breakSecondsLeft%60;
+  document.getElementById('break-countdown').textContent=m+':'+(s<10?'0':'')+s;
+}
+function endBreak(){clearInterval(breakTimer);document.getElementById('break-overlay').classList.remove('show');studySeconds=0;}
+function goBreakChess(){clearInterval(breakTimer);document.getElementById('break-overlay').classList.remove('show');studySeconds=0;goTo('page-chess');}
+
+// ===================== MISTAKES =====================
+function saveMistake(q,yourAnswer,type){
+  var ex=mistakes.find(function(m){return m.qid===q.id&&m.type===type;});
+  if(!ex){mistakes.push({qid:q.id,question:q.text.replace(/<[^>]+>/g,''),category:q.category,yourAnswer:yourAnswer,correctAnswer:q.options[q.correct],explanation:q.explanation||'',type:type,date:new Date().toLocaleDateString()});}
+}
+function saveMistakesToStorage(){localStorage.setItem('gq_mistakes',JSON.stringify(mistakes));}
+function renderMistakes(){
+  var el=document.getElementById('mistakes-list');
+  if(mistakes.length===0){el.innerHTML='<div class="empty-state"><div class="empty-icon">🎉</div><p>No mistakes yet! Keep up the great work.</p></div>';return;}
+  el.innerHTML=mistakes.map(function(m,i){
+    return '<div class="mistake-card"><div class="mistake-card-header"><span class="mistake-cat">'+(CATEGORY_LABELS[m.category]||m.category)+'</span><button class="btn btn-ghost btn-sm btn-icon" onclick="removeMistake('+i+')">🗑</button></div><div class="mistake-q">'+m.question+'</div><div class="mistake-answers"><span class="your-answer">✗ Your answer: '+m.yourAnswer+'</span><span class="right-answer">✓ Correct: '+m.correctAnswer+'</span></div>'+(m.explanation?'<div class="mistake-exp">💡 '+m.explanation+'</div>':'')+'<div style="font-size:.75rem;color:var(--text-muted);margin-top:.5rem;">'+m.date+'</div></div>';
+  }).join('');
+}
+function removeMistake(i){mistakes.splice(i,1);saveMistakesToStorage();renderMistakes();}
+function clearMistakes(){if(confirm('Clear all mistakes?')){mistakes=[];saveMistakesToStorage();renderMistakes();}}
+
+// ===================== MANAGE =====================
+function renderManage(){
+  populateSetupGames();
+  var el=document.getElementById('games-list-manage');
+  el.innerHTML='';
+  var defCard=document.createElement('div');
+  defCard.className='game-card'+(activeGameId==='default'?' active':'');
+  defCard.innerHTML='<div class="game-card-name">📚 Default (All Questions)</div><div class="game-card-meta"><span>'+(PREBUILT.length+customQs.length)+' questions</span><span>Pre-built</span></div>';
+  defCard.onclick=function(){selectGame('default');};
+  el.appendChild(defCard);
+  games.forEach(function(g){
+    var card=document.createElement('div');
+    card.className='game-card'+(activeGameId===g.id?' active':'');
+    card.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="game-card-name">'+esc(g.name)+'</div><div class="game-card-meta"><span>'+(g.questionIds?g.questionIds.length:0)+' questions</span><span>'+esc(g.desc||'')+'</span></div></div><button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteGame(\''+g.id+'\')">✕</button></div>';
+    card.onclick=function(){selectGame(g.id);};
+    el.appendChild(card);
+  });
+}
+function selectGame(gameId){
+  activeGameId=gameId;
+  document.getElementById('add-q-btn').style.display=gameId!=='default'?'flex':'none';
+  document.getElementById('questions-panel-title').textContent=gameId==='default'?'❓ All Questions':'❓ Questions';
+  renderManage();
+  renderQuestionsPanel(gameId);
+  hideAddQuestion();
+}
+function renderQuestionsPanel(gameId){
+  var el=document.getElementById('questions-list-manage');
+  var pool;
+  if(gameId==='default'){pool=PREBUILT.concat(customQs);}
+  else{
+    var g=games.find(function(g){return g.id===gameId;});
+    if(!g)return;
+    pool=PREBUILT.concat(customQs).filter(function(q){return g.questionIds.includes(q.id);});
+  }
+  if(pool.length===0){el.innerHTML='<div class="empty-state"><div class="empty-icon">❓</div><p>No questions yet. Add some!</p></div>';return;}
+  el.innerHTML=pool.map(function(q){
+    return '<div class="question-row"><div style="flex:1"><span class="question-row-cat">'+(CATEGORY_LABELS[q.category]||q.category)+' · '+q.difficulty+'</span><div class="question-row-text">'+q.text.replace(/<[^>]+>/g,'').substring(0,80)+'...</div></div>'+(gameId!=='default'?'<button class="btn btn-danger btn-sm btn-icon" onclick="removeFromGame(\''+gameId+'\','+q.id+')">✕</button>':'')+'</div>';
+  }).join('');
+}
+function showAddGame(){document.getElementById('add-game-form').style.display='block';}
+function hideAddGame(){document.getElementById('add-game-form').style.display='none';}
+function createGame(){
+  var name=document.getElementById('new-game-name').value.trim();
+  if(!name){toast('Please enter a game name','error');return;}
+  var g={id:'g_'+Date.now(),name:name,desc:document.getElementById('new-game-desc').value.trim(),questionIds:[]};
+  games.push(g);saveGames();hideAddGame();
+  document.getElementById('new-game-name').value='';document.getElementById('new-game-desc').value='';
+  toast('Game created!','success');renderManage();
+}
+function deleteGame(id){
+  if(!confirm('Delete this game set?'))return;
+  games=games.filter(function(g){return g.id!==id;});
+  if(activeGameId===id)activeGameId=null;
+  saveGames();toast('Game deleted');renderManage();
+}
+function removeFromGame(gameId,qId){
+  var g=games.find(function(g){return g.id===gameId;});
+  if(!g)return;
+  g.questionIds=g.questionIds.filter(function(id){return id!==qId;});
+  saveGames();renderQuestionsPanel(gameId);renderManage();
+}
+function showAddQuestion(){document.getElementById('add-question-form').style.display='block';}
+function hideAddQuestion(){document.getElementById('add-question-form').style.display='none';}
+function selectCorrect(btn){
+  document.querySelectorAll('.correct-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  selectedCorrectIdx=parseInt(btn.dataset.ans);
+}
+function addQuestion(){
+  var text=document.getElementById('new-q-text').value.trim();
+  var a=document.getElementById('opt-a').value.trim();
+  var b=document.getElementById('opt-b').value.trim();
+  var c=document.getElementById('opt-c').value.trim();
+  var d=document.getElementById('opt-d').value.trim();
+  if(!text||!a||!b||!c||!d){toast('Fill in the question and all 4 options','error');return;}
+  if(selectedCorrectIdx===-1){toast('Select the correct answer','error');return;}
+  var q={id:Date.now(),category:document.getElementById('new-q-category').value,difficulty:document.getElementById('new-q-diff').value,text:text,options:[a,b,c,d],correct:selectedCorrectIdx,explanation:document.getElementById('new-q-exp').value.trim(),custom:true};
+  customQs.push(q);
+  localStorage.setItem('gq_custom_qs',JSON.stringify(customQs));
+  if(activeGameId&&activeGameId!=='default'){var g=games.find(function(g){return g.id===activeGameId;});if(g){g.questionIds.push(q.id);saveGames();}}
+  ['new-q-text','opt-a','opt-b','opt-c','opt-d','new-q-exp'].forEach(function(id){document.getElementById(id).value='';});
+  document.querySelectorAll('.correct-btn').forEach(function(b){b.classList.remove('active');});
+  selectedCorrectIdx=-1;
+  hideAddQuestion();toast('Question added!','success');renderManage();
+  if(activeGameId)renderQuestionsPanel(activeGameId);
+}
+function saveGames(){localStorage.setItem('gq_games',JSON.stringify(games));}
+
+// ===================== CHESS =====================
+var PIECES={wK:'♔',wQ:'♕',wR:'♖',wB:'♗',wN:'♘',wP:'♙',bK:'♚',bQ:'♛',bR:'♜',bB:'♝',bN:'♞',bP:'♟'};
+var board=[],selected=null,chessTurn='w',chessMoves=[],lastMove=null,gameOver=false;
+
+function initChess(){
+  chessTurn='w';selected=null;chessMoves=[];lastMove=null;gameOver=false;
+  board=[
+    ['bR','bN','bB','bQ','bK','bB','bN','bR'],
+    ['bP','bP','bP','bP','bP','bP','bP','bP'],
+    [null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null],
+    ['wP','wP','wP','wP','wP','wP','wP','wP'],
+    ['wR','wN','wB','wQ','wK','wB','wN','wR']
+  ];
+  document.getElementById('chess-status').className='chess-status playing';
+  document.getElementById('chess-status').textContent='Game in progress';
+  document.getElementById('chess-history-list').innerHTML='';
+  renderBoard();
+}
+
+function renderBoard(){
+  var el=document.getElementById('chess-board');
+  el.innerHTML='';
+  for(var r=0;r<8;r++){
+    for(var c=0;c<8;c++){
+      var sq=document.createElement('div');
+      sq.className='chess-sq '+((r+c)%2===0?'light':'dark');
+      if(selected&&selected[0]===r&&selected[1]===c)sq.classList.add('selected');
+      if(lastMove&&((lastMove.f[0]===r&&lastMove.f[1]===c)||(lastMove.t[0]===r&&lastMove.t[1]===c)))sq.classList.add('last-move');
+      if(selected){
+        var mv=getLegalMoves(selected[0],selected[1]);
+        if(mv.some(function(m){return m[0]===r&&m[1]===c;}))sq.classList.add('possible');
+      }
+      if(board[r][c]){
+        var p=document.createElement('div');
+        p.className='chess-piece '+(board[r][c][0]==='w'?'white':'black');
+        p.textContent=PIECES[board[r][c]];
+        sq.appendChild(p);
+      }
+      (function(row,col){sq.onclick=function(){clickSq(row,col);};})(r,c);
+      el.appendChild(sq);
+    }
+  }
+  var td=document.getElementById('chess-turn-display');
+  if(chessTurn==='w')td.innerHTML='<div class="turn-dot white"></div> <span>White\'s turn (You)</span>';
+  else td.innerHTML='<div class="turn-dot black"></div> <span>Black\'s turn (Bot)</span>';
+}
+
+function clickSq(r,c){
+  if(chessTurn!=='w'||gameOver)return;
+  var piece=board[r][c];
+  if(selected){
+    var mv=getLegalMoves(selected[0],selected[1]);
+    if(mv.some(function(m){return m[0]===r&&m[1]===c;})){
+      doMove(selected[0],selected[1],r,c,'w');
+      selected=null;
+      renderBoard();
+      if(!checkGameOver())setTimeout(botMove,600);
+      return;
+    }
+  }
+  selected=(piece&&piece[0]==='w')?[r,c]:null;
+  renderBoard();
+}
+
+function doMove(fr,fc,tr,tc,color){
+  var p=board[fr][fc];
+  lastMove={f:[fr,fc],t:[tr,tc]};
+  board[tr][tc]=p;board[fr][fc]=null;
+  if(p==='wP'&&tr===0)board[tr][tc]='wQ';
+  if(p==='bP'&&tr===7)board[tr][tc]='bQ';
+  chessTurn=color==='w'?'b':'w';
+  var files='abcdefgh';
+  chessMoves.push({color:color,n:files[fc]+(8-fr)+files[tc]+(8-tr)});
+  renderHistory();
+}
+
+function botMove(){
+  if(gameOver)return;
+  var mv=getAllMoves('b');
+  if(mv.length===0){setGameOver('w');return;}
+  var captures=mv.filter(function(m){return board[m.tr][m.tc]!==null;});
+  var pick=captures.length>0?captures[Math.floor(Math.random()*captures.length)]:mv[Math.floor(Math.random()*mv.length)];
+  doMove(pick.fr,pick.fc,pick.tr,pick.tc,'b');
+  renderBoard();
+  checkGameOver();
+}
+
+function getAllMoves(color){
+  var mv=[];
+  for(var r=0;r<8;r++)for(var c=0;c<8;c++)if(board[r][c]&&board[r][c][0]===color)getLegalMoves(r,c).forEach(function(m){mv.push({fr:r,fc:c,tr:m[0],tc:m[1]});});
+  return mv;
+}
+
+function getLegalMoves(r,c){
+  var p=board[r][c];if(!p)return[];
+  var color=p[0],type=p[1],opp=color==='w'?'b':'w',mv=[];
+  function add(tr,tc){if(tr<0||tr>7||tc<0||tc>7)return false;if(board[tr][tc]&&board[tr][tc][0]===color)return false;mv.push([tr,tc]);return!board[tr][tc];}
+  function slide(dr,dc){var nr=r+dr,nc=c+dc;while(add(nr,nc)){nr+=dr;nc+=dc;}}
+  if(type==='P'){
+    var dir=color==='w'?-1:1,start=color==='w'?6:1;
+    if(r+dir>=0&&r+dir<8&&!board[r+dir][c]){mv.push([r+dir,c]);if(r===start&&!board[r+2*dir][c])mv.push([r+2*dir,c]);}
+    [[r+dir,c-1],[r+dir,c+1]].forEach(function(m){if(m[0]>=0&&m[0]<8&&m[1]>=0&&m[1]<8&&board[m[0]][m[1]]&&board[m[0]][m[1]][0]===opp)mv.push(m);});
+  }else if(type==='N'){[[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(function(d){add(r+d[0],c+d[1]);});}
+  else if(type==='B'){[[-1,-1],[-1,1],[1,-1],[1,1]].forEach(function(d){slide(d[0],d[1]);});}
+  else if(type==='R'){[[-1,0],[1,0],[0,-1],[0,1]].forEach(function(d){slide(d[0],d[1]);});}
+  else if(type==='Q'){[[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]].forEach(function(d){slide(d[0],d[1]);});}
+  else if(type==='K'){[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(function(d){add(r+d[0],c+d[1]);});}
+  return mv;
+}
+
+function checkGameOver(){
+  var wK=false,bK=false;
+  for(var r=0;r<8;r++)for(var c=0;c<8;c++){if(board[r][c]==='wK')wK=true;if(board[r][c]==='bK')bK=true;}
+  if(!wK){setGameOver('b');return true;}
+  if(!bK){setGameOver('w');return true;}
+  return false;
+}
+
+function setGameOver(winner){
+  gameOver=true;
+  var s=document.getElementById('chess-status');
+  s.className='chess-status mate';
+  s.textContent=winner==='w'?'♔ You Win! Game Over':'♚ Bot Wins! Game Over';
+}
+
+function renderHistory(){
+  var el=document.getElementById('chess-history-list');
+  var html='';
+  for(var i=0;i<chessMoves.length;i+=2){
+    var num=Math.floor(i/2)+1;
+    var w=chessMoves[i]?chessMoves[i].n:'';
+    var b=chessMoves[i+1]?chessMoves[i+1].n:'';
+    html+='<div class="history-row"><span class="history-num">'+num+'.</span><span class="history-white">'+w+'</span><span class="history-black">'+b+'</span></div>';
+  }
+  el.innerHTML=html;
+  el.scrollTop=el.scrollHeight;
+}
+
+// ===================== UTILS =====================
+function shuffle(arr){
+  var a=arr.slice();
+  for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var tmp=a[i];a[i]=a[j];a[j]=tmp;}
+  return a;
+}
+
+// Init
+initChess();
+populateSetupGames();
+</script>
+</body>
+</html>

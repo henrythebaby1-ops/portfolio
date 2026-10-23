@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Sky Climb 3D Online</title>
+<style>body{margin:0;background:#070c16;color:#dbeafe;font-family:Trebuchet MS,Segoe UI,sans-serif;overflow:hidden}#ui{position:fixed;top:10px;left:10px;background:#0f1b2ecf;border:1px solid #2d4670;border-radius:10px;padding:10px;width:330px;z-index:20}input,button{border-radius:8px;border:1px solid #36537f;background:#0b1424;color:#dbeafe;padding:7px;font-weight:700}button{cursor:pointer}.r{display:flex;gap:6px;margin-top:6px}#s,#lb{font-size:12px;color:#93c5fd;margin-top:6px}</style>
+</head><body>
+<div id="ui"><div style="font-weight:900">Sky Climb 3D Online</div><div class="r"><input id="name" value="Climber"/><input id="room" placeholder="Room ID"/></div><div class="r"><button id="host">Host</button><button id="join">Join</button><button id="leave">Leave</button></div><div id="s">Jump platform to platform. First to top wins.</div><div id="lb"></div></div>
+<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script><script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x081225);const cam=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,2000);const ren=new THREE.WebGLRenderer({antialias:true});ren.setSize(innerWidth,innerHeight);document.body.appendChild(ren.domElement);
+scene.add(new THREE.HemisphereLight(0xaad4ff,0x223344,1));const dl=new THREE.DirectionalLight(0xffffff,.85);dl.position.set(8,20,12);scene.add(dl);
+const ui={name:document.getElementById('name'),room:document.getElementById('room'),s:document.getElementById('s'),lb:document.getElementById('lb')};
+const platforms=[];for(let i=0;i<30;i++){const p=new THREE.Mesh(new THREE.BoxGeometry(8,1.2,8),new THREE.MeshStandardMaterial({color:i%2?0x1f3f66:0x2b5b8f}));p.position.set((Math.random()-.5)*35,i*4,(Math.random()-.5)*35);scene.add(p);platforms.push(p)}
+const goal=new THREE.Mesh(new THREE.SphereGeometry(2,20,20),new THREE.MeshStandardMaterial({emissive:0x22d3ee,color:0x0a5f7f}));goal.position.set(0,platforms[platforms.length-1].position.y+6,0);scene.add(goal);
+let peer=null,isHost=false,hostConn=null,myId=null,conns={},players={},meshes={},wins={};
+const me={x:0,y:2,z:0,vx:0,vy:0,vz:0,name:'Climber',color:'#22d3ee',t:0};const keys={};addEventListener('keydown',e=>keys[e.key.toLowerCase()]=true);addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+function st(t){ui.s.textContent=t;} function send(c,o){if(c&&c.open)c.send(o)} function bc(o){Object.values(conns).forEach(c=>send(c,o));}
+function boot(cb){if(peer){cb&&cb();return;}peer=new Peer();peer.on('open',id=>{myId=id;cb&&cb();});peer.on('connection',c=>bind(c));peer.on('error',e=>st('Peer error: '+e.type));}
+function bind(c){conns[c.peer]=c;c.on('data',m=>onMsg(c,m));c.on('close',()=>{delete conns[c.peer];delete players[c.peer];});}
+function onMsg(c,m){if(isHost){if(m.t==='join'){players[c.peer]={x:0,y:2,z:0,name:m.name,color:m.color,t:Date.now()};wins[c.peer]=wins[c.peer]||0;send(c,{t:'hello',id:c.peer});} if(m.t==='state'){players[c.peer]=Object.assign(players[c.peer]||{},m.p);}} else if(m.t==='snapshot'){players=m.players||{};wins=m.wins||{};}}
+function host(){boot(()=>{isHost=true;ui.room.value=myId;players[myId]=Object.assign({},me,{name:ui.name.value});wins[myId]=0;st('Hosting '+myId);});}
+function join(){const room=ui.room.value.trim();if(!room)return;boot(()=>{isHost=false;hostConn=peer.connect(room,{reliable:true});hostConn.on('open',()=>{bind(hostConn);send(hostConn,{t:'join',name:ui.name.value||'Climber',color:me.color});st('Joined '+room);});});}
+function leave(){try{peer&&peer.destroy()}catch{} peer=null;isHost=false;hostConn=null;conns={};players={};wins={};Object.values(meshes).forEach(m=>scene.remove(m));meshes={};st('Disconnected');}
+document.getElementById('host').onclick=host;document.getElementById('join').onclick=join;document.getElementById('leave').onclick=leave;
+function ensure(id,p){if(meshes[id])return;const m=new THREE.Mesh(new THREE.BoxGeometry(1.3,2.2,1.3),new THREE.MeshStandardMaterial({color:p.color||'#fff'}));scene.add(m);meshes[id]=m;}
+function onGround(x,y,z){for(const p of platforms){if(Math.abs(x-p.position.x)<4.4&&Math.abs(z-p.position.z)<4.4&&y>=p.position.y+0.5&&y<=p.position.y+2.6)return p.position.y+1.6;}if(y<=1.2)return 1.2;return null;}
+let t=0;
+function tick(){
+  const sp=.15;if(keys['w']||keys['arrowup'])me.vz=-sp;else if(keys['s']||keys['arrowdown'])me.vz=sp;else me.vz*=.7;if(keys['a']||keys['arrowleft'])me.vx=-sp;else if(keys['d']||keys['arrowright'])me.vx=sp;else me.vx*=.7;
+  const g=-.02; me.vy+=g; if((keys[' ']||keys['space']) && (onGround(me.x,me.y,me.z)!==null)) me.vy=.42;
+  me.x+=me.vx; me.z+=me.vz; me.y+=me.vy; me.x=Math.max(-45,Math.min(45,me.x)); me.z=Math.max(-45,Math.min(45,me.z));
+  const gy=onGround(me.x,me.y,me.z); if(gy!==null&&me.vy<=0){me.y=gy;me.vy=0;}
+  if(me.y<-10){me.x=0;me.y=2;me.z=0;me.vy=0;}
+  if(me.y>goal.position.y-1.4){wins[myId]=(wins[myId]||0)+1;me.x=0;me.y=2;me.z=0;}
+  players[myId]=Object.assign(players[myId]||{},me,{name:ui.name.value||'Climber',t:Date.now()});
+  if(isHost){Object.keys(players).forEach(id=>{if(id!==myId&&Date.now()-(players[id].t||0)>10000){delete players[id];delete wins[id];}});if(t++%2===0)bc({t:'snapshot',players,wins});}
+  else if(hostConn&&hostConn.open&&t++%2===0)send(hostConn,{t:'state',p:Object.assign({},me,{name:ui.name.value||'Climber',t:Date.now()})});
+}
+function render(){
+  Object.keys(players).forEach(id=>{ensure(id,players[id]);const p=players[id],m=meshes[id];m.position.set(p.x||0,p.y||2,p.z||0);if(id===myId)m.material.emissive.setHex(0x113355);});
+  Object.keys(meshes).forEach(id=>{if(!players[id]){scene.remove(meshes[id]);delete meshes[id];}});
+  const board=Object.keys(players).map(id=>({n:players[id].name||id.slice(0,5),w:wins[id]||0,y:players[id].y||0})).sort((a,b)=>b.w-a.w||b.y-a.y).slice(0,6);
+  ui.lb.innerHTML=board.map((r,i)=>`${i+1}. ${r.n} - Wins ${r.w} - Alt ${r.y.toFixed(1)}`).join('<br>');
+  cam.position.set(me.x+14,me.y+12,me.z+14); cam.lookAt(me.x,me.y,me.z);
+}
+function loop(){requestAnimationFrame(loop);tick();render();ren.render(scene,cam);} loop(); addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();ren.setSize(innerWidth,innerHeight)});
+</script></body></html>

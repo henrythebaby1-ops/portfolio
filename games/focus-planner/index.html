@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Focus Planner</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23167c80'/%3E%3Cpath d='M18 34l8 8 20-24' fill='none' stroke='white' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="workspace" aria-label="Focus Planner">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Today</p>
+            <h1>Focus Planner</h1>
+          </div>
+          <div class="date-chip" id="todayLabel"></div>
+        </header>
+
+        <section class="command-band" aria-label="Add a task">
+          <form id="taskForm" class="task-form">
+            <label class="field task-title-field">
+              <span>Task</span>
+              <input id="taskTitle" name="title" type="text" placeholder="Finish science poster" autocomplete="off" required>
+            </label>
+            <label class="field">
+              <span>Priority</span>
+              <select id="taskPriority" name="priority">
+                <option value="high">High</option>
+                <option value="medium" selected>Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Minutes</span>
+              <input id="taskMinutes" name="minutes" type="number" min="5" max="240" step="5" value="25">
+            </label>
+            <button class="primary-button" type="submit" aria-label="Add task">
+              <span aria-hidden="true">+</span>
+              Add
+            </button>
+          </form>
+        </section>
+
+        <section class="content-grid">
+          <section class="panel task-panel" aria-label="Task list">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Plan</p>
+                <h2>Tasks</h2>
+              </div>
+              <div class="segmented-control" role="tablist" aria-label="Filter tasks">
+                <button class="filter-button active" type="button" data-filter="all">All</button>
+                <button class="filter-button" type="button" data-filter="open">Open</button>
+                <button class="filter-button" type="button" data-filter="done">Done</button>
+              </div>
+            </div>
+            <ul id="taskList" class="task-list" aria-live="polite"></ul>
+          </section>
+
+          <aside class="side-stack">
+            <section class="panel focus-panel" aria-label="Focus timer">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">Session</p>
+                  <h2>Focus Timer</h2>
+                </div>
+                <button id="resetTimer" class="icon-button" type="button" aria-label="Reset timer" title="Reset timer">↺</button>
+              </div>
+              <div class="timer-face">
+                <svg class="timer-ring" viewBox="0 0 120 120" aria-hidden="true">
+                  <circle cx="60" cy="60" r="52"></circle>
+                  <circle id="timerProgress" cx="60" cy="60" r="52"></circle>
+                </svg>
+                <div>
+                  <strong id="timerText">25:00</strong>
+                  <span id="activeTaskLabel">Pick a task</span>
+                </div>
+              </div>
+              <div class="timer-controls">
+                <button id="startPauseTimer" class="primary-button" type="button">Start</button>
+                <button id="fiveMinuteTimer" class="secondary-button" type="button">5 min</button>
+                <button id="twentyFiveMinuteTimer" class="secondary-button" type="button">25 min</button>
+              </div>
+            </section>
+
+            <section class="panel stats-panel" aria-label="Progress">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">Momentum</p>
+                  <h2>Progress</h2>
+                </div>
+              </div>
+              <div class="stats-grid">
+                <div class="stat">
+                  <span id="openCount">0</span>
+                  <p>open</p>
+                </div>
+                <div class="stat">
+                  <span id="doneCount">0</span>
+                  <p>done</p>
+                </div>
+                <div class="stat">
+                  <span id="minutesCount">0</span>
+                  <p>minutes</p>
+                </div>
+              </div>
+              <div class="meter" aria-label="Completion progress">
+                <span id="progressBar"></span>
+              </div>
+            </section>
+          </aside>
+        </section>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>

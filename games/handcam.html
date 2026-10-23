@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HandCam — Gesture Control</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: rgba(255,255,255,0.08);
+    --accent: #7c5cfc;
+    --accent2: #fc5c7d;
+    --accent3: #5cfcb8;
+    --text: #f0eeff;
+    --muted: rgba(240,238,255,0.45);
+    --font-head: 'Syne', sans-serif;
+    --font-mono: 'Space Mono', monospace;
+  }
+
+  html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--font-head); }
+
+  /* ── NAV ── */
+  #nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; gap: 4px;
+    padding: 10px 16px;
+    background: rgba(10,10,15,0.9); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  #nav .logo { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; margin-right: 16px; }
+  #nav .logo span { color: var(--accent); }
+  .tab-btn {
+    padding: 6px 14px; border-radius: 20px; border: 1px solid transparent;
+    font-family: var(--font-head); font-size: 13px; font-weight: 700; cursor: pointer;
+    background: transparent; color: var(--muted); transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .tab-btn:hover { color: var(--text); border-color: var(--border); }
+  .tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  #cam-toggle {
+    margin-left: auto; padding: 6px 14px; border-radius: 20px;
+    border: 1px solid var(--accent); background: transparent;
+    color: var(--accent); font-family: var(--font-head); font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s; letter-spacing: 0.3px;
+  }
+  #cam-toggle.active { background: var(--accent); color: #fff; }
+  #cam-toggle:hover { background: var(--accent); color: #fff; }
+
+  /* ── VIDEO LAYER ── */
+  #video-layer {
+    position: fixed; bottom: 16px; right: 16px; z-index: 50;
+    width: 220px; height: 160px; border-radius: 12px;
+    overflow: hidden; border: 1px solid var(--border);
+    transition: all 0.3s; display: none;
+  }
+  #video-layer.visible { display: block; }
+  #video-layer video, #video-layer canvas { position: absolute; top:0;left:0;width:100%;height:100%; object-fit:cover; }
+  #video-layer canvas { z-index: 2; }
+
+  /* ── TABS ── */
+  .tab-panel { display: none; position: fixed; top: 50px; left: 0; right: 0; bottom: 0; overflow: auto; }
+  .tab-panel.active { display: block; }
+
+  /* ── FAKE CURSOR ── */
+  #fake-cursor {
+    position: fixed; z-index: 9999; pointer-events: none;
+    width: 28px; height: 28px; display: none;
+    transition: transform 0.05s;
+  }
+  #fake-cursor.show { display: block; }
+  #fake-cursor svg { width: 100%; height: 100%; }
+  #fake-cursor.clicking { transform: scale(0.8); }
+  #fake-cursor.right-click { filter: hue-rotate(160deg); }
+  #cursor-ring {
+    position: fixed; z-index: 9998; pointer-events: none;
+    width: 60px; height: 60px; border-radius: 50%;
+    border: 2px solid rgba(124,92,252,0.4); display: none;
+    transform: translate(-50%, -50%); transition: all 0.1s;
+  }
+  #cursor-ring.show { display: block; }
+
+  /* ── GESTURE HUD ── */
+  #gesture-hud {
+    position: fixed; top: 60px; left: 16px; z-index: 200;
+    background: rgba(10,10,15,0.85); backdrop-filter: blur(8px);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 14px; display: none; min-width: 160px;
+  }
+  #gesture-hud.show { display: block; }
+  #gesture-hud .gest-name {
+    font-size: 14px; font-weight: 700; color: var(--accent);
+    font-family: var(--font-mono); margin-bottom: 4px;
+  }
+  #gesture-hud .gest-action { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
+  #scroll-indicator {
+    position: fixed; right: 250px; top: 50%; transform: translateY(-50%);
+    z-index: 200; pointer-events: none; display: none;
+    font-family: var(--font-mono); font-size: 13px; color: var(--accent3);
+    background: rgba(10,10,15,0.8); padding: 8px 12px; border-radius: 8px;
+    border: 1px solid var(--accent3);
+  }
+
+  /* ── DEMO TAB ── */
+  #tab-demo {
+    padding: 40px 40px 80px;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(124,92,252,0.12) 0%, transparent 70%);
+  }
+  .demo-hero { text-align: center; padding: 40px 0 50px; }
+  .demo-hero h1 { font-size: clamp(32px,5vw,64px); font-weight: 800; letter-spacing: -2px; line-height: 1.05; }
+  .demo-hero h1 em { font-style: normal; color: var(--accent); }
+  .demo-hero p { font-size: 16px; color: var(--muted); margin-top: 16px; font-family: var(--font-mono); }
+
+  .demo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; max-width: 1100px; margin: 0 auto; }
+  .demo-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 24px; cursor: pointer;
+    transition: all 0.2s; position: relative; overflow: hidden;
+  }
+  .demo-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .demo-card:hover { transform: translateY(-2px); border-color: rgba(124,92,252,0.4); }
+  .demo-card:hover::before { opacity: 1; }
+  .demo-card .card-icon { font-size: 32px; margin-bottom: 12px; }
+  .demo-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .demo-card p { font-size: 13px; color: var(--muted); font-family: var(--font-mono); line-height: 1.6; }
+  .gesture-badge {
+    display: inline-block; margin-top: 10px;
+    padding: 3px 10px; border-radius: 20px; font-size: 11px;
+    font-family: var(--font-mono); font-weight: 700;
+    background: rgba(124,92,252,0.15); color: var(--accent); border: 1px solid rgba(124,92,252,0.3);
+  }
+
+  .demo-interactive { max-width: 1100px; margin: 40px auto 0; }
+  .demo-interactive h2 { font-size: 22px; font-weight: 800; margin-bottom: 20px; }
+  .click-targets { display: flex; gap: 16px; flex-wrap: wrap; }
+  .click-target {
+    width: 80px; height: 80px; border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; cursor: pointer; transition: all 0.2s;
+    border: 2px solid transparent; user-select: none;
+  }
+  .click-target:hover { transform: scale(1.1); }
+  .click-target.hit { animation: pop 0.3s ease; }
+  @keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.3)} 100%{transform:scale(1)} }
+
+  /* ── GAMES TAB ── */
+  #tab-games { display: none; flex-direction: column; align-items: center; padding: 20px; }
+  #tab-games.active { display: flex; }
+  #game-select { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
+  .game-btn {
+    padding: 10px 20px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text);
+    font-family: var(--font-head); font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .game-btn:hover, .game-btn.active { background: var(--accent); border-color: var(--accent); }
+  #game-canvas { border-radius: 12px; border: 1px solid var(--border); max-width: 100%; display: block; }
+  #game-score { font-family: var(--font-mono); font-size: 20px; margin-bottom: 10px; color: var(--accent); }
+
+  /* ── AR DRAWING TAB ── */
+  #tab-ar { display: none; position: relative; }
+  #tab-ar.active { display: block; }
+  #ar-video { position: absolute; top:0;left:0;width:100%;height:100%; object-fit:cover; }
+  #ar-canvas { position: absolute; top:0;left:0;width:100%;height:100%; z-index:2; }
+  #ar-controls {
+    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+    z-index: 10; display: flex; gap: 10px; align-items: center;
+    background: rgba(10,10,15,0.8); padding: 10px 16px; border-radius: 30px;
+    border: 1px solid var(--border);
+  }
+  .color-swatch {
+    width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+    border: 2px solid transparent; transition: all 0.15s;
+  }
+  .color-swatch.active { border-color: #fff; transform: scale(1.2); }
+  #ar-clear {
+    padding: 5px 12px; border-radius: 16px; border: 1px solid var(--border);
+    background: transparent; color: var(--text); font-family: var(--font-head);
+    font-size: 12px; font-weight: 700; cursor: pointer;
+  }
+  #ar-status { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); z-index: 10; font-family: var(--font-mono); font-size: 13px; color: var(--accent3); background: rgba(0,0,0,0.6); padding: 6px 14px; border-radius: 20px; }
+
+  /* ── BODY/TAG GAME TAB ── */
+  #tab-body { display: none; position: relative; }
+  #tab-body.active { display: block; }
+  #body-video { position: absolute; top:0;left:0;width:100%;height:100%; object-fit:cover; transform: scaleX(-1); }
+  #body-canvas { position: absolute; top:0;left:0;width:100%;height:100%; z-index:2; }
+  #tag-hud {
+    position: absolute; top: 60px; left: 16px; z-index: 10;
+    background: rgba(10,10,15,0.85); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 18px;
+  }
+  #tag-hud h3 { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+  #tag-hud .stat { font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin: 2px 0; }
+  #tag-hud .score-val { font-size: 28px; font-weight: 800; color: var(--accent); }
+  #move-state {
+    position: absolute; top: 60px; right: 16px; z-index: 10;
+    font-family: var(--font-mono); font-size: 14px; font-weight: 700;
+    background: rgba(10,10,15,0.85); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 16px; text-align: center;
+  }
+  #move-state .state-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  #move-state .state-val { color: var(--accent3); font-size: 16px; }
+  #body-start-btn {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    z-index: 20; padding: 16px 36px; border-radius: 14px;
+    border: none; background: var(--accent); color: #fff;
+    font-family: var(--font-head); font-size: 18px; font-weight: 800;
+    cursor: pointer; transition: all 0.2s;
+  }
+  #body-start-btn:hover { transform: translate(-50%,-50%) scale(1.05); }
+
+  /* ── SCROLL OVERLAY ── */
+  #scroll-flash {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    z-index: 8000; pointer-events: none; display: none;
+    font-size: 48px; font-weight: 800; font-family: var(--font-head);
+    color: var(--accent3); opacity: 0; text-shadow: 0 0 30px rgba(92,252,184,0.5);
+  }
+
+  /* ── RIGHT CLICK MENU ── */
+  #ctx-menu {
+    position: fixed; z-index: 9000; display: none;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 6px; min-width: 140px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  }
+  #ctx-menu.show { display: block; }
+  .ctx-item {
+    padding: 8px 14px; border-radius: 6px; font-size: 13px;
+    font-family: var(--font-head); font-weight: 700; cursor: pointer;
+    transition: background 0.1s;
+  }
+  .ctx-item:hover { background: var(--accent); }
+
+  /* ── LOADING ── */
+  #loading-overlay {
+    position: fixed; inset: 0; z-index: 10000;
+    background: var(--bg); display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 16px;
+  }
+  #loading-overlay.hidden { display: none; }
+  .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loading-overlay p { font-family: var(--font-mono); font-size: 14px; color: var(--muted); }
+
+  /* ── PERMISSION MSG ── */
+  #perm-msg {
+    position: fixed; top: 60px; left: 50%; transform: translateX(-50%); z-index: 500;
+    background: rgba(252,92,125,0.15); border: 1px solid rgba(252,92,125,0.4);
+    border-radius: 10px; padding: 10px 18px; font-family: var(--font-mono); font-size: 13px;
+    color: var(--accent2); display: none; text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- FAKE CURSOR -->
+<div id="fake-cursor">
+  <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M5 2L5 22L10 17L14 26L17 25L13 16L21 16L5 2Z" fill="#7c5cfc" stroke="#fff" stroke-width="1.5"/>
+  </svg>
+</div>
+<div id="cursor-ring"></div>
+<div id="scroll-flash" id="scroll-flash">↑↑</div>
+
+<!-- GESTURE HUD -->
+<div id="gesture-hud">
+  <div class="gest-name" id="gest-name">—</div>
+  <div class="gest-action" id="gest-action">No gesture</div>
+</div>
+<div id="scroll-indicator">SCROLLING ↑</div>
+
+<!-- RIGHT CLICK MENU -->
+<div id="ctx-menu">
+  <div class="ctx-item">Copy</div>
+  <div class="ctx-item">Paste</div>
+  <div class="ctx-item">Inspect</div>
+  <div class="ctx-item" id="ctx-close-item">Close</div>
+</div>
+
+<!-- LOADING -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <p>Loading MediaPipe...</p>
+</div>
+
+<!-- PERMISSION MSG -->
+<div id="perm-msg" id="perm-msg">Camera permission required. Click the camera button to start.</div>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="logo">Hand<span>Cam</span></div>
+  <button class="tab-btn active" data-tab="demo">Demo</button>
+  <button class="tab-btn" data-tab="games">Games</button>
+  <button class="tab-btn" data-tab="ar">AR Draw</button>
+  <button class="tab-btn" data-tab="body">Body Tag</button>
+  <button id="cam-toggle">▶ Start Camera</button>
+</nav>
+
+<!-- VIDEO LAYER (pip) -->
+<div id="video-layer">
+  <video id="pip-video" autoplay muted playsinline></video>
+  <canvas id="pip-canvas"></canvas>
+</div>
+
+<!-- ── TAB: DEMO ── -->
+<div id="tab-demo" class="tab-panel active">
+  <div class="demo-hero">
+    <h1>Control your screen<br>with your <em>hands</em></h1>
+    <p>Enable camera · Point your index finger · Start gesturing</p>
+  </div>
+  <div class="demo-grid">
+    <div class="demo-card">
+      <div class="card-icon">☝️</div>
+      <h3>Index Finger = Cursor</h3>
+      <p>Point your index finger — the tip tracks your cursor position in real time across the screen.</p>
+      <span class="gesture-badge">☝ point</span>
+    </div>
+    <div class="demo-card">
+      <div class="card-icon">🖐️</div>
+      <h3>Open Hand = Left Click</h3>
+      <p>Spread all five fingers open wide. Hold for ~0.3s to left-click any element under the cursor.</p>
+      <span class="gesture-badge">🖐 open</span>
+    </div>
+    <div class="demo-card">
+      <div class="card-icon">👎</div>
+      <h3>Thumbs Down = Right Click</h3>
+      <p>Point your thumb downward (other fingers closed). Triggers a context menu at cursor position.</p>
+      <span class="gesture-badge">👎 thumb down</span>
+    </div>
+    <div class="demo-card">
+      <div class="card-icon">👍</div>
+      <h3>Thumbs Up = Scroll Up</h3>
+      <p>Point your thumb upward. The page scrolls up while you hold the gesture. Move thumb down to scroll down.</p>
+      <span class="gesture-badge">👍 thumb up</span>
+    </div>
+    <div class="demo-card">
+      <div class="card-icon">✌️</div>
+      <h3>Two Fingers = Drag</h3>
+      <p>Peace sign (index + middle extended). Move hand to drag elements around the screen.</p>
+      <span class="gesture-badge">✌ pinch-drag</span>
+    </div>
+    <div class="demo-card">
+      <div class="card-icon">🤙</div>
+      <h3>Pinch = Select</h3>
+      <p>Bring thumb and index together. Hold briefly to select text or activate inputs at cursor position.</p>
+      <span class="gesture-badge">🤏 pinch</span>
+    </div>
+  </div>
+  <div class="demo-interactive">
+    <h2>Try clicking these targets 👇</h2>
+    <div class="click-targets" id="click-targets">
+      <div class="click-target" style="background:rgba(124,92,252,0.2);border-color:rgba(124,92,252,0.4)" data-score="10">🎯</div>
+      <div class="click-target" style="background:rgba(252,92,125,0.2);border-color:rgba(252,92,125,0.4)" data-score="20">🌟</div>
+      <div class="click-target" style="background:rgba(92,252,184,0.2);border-color:rgba(92,252,184,0.4)" data-score="30">💎</div>
+      <div class="click-target" style="background:rgba(255,200,50,0.2);border-color:rgba(255,200,50,0.4)" data-score="50">🔥</div>
+      <div class="click-target" style="background:rgba(50,200,255,0.2);border-color:rgba(50,200,255,0.4)" data-score="15">⚡</div>
+      <div class="click-target" style="background:rgba(200,100,255,0.2);border-color:rgba(200,100,255,0.4)" data-score="25">🪄</div>
+    </div>
+    <p style="margin-top:16px;font-family:var(--font-mono);font-size:14px;color:var(--muted)">Score: <span id="demo-score" style="color:var(--accent);font-weight:700">0</span></p>
+  </div>
+</div>
+
+<!-- ── TAB: GAMES ── -->
+<div id="tab-games" class="tab-panel">
+  <div style="padding:20px;width:100%;text-align:center">
+    <div id="game-select">
+      <button class="game-btn active" data-game="whack">Whack-a-Mole</button>
+      <button class="game-btn" data-game="pong">Finger Pong</button>
+      <button class="game-btn" data-game="bubble">Bubble Pop</button>
+    </div>
+    <div id="game-score">Score: <span id="gscore">0</span></div>
+    <canvas id="game-canvas" width="700" height="480"></canvas>
+    <p style="margin-top:10px;font-family:var(--font-mono);font-size:12px;color:var(--muted)">Use your index finger to play · Open hand to start/restart</p>
+  </div>
+</div>
+
+<!-- ── TAB: AR DRAWING ── -->
+<div id="tab-ar" class="tab-panel">
+  <video id="ar-video" autoplay muted playsinline></video>
+  <canvas id="ar-canvas"></canvas>
+  <div id="ar-status">☝ Point finger to draw · ✌ Two fingers to erase</div>
+  <div id="ar-controls">
+    <div class="color-swatch active" style="background:#7c5cfc" data-color="#7c5cfc"></div>
+    <div class="color-swatch" style="background:#fc5c7d" data-color="#fc5c7d"></div>
+    <div class="color-swatch" style="background:#5cfcb8" data-color="#5cfcb8"></div>
+    <div class="color-swatch" style="background:#ffc832" data-color="#ffc832"></div>
+    <div class="color-swatch" style="background:#ff6b35" data-color="#ff6b35"></div>
+    <div class="color-swatch" style="background:#fff" data-color="#fff"></div>
+    <input type="range" id="brush-size" min="2" max="30" value="8" style="width:80px">
+    <button id="ar-clear">Clear</button>
+  </div>
+</div>
+
+<!-- ── TAB: BODY TAG ── -->
+<div id="tab-body" class="tab-panel">
+  <video id="body-video" autoplay muted playsinline></video>
+  <canvas id="body-canvas"></canvas>
+  <div id="tag-hud">
+    <h3>TAG!</h3>
+    <div class="score-val" id="tag-score">0</div>
+    <div class="stat">SCORE</div>
+    <div class="stat" style="margin-top:8px">Lives: <span id="tag-lives" style="color:var(--accent2)">❤️❤️❤️</span></div>
+    <div class="stat">Level: <span id="tag-level" style="color:var(--accent3)">1</span></div>
+  </div>
+  <div id="move-state">
+    <div class="state-label">MOVEMENT</div>
+    <div class="state-val" id="state-val">IDLE</div>
+  </div>
+  <button id="body-start-btn">START GAME</button>
+</div>
+
+<!-- MediaPipe via CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+
+<script>
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+const state = {
+  cameraActive: false,
+  currentTab: 'demo',
+  cursor: { x: window.innerWidth/2, y: window.innerHeight/2 },
+  gesture: 'none',
+  lastGesture: 'none',
+  gestureHoldTime: 0,
+  clickCooldown: 0,
+  scrolling: false,
+  demoScore: 0,
+  arColor: '#7c5cfc',
+  arBrushSize: 8,
+  arDrawing: false,
+  arLastPt: null,
+  // games
+  activeGame: 'whack',
+  gameScore: 0,
+  gameRunning: false,
+  // tag game
+  tagRunning: false,
+  tagScore: 0,
+  tagLives: 3,
+  tagLevel: 1,
+  bodyPose: null,
+  prevShoulderY: null,
+  prevHipCenter: null,
+  moveState: 'IDLE',
+  moveTimer: 0,
+  tagEnemies: [],
+  tagPlayer: { x: 0.5, y: 0.5 },
+  tagLastHit: 0,
+};
+
+// ═══════════════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════════════
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+    state.currentTab = tab;
+    if (tab === 'ar') startARCamera();
+    if (tab === 'body') startBodyCamera();
+  });
+});
+
+// ═══════════════════════════════════════════════
+// CAMERA TOGGLE (main hand tracking)
+// ═══════════════════════════════════════════════
+const camToggle = document.getElementById('cam-toggle');
+const videoLayer = document.getElementById('video-layer');
+const pipVideo = document.getElementById('pip-video');
+const pipCanvas = document.getElementById('pip-canvas');
+let handStream = null;
+let handsModel = null;
+
+camToggle.addEventListener('click', async () => {
+  if (!state.cameraActive) await startHandCamera();
+  else stopHandCamera();
+});
+
+async function startHandCamera() {
+  try {
+    handStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 320, height: 240 }, audio: false });
+    pipVideo.srcObject = handStream;
+    camToggle.textContent = '⏹ Stop Camera';
+    camToggle.classList.add('active');
+    videoLayer.classList.add('visible');
+    state.cameraActive = true;
+    document.getElementById('gesture-hud').classList.add('show');
+    initHandModel();
+  } catch(e) {
+    document.getElementById('perm-msg').style.display = 'block';
+    setTimeout(() => document.getElementById('perm-msg').style.display = 'none', 4000);
+  }
+}
+
+function stopHandCamera() {
+  if (handStream) handStream.getTracks().forEach(t => t.stop());
+  handStream = null;
+  pipVideo.srcObject = null;
+  camToggle.textContent = '▶ Start Camera';
+  camToggle.classList.remove('active');
+  videoLayer.classList.remove('visible');
+  state.cameraActive = false;
+  document.getElementById('gesture-hud').classList.remove('show');
+  document.getElementById('fake-cursor').classList.remove('show');
+  document.getElementById('cursor-ring').classList.remove('show');
+}
+
+function initHandModel() {
+  if (!window.Hands) return;
+  handsModel = new Hands({ locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
+  handsModel.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.7, minTrackingConfidence: 0.5 });
+  handsModel.onResults(onHandResults);
+
+  const camera = new Camera(pipVideo, {
+    onFrame: async () => { if (handsModel) await handsModel.send({ image: pipVideo }); },
+    width: 320, height: 240
+  });
+  camera.start();
+}
+
+// ═══════════════════════════════════════════════
+// HAND DETECTION + GESTURE CLASSIFICATION
+// ═══════════════════════════════════════════════
+function onHandResults(results) {
+  const ctx = pipCanvas.getContext('2d');
+  pipCanvas.width = pipVideo.videoWidth || 320;
+  pipCanvas.height = pipVideo.videoHeight || 240;
+  ctx.clearRect(0,0,pipCanvas.width,pipCanvas.height);
+
+  if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+    const lm = results.multiHandLandmarks[0];
+    drawConnectors(ctx, lm, HAND_CONNECTIONS, { color:'rgba(124,92,252,0.5)', lineWidth:1 });
+    drawLandmarks(ctx, lm, { color:'#7c5cfc', lineWidth:1, radius:2 });
+
+    // Cursor = index fingertip (landmark 8), mirrored
+    const ix = (1 - lm[8].x) * window.innerWidth;
+    const iy = lm[8].y * window.innerHeight;
+    state.cursor.x += (ix - state.cursor.x) * 0.35;
+    state.cursor.y += (iy - state.cursor.y) * 0.35;
+
+    // Classify gesture
+    state.gesture = classifyGesture(lm);
+    updateCursor();
+    handleGesture();
+  } else {
+    state.gesture = 'none';
+    document.getElementById('fake-cursor').classList.remove('show');
+    document.getElementById('cursor-ring').classList.remove('show');
+  }
+  updateGestureHUD();
+
+  // Feed to AR canvas if active
+  if (state.currentTab === 'ar' && results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+    handleARDraw(results.multiHandLandmarks[0]);
+  }
+  // Feed to game
+  if (state.currentTab === 'games') {
+    updateGameWithCursor();
+  }
+}
+
+function fingerExtended(lm, tip, pip) {
+  return lm[tip].y < lm[pip].y;
+}
+function thumbUp(lm) {
+  return lm[4].y < lm[3].y && lm[4].y < lm[2].y;
+}
+function thumbDown(lm) {
+  return lm[4].y > lm[3].y && lm[4].y > lm[2].y;
+}
+
+function classifyGesture(lm) {
+  const index = fingerExtended(lm, 8, 6);
+  const middle = fingerExtended(lm, 12, 10);
+  const ring = fingerExtended(lm, 16, 14);
+  const pinky = fingerExtended(lm, 20, 18);
+  const tUp = thumbUp(lm);
+  const tDown = thumbDown(lm);
+
+  const allOpen = index && middle && ring && pinky;
+  const onlyIndex = index && !middle && !ring && !pinky;
+  const twoFingers = index && middle && !ring && !pinky;
+  const pinchDist = Math.hypot(lm[4].x - lm[8].x, lm[4].y - lm[8].y);
+  const pinching = pinchDist < 0.06;
+
+  if (allOpen) return 'open';           // LEFT CLICK
+  if (tUp && !index && !middle) return 'thumb_up';   // SCROLL UP
+  if (tDown && !index && !middle) return 'thumb_down'; // RIGHT CLICK
+  if (twoFingers) return 'two_fingers';  // ERASE/DRAG
+  if (pinching) return 'pinch';
+  if (onlyIndex) return 'point';        // CURSOR MOVE
+  return 'fist';
+}
+
+// ═══════════════════════════════════════════════
+// CURSOR + GESTURE ACTIONS
+// ═══════════════════════════════════════════════
+const fakeCursor = document.getElementById('fake-cursor');
+const cursorRing = document.getElementById('cursor-ring');
+
+function updateCursor() {
+  fakeCursor.style.left = (state.cursor.x - 4) + 'px';
+  fakeCursor.style.top = (state.cursor.y - 2) + 'px';
+  cursorRing.style.left = state.cursor.x + 'px';
+  cursorRing.style.top = state.cursor.y + 'px';
+  fakeCursor.classList.add('show');
+  cursorRing.classList.add('show');
+}
+
+let gestureHoldStart = 0;
+let scrollInterval = null;
+let isScrolling = false;
+
+function handleGesture() {
+  const g = state.gesture;
+  const now = Date.now();
+
+  // Clear right-click menu on any other gesture
+  if (g !== 'thumb_down' && document.getElementById('ctx-menu').classList.contains('show')) {
+    document.getElementById('ctx-menu').classList.remove('show');
+  }
+
+  // Left click (open hand)
+  if (g === 'open') {
+    fakeCursor.classList.add('clicking');
+    if (state.lastGesture !== 'open') {
+      gestureHoldStart = now;
+    } else if (now - gestureHoldStart > 300 && state.clickCooldown < now) {
+      doLeftClick();
+      state.clickCooldown = now + 800;
+      gestureHoldStart = now + 10000; // prevent repeat
+    }
+  } else {
+    fakeCursor.classList.remove('clicking');
+  }
+
+  // Right click (thumb down)
+  if (g === 'thumb_down') {
+    if (state.lastGesture !== 'thumb_down') {
+      gestureHoldStart = now;
+    } else if (now - gestureHoldStart > 400 && state.clickCooldown < now) {
+      doRightClick();
+      state.clickCooldown = now + 1000;
+      gestureHoldStart = now + 10000;
+    }
+  }
+
+  // Scroll (thumb up = scroll up, fist/closed = scroll down)
+  if (g === 'thumb_up') {
+    if (!isScrolling) {
+      isScrolling = true;
+      document.getElementById('scroll-indicator').textContent = 'SCROLLING ↑';
+      document.getElementById('scroll-indicator').style.display = 'block';
+      scrollInterval = setInterval(() => {
+        const el = getScrollTarget();
+        if (el) el.scrollTop -= 18;
+        else window.scrollBy(0, -18);
+      }, 16);
+    }
+  } else {
+    if (isScrolling) {
+      isScrolling = false;
+      document.getElementById('scroll-indicator').style.display = 'none';
+      clearInterval(scrollInterval);
+    }
+  }
+
+  state.lastGesture = g;
+}
+
+function doLeftClick() {
+  const el = document.elementFromPoint(state.cursor.x, state.cursor.y);
+  if (el) {
+    el.click();
+    el.classList.add('hit');
+    setTimeout(() => el.classList.remove('hit'), 300);
+    // Demo score targets
+    if (el.dataset.score) {
+      state.demoScore += parseInt(el.dataset.score);
+      document.getElementById('demo-score').textContent = state.demoScore;
+      spawnScorePopup(el.dataset.score, state.cursor.x, state.cursor.y);
+    }
+  }
+  // Flash ring
+  cursorRing.style.borderColor = 'rgba(124,92,252,0.9)';
+  setTimeout(() => cursorRing.style.borderColor = 'rgba(124,92,252,0.4)', 200);
+}
+
+function doRightClick() {
+  const menu = document.getElementById('ctx-menu');
+  menu.style.left = Math.min(state.cursor.x, window.innerWidth - 160) + 'px';
+  menu.style.top = Math.min(state.cursor.y, window.innerHeight - 160) + 'px';
+  menu.classList.add('show');
+  fakeCursor.classList.add('right-click');
+  setTimeout(() => { fakeCursor.classList.remove('right-click'); menu.classList.remove('show'); }, 2000);
+}
+
+document.getElementById('ctx-close-item').addEventListener('click', () => {
+  document.getElementById('ctx-menu').classList.remove('show');
+});
+
+function getScrollTarget() {
+  const el = document.elementFromPoint(state.cursor.x, state.cursor.y);
+  let node = el;
+  while (node) {
+    if (node.scrollHeight > node.clientHeight) return node;
+    node = node.parentElement;
+  }
+  return null;
+}
+
+function updateGestureHUD() {
+  const labels = {
+    'point': ['☝ POINT', 'Moving cursor'],
+    'open': ['🖐 OPEN HAND', 'Left click'],
+    'thumb_up': ['👍 THUMB UP', 'Scrolling up'],
+    'thumb_down': ['👎 THUMB DOWN', 'Right click'],
+    'two_fingers': ['✌ TWO FINGERS', 'Erase / Drag'],
+    'pinch': ['🤏 PINCH', 'Select'],
+    'fist': ['✊ FIST', 'Neutral'],
+    'none': ['— NONE', 'No hand detected'],
+  };
+  const l = labels[state.gesture] || labels['none'];
+  document.getElementById('gest-name').textContent = l[0];
+  document.getElementById('gest-action').textContent = l[1];
+}
+
+function spawnScorePopup(score, x, y) {
+  const d = document.createElement('div');
+  d.textContent = '+' + score;
+  d.style.cssText = `position:fixed;left:${x}px;top:${y}px;z-index:9999;pointer-events:none;font-family:var(--font-head);font-size:20px;font-weight:800;color:#7c5cfc;transition:all 0.7s;transform:translateY(0);opacity:1;`;
+  document.body.appendChild(d);
+  requestAnimationFrame(() => { d.style.transform = 'translateY(-60px)'; d.style.opacity = '0'; });
+  setTimeout(() => d.remove(), 700);
+}
+
+// ═══════════════════════════════════════════════
+// GAMES
+// ═══════════════════════════════════════════════
+const gameCanvas = document.getElementById('game-canvas');
+const gctx = gameCanvas.getContext('2d');
+let gameLoop = null;
+let whackMoles = [];
+let whackTimer = 0;
+let bubbles = [];
+let pongBall = { x:350, y:240, vx:4, vy:3 };
+let pongPaddle = { y: 200 };
+let pongScore = 0;
+
+document.querySelectorAll('.game-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.game-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.activeGame = btn.dataset.game;
+    state.gameScore = 0;
+    document.getElementById('gscore').textContent = '0';
+    startGame();
+  });
+});
+
+function startGame() {
+  if (gameLoop) cancelAnimationFrame(gameLoop);
+  state.gameRunning = true;
+  whackMoles = [];
+  bubbles = [];
+  pongBall = { x:350, y:240, vx:4, vy:3 };
+  pongScore = 0;
+  runGame();
+}
+
+function runGame() {
+  gctx.clearRect(0,0,700,480);
+  gctx.fillStyle = '#0a0a0f';
+  gctx.fillRect(0,0,700,480);
+
+  if (state.activeGame === 'whack') drawWhack();
+  else if (state.activeGame === 'pong') drawPong();
+  else if (state.activeGame === 'bubble') drawBubbles();
+
+  // draw finger cursor on game canvas
+  if (state.cameraActive && state.gesture === 'point' || state.gesture === 'open') {
+    const rect = gameCanvas.getBoundingClientRect();
+    const lx = state.cursor.x - rect.left;
+    const ly = state.cursor.y - rect.top;
+    if (lx > 0 && ly > 0 && lx < 700 && ly < 480) {
+      gctx.beginPath();
+      gctx.arc(lx, ly, 10, 0, Math.PI*2);
+      gctx.strokeStyle = state.gesture === 'open' ? '#5cfcb8' : '#7c5cfc';
+      gctx.lineWidth = 2;
+      gctx.stroke();
+    }
+  }
+  gameLoop = requestAnimationFrame(runGame);
+}
+
+// Whack-a-Mole
+function drawWhack() {
+  whackTimer++;
+  if (whackTimer % 60 === 0) {
+    whackMoles.push({ x: 70 + Math.random() * 560, y: 80 + Math.random() * 360, r: 35, life: 120, hit: false });
+  }
+  whackMoles = whackMoles.filter(m => m.life > 0);
+
+  for (const m of whackMoles) {
+    m.life--;
+    const alpha = Math.min(1, m.life / 20);
+    gctx.globalAlpha = alpha;
+    gctx.beginPath();
+    gctx.arc(m.x, m.y, m.r, 0, Math.PI*2);
+    gctx.fillStyle = m.hit ? '#5cfcb8' : '#fc5c7d';
+    gctx.fill();
+    gctx.font = 'bold 28px sans-serif';
+    gctx.textAlign = 'center';
+    gctx.textBaseline = 'middle';
+    gctx.fillStyle = '#fff';
+    gctx.fillText('🐭', m.x, m.y);
+    gctx.globalAlpha = 1;
+  }
+
+  gctx.font = 'bold 16px "Space Mono"';
+  gctx.fillStyle = 'rgba(240,238,255,0.4)';
+  gctx.textAlign = 'left';
+  gctx.fillText('Open hand over a mole to whack!', 16, 460);
+}
+
+// Pong
+function drawPong() {
+  // Move paddle to finger y
+  const rect = gameCanvas.getBoundingClientRect();
+  const ly = state.cursor.y - rect.top;
+  if (ly > 0 && ly < 480) pongPaddle.y += (ly - 40 - pongPaddle.y) * 0.2;
+  pongPaddle.y = Math.max(0, Math.min(400, pongPaddle.y));
+
+  // Ball movement
+  pongBall.x += pongBall.vx;
+  pongBall.y += pongBall.vy;
+  if (pongBall.y < 8 || pongBall.y > 472) pongBall.vy *= -1;
+  if (pongBall.x > 680) pongBall.vx *= -1;
+
+  // Paddle collision
+  if (pongBall.x < 30 && pongBall.y > pongPaddle.y && pongBall.y < pongPaddle.y + 80) {
+    pongBall.vx = Math.abs(pongBall.vx) + 0.1;
+    state.gameScore++;
+    document.getElementById('gscore').textContent = state.gameScore;
+  }
+  if (pongBall.x < 0) { pongBall.x = 350; pongBall.y = 240; pongBall.vx = 4; }
+
+  // Draw
+  gctx.fillStyle = '#7c5cfc';
+  gctx.fillRect(14, pongPaddle.y, 10, 80);
+  gctx.beginPath();
+  gctx.arc(pongBall.x, pongBall.y, 9, 0, Math.PI*2);
+  gctx.fillStyle = '#fc5c7d';
+  gctx.fill();
+  // Net
+  for (let y = 0; y < 480; y += 20) {
+    gctx.fillStyle = 'rgba(255,255,255,0.1)';
+    gctx.fillRect(348, y, 4, 12);
+  }
+}
+
+// Bubble Pop
+function drawBubbles() {
+  if (bubbles.length < 12) {
+    bubbles.push({ x: 50 + Math.random() * 600, y: 520, r: 18 + Math.random() * 22, vy: 0.5 + Math.random() * 1.5, color: ['#7c5cfc','#fc5c7d','#5cfcb8','#ffc832'][Math.floor(Math.random()*4)], pop: false, popAlpha: 1 });
+  }
+  const rect = gameCanvas.getBoundingClientRect();
+  const fx = state.cursor.x - rect.left;
+  const fy = state.cursor.y - rect.top;
+
+  bubbles = bubbles.filter(b => b.y > -50 && b.popAlpha > 0);
+  for (const b of bubbles) {
+    if (b.pop) { b.popAlpha -= 0.08; continue; }
+    b.y -= b.vy;
+    const dist = Math.hypot(fx - b.x, fy - b.y);
+    if ((state.gesture === 'open' || state.gesture === 'point') && dist < b.r + 15) {
+      b.pop = true;
+      state.gameScore += Math.floor(b.r);
+      document.getElementById('gscore').textContent = state.gameScore;
+    }
+    gctx.beginPath();
+    gctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
+    gctx.strokeStyle = b.color;
+    gctx.lineWidth = 2;
+    gctx.stroke();
+    gctx.beginPath();
+    gctx.arc(b.x - b.r*0.25, b.y - b.r*0.25, b.r*0.18, 0, Math.PI*2);
+    gctx.fillStyle = 'rgba(255,255,255,0.4)';
+    gctx.fill();
+  }
+}
+
+function updateGameWithCursor() {
+  if (state.activeGame === 'whack' && state.gesture === 'open') {
+    const rect = gameCanvas.getBoundingClientRect();
+    const fx = state.cursor.x - rect.left;
+    const fy = state.cursor.y - rect.top;
+    for (const m of whackMoles) {
+      if (!m.hit && Math.hypot(fx - m.x, fy - m.y) < m.r) {
+        m.hit = true; m.life = Math.min(m.life, 15);
+        state.gameScore += 10;
+        document.getElementById('gscore').textContent = state.gameScore;
+      }
+    }
+  }
+}
+
+// Auto-start game on tab load
+document.querySelector('[data-tab="games"]').addEventListener('click', () => { setTimeout(startGame, 100); });
+
+// ═══════════════════════════════════════════════
+// AR DRAWING
+// ═══════════════════════════════════════════════
+let arStream = null;
+let arHandModel = null;
+const arVideo = document.getElementById('ar-video');
+const arCanvas = document.getElementById('ar-canvas');
+const arCtx = arCanvas.getContext('2d');
+let arPaths = [];
+let arCurrentPath = null;
+let arErase = false;
+
+async function startARCamera() {
+  if (arStream) return;
+  try {
+    // Try back camera on mobile, front on desktop
+    const constraints = { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false };
+    arStream = await navigator.mediaDevices.getUserMedia(constraints);
+    arVideo.srcObject = arStream;
+    await new Promise(r => arVideo.addEventListener('loadedmetadata', r, { once: true }));
+    arCanvas.width = arVideo.videoWidth || 1280;
+    arCanvas.height = arVideo.videoHeight || 720;
+    initARHandModel();
+  } catch(e) {
+    document.getElementById('ar-status').textContent = 'Camera error: ' + e.message;
+  }
+}
+
+function initARHandModel() {
+  if (!window.Hands) return;
+  arHandModel = new Hands({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
+  arHandModel.setOptions({ maxNumHands: 1, modelComplexity: 0, minDetectionConfidence: 0.6, minTrackingConfidence: 0.5 });
+  arHandModel.onResults(onARHandResults);
+  const cam = new Camera(arVideo, {
+    onFrame: async () => { if (arHandModel) await arHandModel.send({ image: arVideo }); },
+    width: arCanvas.width, height: arCanvas.height
+  });
+  cam.start();
+}
+
+function onARHandResults(results) {
+  arCtx.clearRect(0,0,arCanvas.width,arCanvas.height);
+  // Redraw saved paths
+  for (const p of arPaths) {
+    if (p.points.length < 2) continue;
+    arCtx.beginPath();
+    arCtx.moveTo(p.points[0].x, p.points[0].y);
+    for (let i = 1; i < p.points.length; i++) arCtx.lineTo(p.points[i].x, p.points[i].y);
+    arCtx.strokeStyle = p.color;
+    arCtx.lineWidth = p.size;
+    arCtx.lineCap = 'round';
+    arCtx.lineJoin = 'round';
+    arCtx.stroke();
+  }
+
+  if (!results.multiHandLandmarks || !results.multiHandLandmarks.length) {
+    arCurrentPath = null;
+    return;
+  }
+  const lm = results.multiHandLandmarks[0];
+  const g = classifyGesture(lm);
+  const tipX = (1 - lm[8].x) * arCanvas.width;
+  const tipY = lm[8].y * arCanvas.height;
+  const isErasing = g === 'two_fingers';
+  const isDrawing = g === 'point';
+
+  document.getElementById('ar-status').textContent = isErasing ? '✌ Erasing...' : isDrawing ? '☝ Drawing' : `Gesture: ${g}`;
+
+  // Draw cursor dot
+  arCtx.beginPath();
+  arCtx.arc(tipX, tipY, isErasing ? 20 : 8, 0, Math.PI*2);
+  arCtx.strokeStyle = isErasing ? '#fc5c7d' : state.arColor;
+  arCtx.lineWidth = 2;
+  arCtx.stroke();
+
+  if (isErasing) {
+    arPaths = arPaths.filter(p => !p.points.some(pt => Math.hypot(pt.x - tipX, pt.y - tipY) < 25));
+    arCurrentPath = null;
+  } else if (isDrawing) {
+    if (!arCurrentPath) {
+      arCurrentPath = { color: state.arColor, size: state.arBrushSize, points: [] };
+      arPaths.push(arCurrentPath);
+    }
+    arCurrentPath.points.push({ x: tipX, y: tipY });
+  } else {
+    arCurrentPath = null;
+  }
+}
+
+// AR controls
+document.querySelectorAll('.color-swatch').forEach(s => {
+  s.addEventListener('click', () => {
+    document.querySelectorAll('.color-swatch').forEach(x => x.classList.remove('active'));
+    s.classList.add('active');
+    state.arColor = s.dataset.color;
+  });
+});
+document.getElementById('brush-size').addEventListener('input', e => state.arBrushSize = parseInt(e.target.value));
+document.getElementById('ar-clear').addEventListener('click', () => { arPaths = []; arCtx.clearRect(0,0,arCanvas.width,arCanvas.height); });
+
+// ═══════════════════════════════════════════════
+// BODY TAG GAME
+// ═══════════════════════════════════════════════
+let bodyStream = null;
+let poseModel = null;
+const bodyVideo = document.getElementById('body-video');
+const bodyCanvas = document.getElementById('body-canvas');
+const bctx = bodyCanvas.getContext('2d');
+let tagGameLoop = null;
+let prevNoseX = null;
+
+async function startBodyCamera() {
+  if (bodyStream) return;
+  try {
+    bodyStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 }, audio: false });
+    bodyVideo.srcObject = bodyStream;
+    await new Promise(r => bodyVideo.addEventListener('loadedmetadata', r, { once: true }));
+    bodyCanvas.width = bodyVideo.videoWidth || 640;
+    bodyCanvas.height = bodyVideo.videoHeight || 480;
+    initPoseModel();
+  } catch(e) {}
+}
+
+function initPoseModel() {
+  if (!window.Pose) return;
+  poseModel = new Pose({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}` });
+  poseModel.setOptions({ modelComplexity: 1, smoothLandmarks: true, minDetectionConfidence: 0.6, minTrackingConfidence: 0.5 });
+  poseModel.onResults(onPoseResults);
+  const cam = new Camera(bodyVideo, {
+    onFrame: async () => { if (poseModel) await poseModel.send({ image: bodyVideo }); },
+    width: bodyCanvas.width, height: bodyCanvas.height
+  });
+  cam.start();
+}
+
+function onPoseResults(results) {
+  bctx.clearRect(0, 0, bodyCanvas.width, bodyCanvas.height);
+  if (!results.poseLandmarks) return;
+  const lm = results.poseLandmarks;
+  state.bodyPose = lm;
+
+  // Draw skeleton
+  if (window.drawConnectors && window.POSE_CONNECTIONS) {
+    drawConnectors(bctx, lm, POSE_CONNECTIONS, { color: 'rgba(124,92,252,0.6)', lineWidth: 2 });
+    drawLandmarks(bctx, lm, { color: '#7c5cfc', lineWidth: 1, radius: 3 });
+  }
+
+  // Detect movement state
+  const nose = lm[0];
+  const lShoulder = lm[11]; const rShoulder = lm[12];
+  const lHip = lm[23]; const rHip = lm[24];
+  const lWrist = lm[15]; const rWrist = lm[16];
+
+  const shoulderY = (lShoulder.y + rShoulder.y) / 2;
+  const hipCenterX = (lHip.x + rHip.x) / 2;
+  const noseX = nose.x;
+
+  let newMoveState = 'IDLE';
+  if (prevNoseX !== null) {
+    const dx = Math.abs(noseX - prevNoseX);
+    const isRaised = lWrist.y < lShoulder.y || rWrist.y < rShoulder.y;
+    if (dx > 0.015) newMoveState = 'RUNNING';
+    else if (isRaised) newMoveState = 'ATTACKING';
+    else newMoveState = 'IDLE';
+  }
+  prevNoseX = noseX;
+  state.moveState = newMoveState;
+  document.getElementById('state-val').textContent = newMoveState;
+  document.getElementById('state-val').style.color = newMoveState === 'RUNNING' ? '#5cfcb8' : newMoveState === 'ATTACKING' ? '#fc5c7d' : 'rgba(240,238,255,0.5)';
+
+  // Update tag player position from nose
+  state.tagPlayer.x = 1 - nose.x; // mirrored
+  state.tagPlayer.y = nose.y;
+
+  // Run tag game
+  if (state.tagRunning) updateTagGame();
+}
+
+// TAG game
+function startTagGame() {
+  state.tagRunning = true;
+  state.tagScore = 0;
+  state.tagLives = 3;
+  state.tagLevel = 1;
+  state.tagEnemies = [];
+  document.getElementById('body-start-btn').style.display = 'none';
+  document.getElementById('tag-score').textContent = '0';
+  document.getElementById('tag-lives').textContent = '❤️❤️❤️';
+  document.getElementById('tag-level').textContent = '1';
+  spawnTagEnemies();
+}
+
+function spawnTagEnemies() {
+  state.tagEnemies = [];
+  const count = 2 + state.tagLevel;
+  for (let i = 0; i < count; i++) {
+    state.tagEnemies.push({
+      x: Math.random(), y: 0.2 + Math.random() * 0.6,
+      vx: (Math.random() - 0.5) * 0.003 * state.tagLevel,
+      vy: (Math.random() - 0.5) * 0.002 * state.tagLevel,
+      r: 30, hit: false, hitCooldown: 0
+    });
+  }
+}
+
+function updateTagGame() {
+  const W = bodyCanvas.width, H = bodyCanvas.height;
+  const px = state.tagPlayer.x * W;
+  const py = state.tagPlayer.y * H;
+
+  const livesDisplay = ['', '❤️', '❤️❤️', '❤️❤️❤️'];
+  const now = Date.now();
+
+  for (const e of state.tagEnemies) {
+    // Chase player if running, random if not
+    if (state.moveState === 'RUNNING') {
+      const ex = e.x * W; const ey = e.y * H;
+      const angle = Math.atan2(py - ey, px - ex);
+      e.vx += Math.cos(angle) * 0.0002;
+      e.vy += Math.sin(angle) * 0.0002;
+    }
+    e.vx = Math.max(-0.006, Math.min(0.006, e.vx));
+    e.vy = Math.max(-0.005, Math.min(0.005, e.vy));
+    e.x += e.vx; e.y += e.vy;
+    e.x = Math.max(0.05, Math.min(0.95, e.x));
+    e.y = Math.max(0.1, Math.min(0.9, e.y));
+
+    // Attack resets enemies
+    if (state.moveState === 'ATTACKING' && !e.hit && e.hitCooldown < now) {
+      const dist = Math.hypot(e.x*W - px, e.y*H - py);
+      if (dist < 100) {
+        e.hit = true;
+        state.tagScore += 10 * state.tagLevel;
+        document.getElementById('tag-score').textContent = state.tagScore;
+        e.hitCooldown = now + 2000;
+        setTimeout(() => { e.hit = false; e.x = Math.random(); e.y = 0.2 + Math.random()*0.6; }, 1000);
+      }
+    }
+
+    // Tag player (enemy touches player)
+    if (!e.hit && e.hitCooldown < now) {
+      const dist = Math.hypot(e.x*W - px, e.y*H - py);
+      if (dist < 45 && state.tagLastHit + 2000 < now) {
+        state.tagLives--;
+        state.tagLastHit = now;
+        document.getElementById('tag-lives').textContent = livesDisplay[Math.max(0,state.tagLives)];
+        if (state.tagLives <= 0) {
+          state.tagRunning = false;
+          document.getElementById('body-start-btn').style.display = 'block';
+          document.getElementById('body-start-btn').textContent = 'PLAY AGAIN';
+          return;
+        }
+      }
+    }
+
+    // Draw enemy
+    const ex = e.x * W; const ey = e.y * H;
+    bctx.beginPath();
+    bctx.arc(ex, ey, e.r, 0, Math.PI*2);
+    bctx.fillStyle = e.hit ? 'rgba(92,252,184,0.5)' : 'rgba(252,92,125,0.5)';
+    bctx.fill();
+    bctx.strokeStyle = e.hit ? '#5cfcb8' : '#fc5c7d';
+    bctx.lineWidth = 2;
+    bctx.stroke();
+    bctx.font = 'bold 20px sans-serif';
+    bctx.textAlign = 'center';
+    bctx.textBaseline = 'middle';
+    bctx.fillStyle = '#fff';
+    bctx.fillText('👾', ex, ey);
+  }
+
+  // Level up
+  if (state.tagEnemies.every(e => e.hit)) {
+    state.tagLevel++;
+    document.getElementById('tag-level').textContent = state.tagLevel;
+    spawnTagEnemies();
+  }
+
+  // Draw player indicator
+  bctx.beginPath();
+  bctx.arc(px, py, 20, 0, Math.PI*2);
+  bctx.fillStyle = state.moveState === 'ATTACKING' ? 'rgba(252,92,125,0.4)' : state.moveState === 'RUNNING' ? 'rgba(92,252,184,0.4)' : 'rgba(124,92,252,0.4)';
+  bctx.fill();
+  bctx.strokeStyle = '#fff';
+  bctx.lineWidth = 2;
+  bctx.stroke();
+  bctx.font = '18px sans-serif';
+  bctx.textAlign = 'center';
+  bctx.textBaseline = 'middle';
+  bctx.fillText('🧍', px, py);
+}
+
+document.getElementById('body-start-btn').addEventListener('click', startTagGame);
+
+// ═══════════════════════════════════════════════
+// LOADING OVERLAY
+// ═══════════════════════════════════════════════
+let loadInterval = setInterval(() => {
+  if (window.Hands && window.Pose && window.Camera) {
+    document.getElementById('loading-overlay').classList.add('hidden');
+    clearInterval(loadInterval);
+  }
+}, 300);
+setTimeout(() => document.getElementById('loading-overlay').classList.add('hidden'), 8000);
+
+// Resize handling
+window.addEventListener('resize', () => {
+  if (arCanvas) { arCanvas.width = arVideo.videoWidth || 1280; arCanvas.height = arVideo.videoHeight || 720; }
+  if (bodyCanvas) { bodyCanvas.width = bodyVideo.videoWidth || 640; bodyCanvas.height = bodyVideo.videoHeight || 480; }
+});
+</script>
+</body>
+</html>

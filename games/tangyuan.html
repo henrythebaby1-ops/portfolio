@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>汤圆勇者：拯救嘻嘻</title>
+  <style>
+    :root {
+      --ink: #201428;
+      --paper: #fff7df;
+      --red: #d43131;
+      --jade: #2cb67d;
+      --gold: #f6c644;
+      --blue: #2779d6;
+      --night: #18304a;
+      --shadow: #08060d;
+      --mint: #8ce8c8;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--paper);
+      background:
+        radial-gradient(circle at 20% 15%, rgba(246, 198, 68, .18), transparent 26%),
+        linear-gradient(135deg, rgba(212, 49, 49, .24), transparent 40%),
+        linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px),
+        linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),
+        #17111f;
+      background-size: 16px 16px;
+      font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+      display: grid;
+      place-items: center;
+      overflow-x: hidden;
+    }
+
+    .cabinet {
+      width: min(1600px, 100vw);
+      padding: 12px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(24px, 4vw, 46px);
+      line-height: 1;
+      color: var(--gold);
+      text-shadow: 4px 4px 0 #7b1d2a, 8px 8px 0 #111;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      color: #f9dede;
+      font-size: 15px;
+    }
+
+    .subtitle strong {
+      color: var(--gold);
+    }
+
+    .modebar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    button, select {
+      min-height: 40px;
+      border: 3px solid var(--ink);
+      border-radius: 0;
+      color: var(--ink);
+      background: var(--paper);
+      box-shadow: 4px 4px 0 #000;
+      font: 800 14px "Microsoft YaHei", system-ui, sans-serif;
+      cursor: pointer;
+    }
+
+    button {
+      padding: 8px 12px;
+    }
+
+    select {
+      padding: 7px 8px;
+      max-width: 170px;
+    }
+
+    button:hover, select:hover { transform: translate(-1px, -1px); }
+    button:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #000; }
+    button.active { background: var(--gold); }
+
+    .screen {
+      position: relative;
+      border: 6px solid #08060d;
+      background: #000;
+      box-shadow: 0 18px 0 #08060d, 0 24px 34px rgba(0,0,0,.45);
+      aspect-ratio: 16 / 9;
+      width: 100%;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    .screen:focus-within {
+      outline: 4px solid var(--gold);
+      outline-offset: 4px;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      image-rendering: pixelated;
+      background: #83d8ff;
+    }
+
+    .screen-ui {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: grid;
+      align-content: start;
+      padding: 14px;
+    }
+
+    .status-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, max-content));
+      gap: 8px;
+      align-items: center;
+    }
+
+    .chip {
+      min-width: 88px;
+      border: 3px solid var(--ink);
+      background: rgba(255, 247, 223, .94);
+      color: var(--ink);
+      box-shadow: 4px 4px 0 var(--shadow);
+      padding: 6px 9px;
+      font-weight: 900;
+      font-size: 14px;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(rgba(10, 6, 16, .35), rgba(10, 6, 16, .78));
+      padding: 24px;
+      z-index: 2;
+    }
+
+    .overlay.hidden {
+      display: none;
+    }
+
+    .menu-panel {
+      width: min(920px, 100%);
+      max-height: min(92%, 760px);
+      overflow: auto;
+      border: 5px solid var(--ink);
+      background: var(--paper);
+      color: var(--ink);
+      box-shadow: 10px 10px 0 var(--shadow);
+      padding: clamp(16px, 3vw, 28px);
+    }
+
+    .menu-title {
+      margin: 0;
+      color: var(--red);
+      font-size: clamp(26px, 4vw, 44px);
+      line-height: 1;
+      text-shadow: 3px 3px 0 #f6c644;
+    }
+
+    .menu-copy {
+      margin: 12px 0 18px;
+      color: #3b263f;
+      font-weight: 800;
+      line-height: 1.5;
+    }
+
+    .menu-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin: 14px 0 16px;
+    }
+
+    .menu-tabs button {
+      min-height: 44px;
+      background: #fff;
+    }
+
+    .menu-tabs button.active {
+      background: var(--mint);
+    }
+
+    .menu-page {
+      display: none;
+    }
+
+    .menu-page.active {
+      display: block;
+    }
+
+    .hero-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin: 16px 0 18px;
+    }
+
+    .hero-card {
+      min-height: 86px;
+      border: 3px solid var(--ink);
+      background: #fff0bd;
+      box-shadow: 4px 4px 0 var(--shadow);
+      padding: 10px;
+      font-weight: 900;
+    }
+
+    .hero-card span {
+      display: block;
+      margin-top: 6px;
+      font-size: 13px;
+      color: #5a3140;
+      line-height: 1.3;
+    }
+
+    .big-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .big-actions button {
+      min-height: 58px;
+      font-size: 18px;
+      background: var(--gold);
+    }
+
+    .big-actions button:last-child {
+      background: #b7f1ff;
+    }
+
+    .level-map-head {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      margin: 8px 0 12px;
+      color: #3b263f;
+      font-weight: 900;
+    }
+
+    .level-grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 8px;
+      max-height: 300px;
+      overflow: auto;
+      padding: 4px 8px 8px 4px;
+    }
+
+    .level-grid button {
+      min-width: 0;
+      min-height: 42px;
+      padding: 4px;
+      background: #fff;
+      font-size: 13px;
+    }
+
+    .level-grid button.current {
+      background: var(--gold);
+    }
+
+    .level-grid button.final {
+      background: #ff9fca;
+    }
+
+    .menu-note {
+      margin: 12px 0 0;
+      color: #5a3140;
+      font-weight: 800;
+      line-height: 1.45;
+    }
+
+    .maker-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin: 12px 0;
+    }
+
+    .maker-field {
+      border: 3px solid var(--ink);
+      background: #fff;
+      box-shadow: 4px 4px 0 var(--shadow);
+      padding: 10px;
+      font-weight: 900;
+    }
+
+    .maker-field label {
+      display: block;
+      margin-bottom: 8px;
+      color: #3b263f;
+      font-size: 13px;
+    }
+
+    .maker-field input {
+      width: 100%;
+      min-height: 38px;
+      border: 2px solid var(--ink);
+      padding: 6px;
+      color: var(--ink);
+      background: #fff7df;
+      font: 900 15px "Microsoft YaHei", system-ui, sans-serif;
+    }
+
+    .maker-preview {
+      border: 3px solid var(--ink);
+      background: #dff6ff;
+      box-shadow: 4px 4px 0 var(--shadow);
+      height: 86px;
+      margin: 12px 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .maker-preview span {
+      position: absolute;
+      bottom: 0;
+      height: 20px;
+      background: #2cb67d;
+      border-top: 4px solid #f6c644;
+    }
+
+    .hud {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+      margin: 18px 0 0;
+      color: var(--ink);
+    }
+
+    .tile {
+      min-height: 44px;
+      border: 3px solid var(--ink);
+      background: var(--paper);
+      box-shadow: 4px 4px 0 #000;
+      padding: 8px 10px;
+      font-weight: 900;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 82px 82px 1fr 98px;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .controls button {
+      min-height: 58px;
+      font-size: 24px;
+    }
+
+    .help {
+      margin-top: 14px;
+      color: #f3e8cd;
+      font-weight: 700;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 760px) {
+      .cabinet { padding: 10px; }
+      .topbar { grid-template-columns: 1fr; align-items: start; }
+      .modebar { justify-content: start; }
+      .hud { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 22px; }
+      .status-strip { grid-template-columns: repeat(2, minmax(0, max-content)); }
+      .hero-row, .big-actions { grid-template-columns: 1fr; }
+      .menu-tabs { grid-template-columns: 1fr; }
+      .level-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); max-height: 220px; }
+      .maker-grid { grid-template-columns: 1fr; }
+      .menu-panel { padding: 16px; }
+      button, select { font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="cabinet">
+    <section class="topbar">
+      <div>
+        <h1>汤圆勇者：拯救嘻嘻</h1>
+        <p class="subtitle"><strong>汤圆</strong>出发救妹妹<strong>嘻嘻</strong>：120关中国像素平台跳跃，带自制关卡和无限恐龙跑酷。</p>
+      </div>
+      <div class="modebar">
+        <button id="campaignBtn" class="active">冒险模式</button>
+        <button id="endlessBtn">无限模式</button>
+        <select id="levelSelect" aria-label="选择关卡"></select>
+        <button id="menuBtn">主菜单</button>
+        <button id="restartBtn">重新开始</button>
+      </div>
+    </section>
+
+    <section class="screen" id="screen">
+      <canvas id="game" width="1280" height="720" tabindex="0" aria-label="汤圆勇者游戏画面"></canvas>
+      <div class="screen-ui" aria-hidden="true">
+        <div class="status-strip">
+          <div class="chip" id="screenMode">冒险</div>
+          <div class="chip" id="screenLevel">第 1 关</div>
+          <div class="chip" id="screenCoins">元宝 0</div>
+          <div class="chip" id="screenLives">生命 3</div>
+        </div>
+      </div>
+      <div class="overlay" id="menuOverlay">
+        <div class="menu-panel">
+          <h2 class="menu-title">主菜单</h2>
+          <p class="menu-copy">汤圆要穿过 120 个中国像素关卡救出嘻嘻。还能自己做关卡、选关、开跑、重来。</p>
+          <div class="menu-tabs" role="tablist" aria-label="主菜单页面">
+            <button class="active" data-menu-page="home">首页</button>
+            <button data-menu-page="levels">关卡地图</button>
+            <button data-menu-page="maker">关卡制作</button>
+            <button data-menu-page="endless">无限跑酷</button>
+          </div>
+          <div class="menu-page active" id="menu-home">
+            <div class="hero-row">
+              <div class="hero-card">汤圆<span>新的像素勇者，负责跳、跑、踩灯笼怪。</span></div>
+              <div class="hero-card">嘻嘻<span>妹妹在第 120 关终点等汤圆救她。</span></div>
+              <div class="hero-card">关卡地图<span>现在可以直接选 1-120，还能做自制关卡。</span></div>
+            </div>
+            <div class="big-actions">
+              <button id="startCampaignBtn">继续冒险</button>
+              <button id="openLevelsBtn">选择关卡</button>
+              <button id="startEndlessBtn">无限跑酷</button>
+            </div>
+          </div>
+          <div class="menu-page" id="menu-levels">
+            <div class="level-map-head">
+              <span id="levelMapTitle">当前：第 1 / 120 关</span>
+              <button id="playSelectedLevelBtn">开始当前关</button>
+            </div>
+            <div class="level-grid" id="levelGrid" aria-label="120关关卡地图"></div>
+            <p class="menu-note">点一个数字就会切到那一关，再按“开始当前关”。第 120 关是救嘻嘻的最终关。</p>
+          </div>
+          <div class="menu-page" id="menu-maker">
+            <div class="level-map-head">
+              <span>关卡制作器</span>
+              <button id="randomMakerBtn">随机一下</button>
+            </div>
+            <div class="maker-grid">
+              <div class="maker-field"><label for="makerLength">长度</label><input id="makerLength" type="number" min="1800" max="9000" step="200" value="3600"></div>
+              <div class="maker-field"><label for="makerPlatforms">平台</label><input id="makerPlatforms" type="number" min="3" max="40" value="14"></div>
+              <div class="maker-field"><label for="makerCoins">元宝</label><input id="makerCoins" type="number" min="0" max="80" value="24"></div>
+              <div class="maker-field"><label for="makerEnemies">灯笼怪</label><input id="makerEnemies" type="number" min="0" max="35" value="10"></div>
+              <div class="maker-field"><label for="makerSpikes">尖刺</label><input id="makerSpikes" type="number" min="0" max="25" value="5"></div>
+            </div>
+            <div class="maker-preview" id="makerPreview" aria-hidden="true"></div>
+            <div class="big-actions">
+              <button id="playCustomBtn">试玩自制关卡</button>
+              <button id="saveCustomBtn">保存设置</button>
+              <button id="loadCustomBtn">读取设置</button>
+            </div>
+            <p class="menu-note" id="makerNote">调数字，按“试玩自制关卡”。自制关卡也有终点牌坊和嘻嘻。</p>
+          </div>
+          <div class="menu-page" id="menu-endless">
+            <div class="hero-row">
+              <div class="hero-card">无限跑酷<span>像 Chrome Dino 一样一直跑，越久越快。</span></div>
+              <div class="hero-card">跳过障碍<span>竹子和石头会越来越密。</span></div>
+              <div class="hero-card">纪录<span>最高分会保存在这个浏览器里。</span></div>
+            </div>
+            <div class="big-actions">
+              <button id="startEndlessBtn2">开始无限跑酷</button>
+              <button id="backHomeBtn">回首页</button>
+              <button id="playLevelOneBtn">从第 1 关开始</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="hud" aria-live="polite">
+      <div class="tile" id="modeTile">模式：冒险</div>
+      <div class="tile" id="levelTile">关卡：1 / 120</div>
+      <div class="tile" id="coinTile">元宝：0</div>
+      <div class="tile" id="lifeTile">生命：3</div>
+      <div class="tile" id="msgTile">目标：救出嘻嘻</div>
+    </section>
+
+    <section class="controls" aria-label="触摸控制">
+      <button data-key="ArrowLeft">←</button>
+      <button data-key="ArrowRight">→</button>
+      <span></span>
+      <button data-key="Space">跳</button>
+    </section>
+
+    <p class="help">键盘：A/D 或 ←/→ 移动，W/空格/↑ 跳跃，R 重开。碰到灯笼怪会受伤，踩头可以击败它。拿元宝，过牌坊，最后救出妹妹嘻嘻。</p>
+  </main>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width;
+    const H = canvas.height;
+    const keys = new Set();
+    const LEVEL_COUNT = 120;
+    const storage = {
+      getBest() {
+        try { return Number(localStorage.getItem("tangyuan-best") || 0); }
+        catch (error) { return 0; }
+      },
+      setBest(value) {
+        try { localStorage.setItem("tangyuan-best", String(value)); }
+        catch (error) {}
+      }
+    };
+    const ui = {
+      screen: document.getElementById("screen"),
+      campaignBtn: document.getElementById("campaignBtn"),
+      endlessBtn: document.getElementById("endlessBtn"),
+      restartBtn: document.getElementById("restartBtn"),
+      menuBtn: document.getElementById("menuBtn"),
+      startCampaignBtn: document.getElementById("startCampaignBtn"),
+      startEndlessBtn: document.getElementById("startEndlessBtn"),
+      startEndlessBtn2: document.getElementById("startEndlessBtn2"),
+      openLevelsBtn: document.getElementById("openLevelsBtn"),
+      backHomeBtn: document.getElementById("backHomeBtn"),
+      playLevelOneBtn: document.getElementById("playLevelOneBtn"),
+      playSelectedLevelBtn: document.getElementById("playSelectedLevelBtn"),
+      playCustomBtn: document.getElementById("playCustomBtn"),
+      saveCustomBtn: document.getElementById("saveCustomBtn"),
+      loadCustomBtn: document.getElementById("loadCustomBtn"),
+      randomMakerBtn: document.getElementById("randomMakerBtn"),
+      makerLength: document.getElementById("makerLength"),
+      makerPlatforms: document.getElementById("makerPlatforms"),
+      makerCoins: document.getElementById("makerCoins"),
+      makerEnemies: document.getElementById("makerEnemies"),
+      makerSpikes: document.getElementById("makerSpikes"),
+      makerPreview: document.getElementById("makerPreview"),
+      makerNote: document.getElementById("makerNote"),
+      menuOverlay: document.getElementById("menuOverlay"),
+      menuTabs: [...document.querySelectorAll(".menu-tabs button")],
+      menuPages: [...document.querySelectorAll(".menu-page")],
+      levelGrid: document.getElementById("levelGrid"),
+      levelMapTitle: document.getElementById("levelMapTitle"),
+      levelSelect: document.getElementById("levelSelect"),
+      modeTile: document.getElementById("modeTile"),
+      levelTile: document.getElementById("levelTile"),
+      coinTile: document.getElementById("coinTile"),
+      lifeTile: document.getElementById("lifeTile"),
+      msgTile: document.getElementById("msgTile"),
+      screenMode: document.getElementById("screenMode"),
+      screenLevel: document.getElementById("screenLevel"),
+      screenCoins: document.getElementById("screenCoins"),
+      screenLives: document.getElementById("screenLives")
+    };
+
+    const state = {
+      mode: "campaign",
+      started: false,
+      custom: false,
+      level: 1,
+      coins: 0,
+      lives: 3,
+      message: "目标：救出嘻嘻",
+      t: 0,
+      camera: 0,
+      won: false,
+      gameOver: false,
+      endlessScore: 0,
+      best: storage.getBest()
+    };
+
+    const player = {
+      x: 90, y: 0, w: 30, h: 42,
+      vx: 0, vy: 0, grounded: false,
+      hurt: 0, face: 1
+    };
+
+    let levelData = null;
+    let runner = null;
+    let customSettings = null;
+
+    for (let i = 1; i <= LEVEL_COUNT; i++) {
+      const opt = document.createElement("option");
+      opt.value = i;
+      opt.textContent = `第 ${i} 关`;
+      ui.levelSelect.appendChild(opt);
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = i;
+      button.dataset.level = i;
+      if (i === LEVEL_COUNT) button.classList.add("final");
+      ui.levelGrid.appendChild(button);
+    }
+
+    function makeLevel(n) {
+      const width = 1700 + n * 130;
+      const platforms = [
+        { x: 0, y: 472, w: width, h: 68, type: "ground" },
+        { x: 250, y: 382, w: 150, h: 24 },
+        { x: 540, y: 332, w: 150, h: 24 },
+        { x: 850, y: 394, w: 160, h: 24 }
+      ];
+      const coins = [];
+      const enemies = [];
+      const lanterns = [];
+
+      for (let i = 0; i < 8 + Math.floor(n / 2); i++) {
+        const x = 280 + i * 210 + (i % 2) * 58;
+        const y = i % 3 === 0 ? 340 : i % 3 === 1 ? 292 : 424;
+        coins.push({ x, y, got: false });
+      }
+
+      for (let i = 0; i < 5 + Math.floor(n / 3); i++) {
+        const x = 430 + i * 310;
+        const y = 432;
+        enemies.push({ x, y, w: 34, h: 36, vx: i % 2 ? -1.2 : 1.2, alive: true, min: x - 80, max: x + 120 });
+      }
+
+      for (let i = 0; i < 5 + n; i++) {
+        const x = 1180 + i * 210;
+        const y = 280 + ((i + n) % 3) * 48;
+        platforms.push({ x, y, w: 124 + (i % 2) * 44, h: 24 });
+        if (i % 2 === 0) coins.push({ x: x + 45, y: y - 42, got: false });
+        if (i % 5 === 2) lanterns.push({ x: x + 30, y: y - 88, swing: i });
+      }
+
+      if (n >= 6) {
+        for (let i = 0; i < Math.floor(n / 4); i++) {
+          platforms.push({ x: 1280 + i * 620, y: 448, w: 110, h: 24, type: "spikes" });
+        }
+      }
+
+      if (n === LEVEL_COUNT) {
+        enemies.push({ x: width - 360, y: 404, w: 66, h: 64, vx: 1.7, alive: true, min: width - 520, max: width - 170, boss: true });
+      }
+
+      return {
+        n,
+        width,
+        platforms,
+        coins,
+        enemies,
+        lanterns,
+        gate: { x: width - 160, y: 348, w: 72, h: 124 },
+        sister: { x: width - 88, y: 398, w: 30, h: 44 }
+      };
+    }
+
+    function readMakerSettings() {
+      return {
+        width: clampNumber(ui.makerLength.value, 1800, 9000, 3600),
+        platforms: clampNumber(ui.makerPlatforms.value, 3, 40, 14),
+        coins: clampNumber(ui.makerCoins.value, 0, 80, 24),
+        enemies: clampNumber(ui.makerEnemies.value, 0, 35, 10),
+        spikes: clampNumber(ui.makerSpikes.value, 0, 25, 5)
+      };
+    }
+
+    function clampNumber(value, min, max, fallback) {
+      const number = Number(value);
+      if (!Number.isFinite(number)) return fallback;
+      return Math.max(min, Math.min(max, Math.round(number)));
+    }
+
+    function makeCustomLevel(settings = readMakerSettings()) {
+      const width = settings.width;
+      const platforms = [
+        { x: 0, y: 472, w: width, h: 68, type: "ground" },
+        { x: 240, y: 382, w: 170, h: 24 },
+        { x: width - 440, y: 380, w: 210, h: 24 }
+      ];
+      const coins = [];
+      const enemies = [];
+      const lanterns = [];
+
+      for (let i = 0; i < settings.platforms; i++) {
+        const spread = width - 760;
+        const x = 460 + Math.round((spread / Math.max(1, settings.platforms - 1)) * i);
+        const y = 285 + ((i * 73 + settings.coins * 11) % 130);
+        platforms.push({ x, y, w: 120 + (i % 3) * 36, h: 24 });
+      }
+
+      for (let i = 0; i < settings.coins; i++) {
+        const x = 310 + Math.round(((width - 620) / Math.max(1, settings.coins)) * i);
+        const y = i % 4 === 0 ? 338 : i % 4 === 1 ? 292 : i % 4 === 2 ? 250 : 424;
+        coins.push({ x, y, got: false });
+      }
+
+      for (let i = 0; i < settings.enemies; i++) {
+        const x = 520 + Math.round(((width - 900) / Math.max(1, settings.enemies)) * i);
+        enemies.push({ x, y: 432, w: 34, h: 36, vx: i % 2 ? -1.3 : 1.3, alive: true, min: x - 70, max: x + 120 });
+        if (i % 4 === 1) lanterns.push({ x: x + 90, y: 278, swing: i });
+      }
+
+      for (let i = 0; i < settings.spikes; i++) {
+        const x = 700 + Math.round(((width - 1100) / Math.max(1, settings.spikes)) * i);
+        platforms.push({ x, y: 448, w: 120, h: 24, type: "spikes" });
+      }
+
+      return {
+        n: "custom",
+        width,
+        platforms,
+        coins,
+        enemies,
+        lanterns,
+        gate: { x: width - 170, y: 348, w: 72, h: 124 },
+        sister: { x: width - 92, y: 398, w: 30, h: 44 }
+      };
+    }
+
+    function updateMakerPreview() {
+      const settings = readMakerSettings();
+      ui.makerPreview.innerHTML = "";
+      const pieces = Math.min(18, Math.max(4, Math.floor(settings.platforms / 2)));
+      for (let i = 0; i < pieces; i++) {
+        const piece = document.createElement("span");
+        piece.style.left = `${(i / pieces) * 96}%`;
+        piece.style.width = `${Math.max(5, 70 / pieces)}%`;
+        piece.style.bottom = `${10 + (i * 19) % 42}px`;
+        ui.makerPreview.appendChild(piece);
+      }
+      ui.makerNote.textContent = `预览：长度 ${settings.width}，平台 ${settings.platforms}，元宝 ${settings.coins}，灯笼怪 ${settings.enemies}，尖刺 ${settings.spikes}`;
+    }
+
+    function focusGame() {
+      canvas.focus({ preventScroll: true });
+    }
+
+    function openMenu() {
+      state.started = false;
+      ui.menuOverlay.classList.remove("hidden");
+      keys.clear();
+      updateHud();
+    }
+
+    function showMenuPage(page) {
+      ui.menuTabs.forEach(button => button.classList.toggle("active", button.dataset.menuPage === page));
+      ui.menuPages.forEach(section => section.classList.toggle("active", section.id === `menu-${page}`));
+    }
+
+    function closeMenu() {
+      state.started = true;
+      ui.menuOverlay.classList.add("hidden");
+      focusGame();
+      updateHud();
+    }
+
+    function resetCampaign(keepStats = false, startNow = state.started) {
+      state.mode = "campaign";
+      state.started = startNow;
+      state.custom = false;
+      state.won = false;
+      state.gameOver = false;
+      state.level = Math.max(1, Math.min(LEVEL_COUNT, state.level));
+      state.message = state.level === LEVEL_COUNT ? "最终关：嘻嘻就在前面！" : "目标：找到红色牌坊";
+      if (!keepStats) {
+        state.coins = 0;
+        state.lives = 3;
+      }
+      levelData = makeLevel(state.level);
+      player.x = 90;
+      player.y = 380;
+      player.vx = 0;
+      player.vy = 0;
+      player.hurt = 0;
+      state.camera = 0;
+      ui.levelSelect.value = state.level;
+      setModeButtons();
+      ui.menuOverlay.classList.toggle("hidden", state.started);
+      if (state.started) focusGame();
+      updateHud();
+    }
+
+    function resetCustomLevel(startNow = true) {
+      state.mode = "campaign";
+      state.started = startNow;
+      state.custom = true;
+      state.won = false;
+      state.gameOver = false;
+      state.coins = 0;
+      state.lives = 3;
+      state.message = "自制关卡：冲到牌坊救嘻嘻";
+      customSettings = readMakerSettings();
+      levelData = makeCustomLevel(customSettings);
+      player.x = 90;
+      player.y = 380;
+      player.vx = 0;
+      player.vy = 0;
+      player.hurt = 0;
+      state.camera = 0;
+      setModeButtons();
+      ui.menuOverlay.classList.toggle("hidden", state.started);
+      if (state.started) focusGame();
+      updateHud();
+    }
+
+    function resetEndless(startNow = state.started) {
+      state.mode = "endless";
+      state.started = startNow;
+      state.custom = false;
+      state.gameOver = false;
+      state.won = false;
+      state.endlessScore = 0;
+      state.message = "无限跑酷：越远越好";
+      runner = {
+        x: 90, y: 390, w: 34, h: 42, vy: 0, grounded: true,
+        speed: 6, obstacles: [], clouds: [], spawn: 45
+      };
+      for (let i = 0; i < 5; i++) {
+        runner.clouds.push({ x: 220 + i * 220, y: 70 + i % 2 * 50 });
+      }
+      setModeButtons();
+      ui.menuOverlay.classList.toggle("hidden", state.started);
+      if (state.started) focusGame();
+      updateHud();
+    }
+
+    function setModeButtons() {
+      ui.campaignBtn.classList.toggle("active", state.mode === "campaign");
+      ui.endlessBtn.classList.toggle("active", state.mode === "endless");
+      ui.levelSelect.disabled = state.mode !== "campaign";
+    }
+
+    function updateLevelButtons() {
+      ui.levelGrid.querySelectorAll("button").forEach(button => {
+        button.classList.toggle("current", Number(button.dataset.level) === state.level);
+      });
+      ui.levelMapTitle.textContent = `当前：第 ${state.level} / ${LEVEL_COUNT} 关`;
+    }
+
+    function updateHud() {
+      ui.modeTile.textContent = `模式：${state.mode === "campaign" ? "冒险" : "无限恐龙跑酷"}`;
+      ui.levelTile.textContent = state.mode === "campaign" ? (state.custom ? "关卡：自制" : `关卡：${state.level} / ${LEVEL_COUNT}`) : `纪录：${state.best}`;
+      ui.coinTile.textContent = state.mode === "campaign" ? `元宝：${state.coins}` : `分数：${Math.floor(state.endlessScore)}`;
+      ui.lifeTile.textContent = state.mode === "campaign" ? `生命：${state.lives}` : `速度：${runner ? runner.speed.toFixed(1) : "6.0"}`;
+      ui.msgTile.textContent = state.message;
+      ui.screenMode.textContent = state.mode === "campaign" ? (state.custom ? "自制" : "冒险") : "无限跑酷";
+      ui.screenLevel.textContent = state.mode === "campaign" ? (state.custom ? "自制关卡" : `第 ${state.level} / ${LEVEL_COUNT} 关`) : `纪录 ${state.best}`;
+      ui.screenCoins.textContent = state.mode === "campaign" ? `元宝 ${state.coins}` : `分数 ${Math.floor(state.endlessScore)}`;
+      ui.screenLives.textContent = state.mode === "campaign" ? `生命 ${state.lives}` : `速度 ${runner ? runner.speed.toFixed(1) : "6.0"}`;
+      updateLevelButtons();
+    }
+
+    function rects(a, b) {
+      return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    }
+
+    function jumpPressed() {
+      return keys.has("Space") || keys.has("ArrowUp") || keys.has("KeyW");
+    }
+
+    function updateCampaign() {
+      if (state.gameOver || state.won) return;
+
+      const speed = 4.4;
+      const gravity = 0.55;
+      const left = keys.has("ArrowLeft") || keys.has("KeyA");
+      const right = keys.has("ArrowRight") || keys.has("KeyD");
+      player.vx = (right ? speed : 0) - (left ? speed : 0);
+      if (player.vx) player.face = player.vx > 0 ? 1 : -1;
+      if (jumpPressed() && player.grounded) {
+        player.vy = -12.6;
+        player.grounded = false;
+      }
+
+      player.vy += gravity;
+      player.x += player.vx;
+      player.y += player.vy;
+      player.grounded = false;
+
+      for (const p of levelData.platforms) {
+        if (p.type === "spikes") {
+          if (rects(player, p)) damage("小心尖刺！");
+          continue;
+        }
+        if (rects(player, p) && player.vy >= 0 && player.y + player.h - player.vy <= p.y + 6) {
+          player.y = p.y - player.h;
+          player.vy = 0;
+          player.grounded = true;
+        }
+      }
+
+      player.x = Math.max(0, Math.min(levelData.width - player.w, player.x));
+      if (player.y > H + 80) damage("汤圆掉进云海了！");
+      if (player.hurt > 0) player.hurt--;
+
+      for (const c of levelData.coins) {
+        if (!c.got && rects(player, { x: c.x - 12, y: c.y - 12, w: 24, h: 24 })) {
+          c.got = true;
+          state.coins++;
+          state.message = "叮！拿到金元宝";
+        }
+      }
+
+      for (const e of levelData.enemies) {
+        if (!e.alive) continue;
+        e.x += e.vx;
+        if (e.x < e.min || e.x > e.max) e.vx *= -1;
+        if (rects(player, e)) {
+          if (player.vy > 0 && player.y + player.h - player.vy < e.y + 12) {
+            e.alive = false;
+            player.vy = -9;
+            state.message = e.boss ? "大灯笼怪被汤圆踩扁了！" : "踩扁灯笼怪！";
+          } else {
+            damage(e.boss ? "大灯笼怪太烫了！" : "灯笼怪撞到汤圆！");
+          }
+        }
+      }
+
+      for (const l of levelData.lanterns) {
+        const bob = Math.sin(state.t / 20 + l.swing) * 12;
+        if (rects(player, { x: l.x, y: l.y + bob, w: 34, h: 54 })) damage("会飞的灯笼！");
+      }
+
+      if (rects(player, levelData.gate)) {
+        if (state.custom || state.level === LEVEL_COUNT) {
+          state.won = true;
+          state.message = state.custom ? "自制关卡完成！汤圆救到嘻嘻！" : "汤圆救出了嘻嘻！大团圆！";
+        } else {
+          state.level++;
+          resetCampaign(true);
+          state.message = `进入第 ${state.level} 关`;
+        }
+      }
+
+      state.camera = Math.max(0, Math.min(levelData.width - W, player.x - W * 0.38));
+      updateHud();
+    }
+
+    function damage(text) {
+      if (player.hurt > 0 || state.gameOver || state.won) return;
+      state.lives--;
+      state.message = text;
+      player.hurt = 70;
+      player.x = Math.max(50, player.x - 90);
+      player.y = 360;
+      player.vy = -5;
+      if (state.lives <= 0) {
+        state.gameOver = true;
+        state.message = "生命用完了，按 R 再来一次";
+      }
+    }
+
+    function updateEndless() {
+      if (state.gameOver) return;
+      runner.speed += 0.0024;
+      state.endlessScore += runner.speed * 0.16;
+      runner.spawn--;
+      if (runner.spawn <= 0) {
+        const isTall = Math.random() > 0.62;
+        runner.obstacles.push({
+          x: W + 40,
+          y: isTall ? 382 : 410,
+          w: isTall ? 34 : 48,
+          h: isTall ? 70 : 42,
+          kind: isTall ? "bamboo" : "stone"
+        });
+        runner.spawn = 50 + Math.random() * 65 - Math.min(28, runner.speed * 2);
+      }
+
+      if (jumpPressed() && runner.grounded) {
+        runner.vy = -13.5;
+        runner.grounded = false;
+      }
+      runner.vy += 0.65;
+      runner.y += runner.vy;
+      if (runner.y >= 390) {
+        runner.y = 390;
+        runner.vy = 0;
+        runner.grounded = true;
+      }
+
+      for (const o of runner.obstacles) o.x -= runner.speed;
+      runner.obstacles = runner.obstacles.filter(o => o.x + o.w > -30);
+      for (const cloud of runner.clouds) {
+        cloud.x -= runner.speed * 0.28;
+        if (cloud.x < -80) {
+          cloud.x = W + 90;
+          cloud.y = 65 + Math.random() * 90;
+        }
+      }
+
+      for (const o of runner.obstacles) {
+        if (rects(runner, o)) {
+          state.gameOver = true;
+          state.best = Math.max(state.best, Math.floor(state.endlessScore));
+          storage.setBest(state.best);
+          state.message = "碰到了！按 R 重新跑";
+        }
+      }
+      updateHud();
+    }
+
+    function drawPixelText(text, x, y, size = 18, color = "#fff7df", align = "left") {
+      ctx.save();
+      ctx.font = `900 ${size}px "Microsoft YaHei", sans-serif`;
+      ctx.textAlign = align;
+      ctx.textBaseline = "top";
+      ctx.fillStyle = "#120b18";
+      ctx.fillText(text, x + 3, y + 3);
+      ctx.fillStyle = color;
+      ctx.fillText(text, x, y);
+      ctx.restore();
+    }
+
+    function drawBg(scroll = 0, night = false) {
+      ctx.fillStyle = night ? "#17345f" : "#86dcff";
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = night ? "#29456d" : "#fff0b9";
+      ctx.beginPath();
+      ctx.arc(790, 82, 38, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = night ? "#23415b" : "#5db668";
+      for (let i = -1; i < 8; i++) {
+        const x = i * 190 - (scroll * 0.18 % 190);
+        ctx.fillRect(x + 12, 292, 150, 180);
+        ctx.fillRect(x + 46, 238, 88, 54);
+      }
+      ctx.fillStyle = night ? "#c7464c" : "#d43131";
+      for (let i = -1; i < 9; i++) {
+        const x = i * 160 - (scroll * 0.35 % 160);
+        ctx.fillRect(x, 214, 70, 10);
+        ctx.fillRect(x + 8, 224, 54, 14);
+        ctx.fillStyle = "#f6c644";
+        ctx.fillRect(x + 28, 238, 12, 22);
+        ctx.fillStyle = night ? "#c7464c" : "#d43131";
+      }
+    }
+
+    function drawPlatform(p, cam) {
+      const x = Math.floor(p.x - cam);
+      if (p.type === "spikes") {
+        ctx.fillStyle = "#29323d";
+        ctx.fillRect(x, p.y + 14, p.w, 10);
+        ctx.fillStyle = "#eaf6ff";
+        for (let i = 0; i < p.w; i += 22) {
+          ctx.beginPath();
+          ctx.moveTo(x + i, p.y + 16);
+          ctx.lineTo(x + i + 11, p.y - 10);
+          ctx.lineTo(x + i + 22, p.y + 16);
+          ctx.fill();
+        }
+        return;
+      }
+      ctx.fillStyle = p.type === "ground" ? "#277047" : "#995522";
+      ctx.fillRect(x, p.y, p.w, p.h);
+      ctx.fillStyle = p.type === "ground" ? "#45b663" : "#f6c644";
+      ctx.fillRect(x, p.y, p.w, 8);
+      ctx.fillStyle = "rgba(0,0,0,.18)";
+      for (let i = 0; i < p.w; i += 32) ctx.fillRect(x + i, p.y + 11, 16, 4);
+    }
+
+    function px(x, y, w, h, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(Math.floor(x), Math.floor(y), w, h);
+    }
+
+    function drawTangyuan(x, y, face = 1, hurt = 0) {
+      ctx.save();
+      if (hurt % 8 < 4) ctx.globalAlpha = 0.55;
+      ctx.translate(Math.floor(x), Math.floor(y));
+      const step = Math.sin(state.t / 6) > 0 ? 2 : 0;
+      px(9, 0, 16, 5, "#201428");
+      px(7, 3, 20, 6, "#f6c644");
+      px(12, -2, 10, 4, "#ffe38a");
+      px(5, 7, 26, 4, "#201428");
+      px(3, 11, 30, 24, "#201428");
+      px(7, 5, 22, 8, "#fff8ec");
+      px(6, 12, 26, 23, "#fff8ec");
+      px(9, 8, 17, 5, "#ffffff");
+      px(1, 15, 7, 19, "#201428");
+      px(28, 15, 7, 19, "#201428");
+      px(2, 16, 5, 17, "#d43131");
+      px(29, 16, 5, 17, "#d43131");
+      px(6, 27, 26, 8, "#d43131");
+      px(9, 29, 20, 4, "#f6c644");
+      px(11, 34 + step, 8, 8, "#201428");
+      px(22, 36 - step, 8, 6, "#201428");
+      px(12, 34 + step, 6, 5, "#27456b");
+      px(23, 36 - step, 6, 4, "#27456b");
+      const leftEye = face > 0 ? 13 : 9;
+      const rightEye = face > 0 ? 23 : 19;
+      px(leftEye, 17, 4, 4, "#201428");
+      px(rightEye, 17, 4, 4, "#201428");
+      px(leftEye + 1, 17, 1, 1, "#fff");
+      px(rightEye + 1, 17, 1, 1, "#fff");
+      px(face > 0 ? 19 : 16, 24, 7, 3, "#201428");
+      px(8, 21, 3, 3, "#ff9f9f");
+      px(28, 21, 3, 3, "#ff9f9f");
+      px(15, 7, 4, 4, "#d43131");
+      px(20, 7, 4, 4, "#d43131");
+      ctx.restore();
+    }
+
+    function drawEnemy(e, cam) {
+      if (!e.alive) return;
+      const x = Math.floor(e.x - cam);
+      const y = Math.floor(e.y);
+      const blink = Math.sin(state.t / 10 + e.x) > 0 ? 2 : 0;
+      px(x + 6, y - 9, e.w - 12, 8, "#201428");
+      px(x + 9, y - 7, e.w - 18, 5, "#f6c644");
+      px(x + 2, y, e.w - 4, e.h, "#201428");
+      px(x, y + 6, e.w, e.h - 12, e.boss ? "#8b1c2b" : "#d43131");
+      px(x + 5, y + 10, e.w - 10, 11, "#f6c644");
+      px(x + 8, y + 13, e.w - 16, 5, "#ffe38a");
+      px(x + 8, y + 25, 6, 5 + blink, "#201428");
+      px(x + e.w - 14, y + 25, 6, 5 + blink, "#201428");
+      px(x + 12, y + e.h - 4, 7, 6, "#201428");
+      px(x + e.w - 19, y + e.h - 4, 7, 6, "#201428");
+      if (e.boss) {
+        px(x + 17, y - 18, 10, 10, "#f6c644");
+        px(x + 21, y - 27, 3, 10, "#201428");
+        px(x + 18, y + 38, e.w - 36, 5, "#fff7df");
+      }
+    }
+
+    function drawCoin(c, cam) {
+      if (c.got) return;
+      const x = Math.floor(c.x - cam);
+      const y = Math.floor(c.y + Math.sin(state.t / 12 + c.x) * 3);
+      px(x - 13, y - 11, 26, 22, "#7b4c10");
+      px(x - 10, y - 14, 20, 28, "#f6c644");
+      px(x - 7, y - 10, 14, 20, "#ffd95f");
+      px(x - 3, y - 7, 6, 14, "#9b6114");
+      px(x - 6, y - 12, 6, 4, "#fff7a9");
+    }
+
+    function drawGate(g, cam) {
+      const x = Math.floor(g.x - cam);
+      px(x - 20, g.y - 6, g.w + 40, 10, "#201428");
+      px(x - 15, g.y, g.w + 30, 28, "#d43131");
+      px(x - 8, g.y + 6, g.w + 16, 8, "#f6c644");
+      px(x - 4, g.y + 22, 12, g.h - 18, "#201428");
+      px(x + g.w - 8, g.y + 22, 12, g.h - 18, "#201428");
+      px(x, g.y + 24, 8, g.h - 22, "#8b1c2b");
+      px(x + g.w - 4, g.y + 24, 8, g.h - 22, "#8b1c2b");
+      px(x + 12, g.y + 32, g.w - 24, 44, "#fff7df");
+      px(x + 16, g.y + 36, g.w - 32, 36, "#d43131");
+      drawPixelText("福", x + g.w / 2, g.y + 40, 22, "#f6c644", "center");
+    }
+
+    function drawSister(s, cam) {
+      const x = Math.floor(s.x - cam);
+      const y = Math.floor(s.y + Math.sin(state.t / 18) * 2);
+      px(x + 5, y - 3, 24, 6, "#201428");
+      px(x + 6, y - 5, 22, 5, "#d43131");
+      px(x + 8, y, 18, 15, "#201428");
+      px(x + 10, y + 1, 14, 13, "#fff8ec");
+      px(x + 4, y + 13, 26, 30, "#201428");
+      px(x + 6, y + 14, 22, 28, "#ff9fca");
+      px(x + 10, y + 23, 14, 5, "#f6c644");
+      px(x + 11, y + 7, 3, 3, "#201428");
+      px(x + 20, y + 7, 3, 3, "#201428");
+      px(x + 15, y + 12, 6, 2, "#d43131");
+      px(x + 5, y + 42, 8, 5, "#201428");
+      px(x + 21, y + 42, 8, 5, "#201428");
+      px(x - 3, y + 16, 7, 17, "#ff9fca");
+      px(x + 30, y + 16, 7, 17, "#ff9fca");
+      drawPixelText("嘻嘻", x + 17, y - 29, 16, "#fff7df", "center");
+    }
+
+    function drawCampaign() {
+      drawBg(state.camera, state.level > 20);
+      for (const p of levelData.platforms) drawPlatform(p, state.camera);
+      for (const c of levelData.coins) drawCoin(c, state.camera);
+      for (const e of levelData.enemies) drawEnemy(e, state.camera);
+      for (const l of levelData.lanterns) {
+        const x = Math.floor(l.x - state.camera);
+        const y = Math.floor(l.y + Math.sin(state.t / 20 + l.swing) * 12);
+        px(x + 15, y - 30, 4, 30, "#201428");
+        px(x + 8, y - 3, 18, 5, "#201428");
+        px(x + 2, y + 2, 30, 42, "#201428");
+        px(x, y + 8, 34, 30, "#d43131");
+        px(x + 5, y + 4, 24, 8, "#f6c644");
+        px(x + 7, y + 13, 20, 18, "#ffe38a");
+        px(x + 11, y + 17, 4, 5, "#201428");
+        px(x + 20, y + 17, 4, 5, "#201428");
+        px(x + 12, y + 28, 11, 3, "#201428");
+        px(x + 8, y + 40, 18, 6, "#f6c644");
+      }
+      drawGate(levelData.gate, state.camera);
+      if (state.custom || state.level === LEVEL_COUNT || state.won) drawSister(levelData.sister, state.camera);
+      drawTangyuan(player.x - state.camera, player.y, player.face, player.hurt);
+      drawPixelText(state.custom ? "自制关卡" : `第 ${state.level} 关`, 24, 20, 22, "#fff7df");
+      drawPixelText(`元宝 ${state.coins}  生命 ${state.lives}`, 24, 48, 18, "#fff7df");
+
+      if (state.gameOver || state.won) drawOverlay(state.won ? "大成功！" : "再试一次", state.message, "按 R 重新开始");
+    }
+
+    function drawEndless() {
+      drawBg(state.endlessScore * 4, false);
+      ctx.fillStyle = "#277047";
+      ctx.fillRect(0, 432, W, 108);
+      ctx.fillStyle = "#45b663";
+      ctx.fillRect(0, 432, W, 10);
+      for (const cloud of runner.clouds) {
+        ctx.fillStyle = "#fff7df";
+        ctx.fillRect(cloud.x, cloud.y, 70, 22);
+        ctx.fillRect(cloud.x + 22, cloud.y - 12, 38, 18);
+      }
+      for (const o of runner.obstacles) {
+        if (o.kind === "bamboo") {
+          px(o.x + 4, o.y, o.w - 8, o.h, "#123d28");
+          px(o.x + 8, o.y + 2, o.w - 16, o.h - 2, "#1f8a4c");
+          px(o.x + 4, o.y + 10, o.w - 8, 6, "#d9f77c");
+          px(o.x + 4, o.y + 35, o.w - 8, 6, "#d9f77c");
+          px(o.x - 8, o.y + 20, 16, 8, "#1f8a4c");
+          px(o.x + o.w - 8, o.y + 50, 18, 8, "#1f8a4c");
+        } else {
+          px(o.x, o.y + 10, o.w, o.h - 10, "#29323d");
+          px(o.x + 5, o.y, o.w - 10, o.h, "#556070");
+          px(o.x + 11, o.y + 8, o.w - 22, 8, "#a4adba");
+          px(o.x + 9, o.y + 24, 10, 8, "#394452");
+          px(o.x + o.w - 20, o.y + 20, 8, 7, "#394452");
+        }
+      }
+      drawTangyuan(runner.x, runner.y, 1, state.gameOver ? 1 : 0);
+      drawPixelText("无限恐龙跑酷", 24, 20, 22, "#fff7df");
+      drawPixelText(`分数 ${Math.floor(state.endlessScore)}  纪录 ${state.best}`, 24, 48, 18, "#fff7df");
+      if (state.gameOver) drawOverlay("跑酷结束", state.message, `分数 ${Math.floor(state.endlessScore)} / 纪录 ${state.best}`);
+    }
+
+    function drawOverlay(title, text, small) {
+      ctx.fillStyle = "rgba(10, 6, 16, .72)";
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = "#fff7df";
+      ctx.fillRect(230, 154, 500, 190);
+      ctx.strokeStyle = "#201428";
+      ctx.lineWidth = 6;
+      ctx.strokeRect(230, 154, 500, 190);
+      drawPixelText(title, W / 2, 190, 38, "#d43131", "center");
+      drawPixelText(text, W / 2, 246, 22, "#201428", "center");
+      drawPixelText(small, W / 2, 288, 18, "#2779d6", "center");
+    }
+
+    function loop() {
+      if (state.started) state.t++;
+      if (state.mode === "campaign") {
+        if (state.started) updateCampaign();
+        drawCampaign();
+      } else {
+        if (state.started) updateEndless();
+        drawEndless();
+      }
+      requestAnimationFrame(loop);
+    }
+
+    window.addEventListener("keydown", event => {
+      keys.add(event.code);
+      if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.code)) event.preventDefault();
+      if (!state.started && (event.code === "Enter" || event.code === "Space")) {
+        state.custom ? resetCustomLevel(true) : state.mode === "campaign" ? resetCampaign(false, true) : resetEndless(true);
+      }
+      if (event.code === "Escape") openMenu();
+      if (event.code === "KeyR") state.custom ? resetCustomLevel(true) : state.mode === "campaign" ? resetCampaign(false, true) : resetEndless(true);
+    });
+
+    window.addEventListener("keyup", event => keys.delete(event.code));
+
+    document.querySelectorAll(".controls button").forEach(button => {
+      const code = button.dataset.key;
+      button.addEventListener("pointerdown", event => {
+        event.preventDefault();
+        if (!state.started) closeMenu();
+        keys.add(code);
+        focusGame();
+      });
+      button.addEventListener("pointerup", () => keys.delete(code));
+      button.addEventListener("pointercancel", () => keys.delete(code));
+      button.addEventListener("pointerleave", () => keys.delete(code));
+    });
+
+    canvas.addEventListener("pointerdown", focusGame);
+    ui.screen.addEventListener("pointerdown", () => {
+      if (state.started) focusGame();
+    });
+    ui.campaignBtn.addEventListener("click", () => resetCampaign(false, true));
+    ui.endlessBtn.addEventListener("click", () => resetEndless(true));
+    ui.menuBtn.addEventListener("click", openMenu);
+    ui.startCampaignBtn.addEventListener("click", () => resetCampaign(false, true));
+    ui.openLevelsBtn.addEventListener("click", () => showMenuPage("levels"));
+    ui.startEndlessBtn.addEventListener("click", () => resetEndless(true));
+    ui.startEndlessBtn2.addEventListener("click", () => resetEndless(true));
+    ui.backHomeBtn.addEventListener("click", () => showMenuPage("home"));
+    ui.playLevelOneBtn.addEventListener("click", () => {
+      state.level = 1;
+      resetCampaign(false, true);
+    });
+    ui.playSelectedLevelBtn.addEventListener("click", () => resetCampaign(false, true));
+    ui.playCustomBtn.addEventListener("click", () => resetCustomLevel(true));
+    ui.saveCustomBtn.addEventListener("click", () => {
+      const settings = readMakerSettings();
+      try {
+        localStorage.setItem("tangyuan-maker", JSON.stringify(settings));
+        ui.makerNote.textContent = "已保存自制关卡设置。";
+      } catch (error) {
+        ui.makerNote.textContent = "这个浏览器不让保存，但仍然可以试玩。";
+      }
+    });
+    ui.loadCustomBtn.addEventListener("click", () => {
+      try {
+        const saved = JSON.parse(localStorage.getItem("tangyuan-maker") || "null");
+        if (saved) {
+          ui.makerLength.value = saved.width;
+          ui.makerPlatforms.value = saved.platforms;
+          ui.makerCoins.value = saved.coins;
+          ui.makerEnemies.value = saved.enemies;
+          ui.makerSpikes.value = saved.spikes;
+        }
+      } catch (error) {}
+      updateMakerPreview();
+    });
+    ui.randomMakerBtn.addEventListener("click", () => {
+      ui.makerLength.value = 2400 + Math.floor(Math.random() * 25) * 200;
+      ui.makerPlatforms.value = 6 + Math.floor(Math.random() * 26);
+      ui.makerCoins.value = 8 + Math.floor(Math.random() * 52);
+      ui.makerEnemies.value = 3 + Math.floor(Math.random() * 24);
+      ui.makerSpikes.value = Math.floor(Math.random() * 18);
+      updateMakerPreview();
+    });
+    [ui.makerLength, ui.makerPlatforms, ui.makerCoins, ui.makerEnemies, ui.makerSpikes].forEach(input => {
+      input.addEventListener("input", updateMakerPreview);
+    });
+    ui.restartBtn.addEventListener("click", () => state.custom ? resetCustomLevel(true) : state.mode === "campaign" ? resetCampaign(false, true) : resetEndless(true));
+    ui.menuTabs.forEach(button => {
+      button.addEventListener("click", () => showMenuPage(button.dataset.menuPage));
+    });
+    ui.levelGrid.addEventListener("click", event => {
+      const button = event.target.closest("button[data-level]");
+      if (!button) return;
+      state.level = Number(button.dataset.level);
+      resetCampaign(false, false);
+      showMenuPage("levels");
+    });
+    ui.levelSelect.addEventListener("change", () => {
+      state.level = Number(ui.levelSelect.value);
+      resetCampaign(false, true);
+    });
+
+    resetCampaign(false, false);
+    updateMakerPreview();
+    loop();
+  </script>
+</body>
+</html>

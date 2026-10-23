@@ -1,0 +1,240 @@
+:root {
+  --bg: #061433;
+  --bg-soft: #0d1f49;
+  --card: rgba(10, 34, 77, 0.72);
+  --line: rgba(88, 227, 255, 0.35);
+  --cyan: #58e3ff;
+  --cyan-strong: #06d0ff;
+  --text: #ecf8ff;
+  --muted: #a4c4d9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Outfit", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 20% 10%, #1449a0 0, transparent 38%),
+    radial-gradient(circle at 88% 15%, #0ba9dd 0, transparent 34%),
+    linear-gradient(155deg, var(--bg), #020818 62%, #00040f 100%);
+  overflow-x: hidden;
+}
+
+.glow {
+  position: fixed;
+  border-radius: 999px;
+  filter: blur(50px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.glow-one {
+  width: 260px;
+  height: 260px;
+  background: rgba(10, 180, 255, 0.45);
+  top: 10%;
+  left: -90px;
+}
+
+.glow-two {
+  width: 320px;
+  height: 320px;
+  background: rgba(67, 133, 255, 0.35);
+  bottom: -90px;
+  right: -80px;
+}
+
+.page {
+  position: relative;
+  z-index: 1;
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 2.2rem 1rem 2.8rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.28);
+  padding: 1.1rem;
+}
+
+.hero h1 {
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  margin: 0.15rem 0 0.4rem;
+}
+
+.badge {
+  display: inline-block;
+  margin: 0;
+  padding: 0.35rem 0.7rem;
+  font-weight: 700;
+  font-size: 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--cyan);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.hero-text {
+  color: var(--muted);
+  max-width: 70ch;
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.step-card h2,
+.trainer h2,
+.demo h2 {
+  margin-top: 0;
+}
+
+ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+
+li {
+  margin: 0.45rem 0;
+  color: #d1e5f4;
+}
+
+.btn {
+  margin-top: 0.6rem;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--cyan-strong), #5ce9ff);
+  color: #041229;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  padding: 0.68rem 1.15rem;
+  cursor: pointer;
+}
+
+.btn.secondary {
+  background: linear-gradient(90deg, #19b4ff, #7df2ff);
+}
+
+.checks {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 0.75rem;
+}
+
+label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #d7effc;
+}
+
+input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--cyan-strong);
+}
+
+.meter-wrap {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--line);
+  height: 14px;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.meter {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #0ec4ff, #81f4ff);
+  transition: width 200ms ease;
+}
+
+.status {
+  color: var(--cyan);
+  font-weight: 700;
+}
+
+.spinner-zone {
+  height: 120px;
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  margin: 0.8rem 0;
+  background: linear-gradient(180deg, rgba(19, 51, 110, 0.35), rgba(4, 17, 43, 0.4));
+}
+
+.cap {
+  width: 90px;
+  height: 18px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #4be6ff, #0d7fff 55%, #5cecff);
+  box-shadow: 0 0 18px rgba(87, 220, 255, 0.8);
+  transform-origin: center;
+}
+
+.cap.spin {
+  animation: capspin 780ms ease-in-out 4;
+}
+
+.cap.air {
+  animation: airspin 950ms ease-in-out 3;
+}
+
+.cap.one-hand {
+  animation: onehandspin 650ms linear 5;
+}
+
+.demo-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+@keyframes capspin {
+  0% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(190deg) scale(1.1); }
+  50% { transform: rotate(360deg) scale(1); }
+  75% { transform: rotate(560deg) scale(1.1); }
+  100% { transform: rotate(720deg) scale(1); }
+}
+
+@keyframes airspin {
+  0% { transform: translateY(0) rotate(0deg) scale(1); }
+  15% { transform: translateY(-22px) rotate(180deg) scale(1.02); }
+  50% { transform: translateY(-42px) rotate(540deg) scale(1.06); }
+  75% { transform: translateY(-20px) rotate(760deg) scale(1.03); }
+  100% { transform: translateY(0) rotate(980deg) scale(1); }
+}
+
+@keyframes onehandspin {
+  0% { transform: rotate(0deg) translateX(0); }
+  25% { transform: rotate(180deg) translateX(8px); }
+  50% { transform: rotate(360deg) translateX(0); }
+  75% { transform: rotate(540deg) translateX(-8px); }
+  100% { transform: rotate(720deg) translateX(0); }
+}
+
+@media (max-width: 700px) {
+  .page {
+    padding-top: 1.1rem;
+  }
+
+  .card {
+    padding: 0.95rem;
+  }
+}

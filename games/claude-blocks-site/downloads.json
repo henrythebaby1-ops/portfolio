@@ -1,0 +1,26 @@
+{
+  "version": "1.2.0",
+  "built": "2026-10-10T22:26:52.908Z",
+  "files": {
+    "mac": {
+      "file": "downloads/ClaudeBlocks-mac.dmg",
+      "size": 228709926
+    },
+    "windows": {
+      "file": "downloads/ClaudeBlocks-windows-setup.exe",
+      "size": 114239529
+    },
+    "linux": {
+      "file": "downloads/ClaudeBlocks-linux.AppImage",
+      "size": 126244609
+    },
+    "android": {
+      "file": "downloads/ClaudeBlocks-android.apk",
+      "size": 4967689
+    },
+    "pibridge": {
+      "file": "downloads/pi-bridge.py",
+      "size": 14069
+    }
+  }
+}

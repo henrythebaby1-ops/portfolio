@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Capspin Lesson Place</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="glow glow-one"></div>
+  <div class="glow glow-two"></div>
+
+  <main class="page">
+    <header class="hero card">
+      <p class="badge">Independent Lesson Space</p>
+      <h1>Capspin Lesson Place</h1>
+      <p class="hero-text">
+        This is not connected to the Capspin official website. It has its own style and learning path.
+        Learn how to spin a marker cap using both hands and a smooth twirl.
+      </p>
+      <button id="startBtn" class="btn">Start the Lesson</button>
+    </header>
+
+    <section class="grid">
+      <article class="card step-card">
+        <h2>1. Setup</h2>
+        <ul>
+          <li>Use a marker cap that is not cracked.</li>
+          <li>Sit at a table to keep practice controlled.</li>
+          <li>Warm up fingers and wrists for 1 minute.</li>
+        </ul>
+      </article>
+
+      <article class="card step-card">
+        <h2>2. Two-Hand Hold</h2>
+        <ul>
+          <li>Hold the cap lightly between thumb and index finger of your right hand.</li>
+          <li>Place your left hand close to catch and guide.</li>
+          <li>Keep elbows relaxed and shoulders low.</li>
+        </ul>
+      </article>
+
+      <article class="card step-card">
+        <h2>3. Twirl Motion</h2>
+        <ul>
+          <li>Push the cap with your right thumb so it rolls over your index finger.</li>
+          <li>As it turns, let your left hand guide the next touch.</li>
+          <li>Transfer back and forth: right hand start, left hand control, right hand catch.</li>
+        </ul>
+      </article>
+
+      <article class="card step-card">
+        <h2>4. Build Speed</h2>
+        <ul>
+          <li>Begin slowly for clean control.</li>
+          <li>Do 10 good reps, then increase speed a little.</li>
+          <li>Focus on smooth circles, not force.</li>
+        </ul>
+      </article>
+
+      <article class="card step-card">
+        <h2>5. Air Twirl Style</h2>
+        <ul>
+          <li>Use your right hand to pop the cap up 3 to 6 inches.</li>
+          <li>Twist your wrist while it is in the air to add spin.</li>
+          <li>Catch with your left hand first, then return to right hand.</li>
+        </ul>
+      </article>
+
+      <article class="card step-card">
+        <h2>6. One-Hand Style</h2>
+        <ul>
+          <li>Keep the cap on your index finger and drive with your thumb.</li>
+          <li>Let it loop around your fingers without using the other hand.</li>
+          <li>Start with short spins, then connect 5 loops in a row.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="card trainer">
+      <h2>Practice Tracker</h2>
+      <p>Check steps as you complete them.</p>
+      <div class="checks">
+        <label><input type="checkbox" class="progress" /> Warm-up done</label>
+        <label><input type="checkbox" class="progress" /> Two-hand hold stable</label>
+        <label><input type="checkbox" class="progress" /> 10 controlled twirls</label>
+        <label><input type="checkbox" class="progress" /> 3 fast clean spins</label>
+      </div>
+      <div class="meter-wrap">
+        <div id="meter" class="meter"></div>
+      </div>
+      <p id="status" class="status">0% complete</p>
+    </section>
+
+    <section class="card demo">
+      <h2>Spin Demo</h2>
+      <p>Choose a style to visualize the twirl rhythm.</p>
+      <div class="spinner-zone">
+        <div id="cap" class="cap"></div>
+      </div>
+      <div class="demo-controls">
+        <button id="spinBtn" class="btn secondary">Two-Hand Spin</button>
+        <button id="airBtn" class="btn secondary">Air Twirl</button>
+        <button id="oneHandBtn" class="btn secondary">One-Hand Spin</button>
+      </div>
+      <p id="demoLabel" class="status">Current style: Two-Hand Spin</p>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

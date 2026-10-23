@@ -1,0 +1,1832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MAP — Interactive Space & Science Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Share+Tech+Mono&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{
+  --void:#020409;--deep:#060d1a;--panel:#0a1628;--surface:#0f2040;
+  --rim:#1a3a6a;--accent:#00d4ff;--glow:#0088cc;--hot:#ff6b35;
+  --mars:#c1440e;--green:#00ff9d;--gold:#ffd700;--text:#c8e0ff;--muted:#5a7a9a;
+  --hud:'Orbitron',monospace;--mono:'Share Tech Mono',monospace;--body:'Exo 2',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--void);color:var(--text);font-family:var(--body);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--deep)}::-webkit-scrollbar-thumb{background:var(--rim);border-radius:2px}
+#starfield{position:fixed;inset:0;z-index:0;pointer-events:none}
+.star{position:absolute;border-radius:50%;background:#fff;animation:twinkle var(--d,3s) ease-in-out infinite}
+@keyframes twinkle{0%,100%{opacity:var(--o,.8);transform:scale(1)}50%{opacity:.1;transform:scale(.5)}}
+#app{position:relative;z-index:1;display:flex;flex-direction:column;min-height:100vh}
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--rim);background:linear-gradient(180deg,#0a1628f0,#060d1a90);backdrop-filter:blur(14px);position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:38px;height:38px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#00d4ff,#003366);display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 0 18px #00d4ff80;animation:pglow 2.5s ease-in-out infinite}
+@keyframes pglow{0%,100%{box-shadow:0 0 18px #00d4ff70}50%{box-shadow:0 0 32px #00d4ffcc}}
+.logo-text{font-family:var(--hud);font-size:20px;font-weight:900;letter-spacing:5px;background:linear-gradient(90deg,#fff,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.logo-sub{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:3px;margin-top:1px}
+.hdr-right{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pill{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9px;color:var(--muted);border:1px solid var(--rim);border-radius:20px;padding:4px 9px;white-space:nowrap}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 1.4s ease infinite}
+.dot.red{background:#ff4455}
+.dot.gold{background:var(--gold)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+nav{display:flex;gap:1px;padding:0 24px;background:var(--deep);border-bottom:1px solid var(--rim);overflow-x:auto;position:sticky;top:67px;z-index:99}
+nav::-webkit-scrollbar{height:0}
+.nb{padding:10px 14px;border:none;background:none;color:var(--muted);font-family:var(--hud);font-size:8px;letter-spacing:2px;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.nb:hover{color:var(--text)}.nb.active{color:var(--accent);border-bottom-color:var(--accent)}
+main{flex:1;padding:22px 24px;max-width:1400px;width:100%;margin:0 auto}
+.tp{display:none}.tp.active{display:block;animation:fadein .3s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.sh{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px}
+.ss{font-family:var(--mono);font-size:9px;letter-spacing:3px;color:var(--muted);margin-bottom:4px}
+.stitle{font-family:var(--hud);font-size:22px;font-weight:800;color:#fff}
+.stitle span{color:var(--accent)}
+.lbadge{display:flex;align-items:center;gap:5px;background:#00ff9d15;border:1px solid #00ff9d40;border-radius:20px;padding:4px 10px;font-family:var(--mono);font-size:9px;color:var(--green)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:900px){.g3,.g4{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.g2,.g3,.g4{grid-template-columns:1fr}}
+.panel{background:linear-gradient(145deg,var(--panel),#080f1e);border:1px solid var(--rim);border-radius:12px;padding:18px;position:relative;overflow:hidden;transition:border-color .2s,box-shadow .2s}
+.panel::before{content:'';position:absolute;inset:0;border-radius:12px;background:linear-gradient(135deg,#00d4ff08,transparent 60%);pointer-events:none}
+.panel:hover{border-color:#2a5a9a;box-shadow:0 0 16px #00d4ff10}
+.pl{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--muted);margin-bottom:5px;text-transform:uppercase}
+.pv{font-family:var(--hud);font-size:24px;font-weight:700;color:#fff;line-height:1}
+.pv.ac{color:var(--accent)}.pv.ht{color:var(--hot)}.pv.gr{color:var(--green)}.pv.gd{color:var(--gold)}
+.pu{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:3px}
+hr.div{border:none;border-top:1px solid var(--rim);margin:14px 0}
+
+/* ── REAL ISS MAP ── */
+#iss-globe-wrap{position:relative;background:var(--deep);border:1px solid var(--rim);border-radius:12px;overflow:hidden;margin-bottom:18px}
+#iss-globe-wrap canvas{display:block;width:100%!important}
+.iss-overlay{position:absolute;bottom:10px;left:14px;font-family:var(--mono);font-size:10px;color:var(--accent);background:#00000080;padding:6px 10px;border-radius:6px;backdrop-filter:blur(6px)}
+.iss-overlay-r{position:absolute;bottom:10px;right:14px;font-family:var(--mono);font-size:10px;color:var(--muted);background:#00000080;padding:6px 10px;border-radius:6px;backdrop-filter:blur(6px);text-align:right}
+.iss-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#020409cc;font-family:var(--mono);font-size:11px;color:var(--accent);flex-direction:column;gap:10px;z-index:10}
+.iss-load-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:ld 1.2s ease-in-out infinite;display:inline-block;margin:0 3px}
+.iss-load-dot:nth-child(2){animation-delay:.2s}.iss-load-dot:nth-child(3){animation-delay:.4s}
+@keyframes ld{0%,100%{transform:scale(.5);opacity:.3}50%{transform:scale(1.2);opacity:1}}
+.iss-trail-point{position:absolute;width:4px;height:4px;border-radius:50%;background:var(--accent);opacity:.4;transform:translate(-50%,-50%);pointer-events:none}
+
+/* ── ISS SVG MAP ── */
+#world-svg-wrap{position:relative;border-radius:10px;overflow:hidden;background:#020d1a;border:1px solid var(--rim);margin-bottom:18px}
+#world-svg-wrap svg{display:block;width:100%}
+.iss-svg-dot{animation:sonar2 2s ease-out infinite}
+@keyframes sonar2{0%{stroke-opacity:.9;stroke-width:1}100%{stroke-opacity:0;stroke-width:8}}
+
+/* ── 3D PLANET VIEWER ── */
+#planet3d-wrap{position:relative}
+#planet3d-canvas-wrap{width:100%;height:420px;background:radial-gradient(ellipse at 50% 50%,#0a1628,#020409);border:1px solid var(--rim);border-radius:12px;overflow:hidden;cursor:grab}
+#planet3d-canvas-wrap:active{cursor:grabbing}
+#planet3d-canvas-wrap canvas{display:block}
+.p3d-controls{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;align-items:center}
+.p3d-btn{background:var(--surface);border:1px solid var(--rim);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:6px 12px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px}
+.p3d-btn:hover,.p3d-btn.sel{background:var(--accent);border-color:var(--accent);color:#000}
+.p3d-info{background:var(--panel);border:1px solid var(--rim);border-radius:10px;padding:16px;margin-top:14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.p3d-stat{text-align:center}
+.p3d-val{font-family:var(--hud);font-size:15px;font-weight:600;color:var(--accent)}
+.p3d-key{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px}
+
+/* ── PLANET GRID ── */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-bottom:18px}
+.ptile{background:var(--panel);border:1px solid var(--rim);border-radius:10px;padding:12px 8px;text-align:center;cursor:pointer;transition:all .2s}
+.ptile:hover,.ptile.sel{border-color:var(--accent);transform:translateY(-3px);box-shadow:0 6px 20px #00d4ff20}
+.pball{width:48px;height:48px;border-radius:50%;margin:0 auto 8px;box-shadow:-5px -3px 10px rgba(0,0,0,.5),inset -7px -5px 14px rgba(0,0,0,.6)}
+.pname{font-family:var(--hud);font-size:10px;font-weight:600;color:#fff}
+.ptype{font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:2px}
+.pdetail{background:linear-gradient(145deg,#0a1628,#060d1a);border:1px solid var(--accent);border-radius:14px;padding:22px;animation:fadein .3s ease;margin-top:0}
+.pd-hdr{display:flex;align-items:center;gap:16px;margin-bottom:16px}
+.pd-ball{width:70px;height:70px;border-radius:50%;flex-shrink:0;box-shadow:-8px -6px 18px rgba(0,0,0,.7),inset -10px -8px 20px rgba(0,0,0,.7)}
+.pd-name{font-family:var(--hud);font-size:22px;font-weight:800;color:#fff}
+.pd-type{font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:3px;margin-top:3px}
+.pd-desc{font-size:12px;line-height:1.7;color:var(--text);margin-bottom:14px;opacity:.85}
+.sgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.sbox{background:var(--surface);border-radius:7px;padding:10px;text-align:center}
+.sval{font-family:var(--hud);font-size:13px;font-weight:600;color:var(--accent)}
+.skey{font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:2px}
+.view3d-btn{background:linear-gradient(135deg,var(--accent),var(--glow));border:none;border-radius:8px;color:#000;font-family:var(--hud);font-size:9px;letter-spacing:2px;padding:9px 18px;cursor:pointer;font-weight:700;transition:all .2s;margin-top:14px}
+.view3d-btn:hover{transform:translateY(-1px);box-shadow:0 5px 16px #00d4ff50}
+
+/* ── ROVER TRACKER ── */
+#rover-map-wrap{position:relative;width:100%;height:340px;background:var(--deep);border:1px solid var(--rim);border-radius:12px;overflow:hidden;margin-bottom:18px}
+#rover-canvas{display:block;width:100%;height:100%}
+.rover-selector{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.rs-btn{background:var(--surface);border:1px solid var(--rim);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:9px;letter-spacing:2px;padding:6px 14px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px}
+.rs-btn:hover{border-color:var(--accent)}
+.rs-btn.sel{border-color:var(--accent);background:#00d4ff15;color:var(--accent)}
+.rs-btn.mars-sel{border-color:var(--mars);background:#c1440e15;color:var(--hot)}
+.rover-telemetry{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.rt-box{background:var(--surface);border:1px solid var(--rim);border-radius:8px;padding:10px 14px;flex:1;min-width:120px}
+.rt-key{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:2px}
+.rt-val{font-family:var(--hud);font-size:16px;font-weight:700;color:var(--hot)}
+.rover-path-legend{display:flex;gap:14px;margin-top:10px;font-family:var(--mono);font-size:9px;color:var(--muted);align-items:center;flex-wrap:wrap}
+.leg-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:4px}
+
+/* ── ROVERS PANEL ── */
+.rv-hdr{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.rv-ico{width:42px;height:42px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;background:linear-gradient(135deg,#1a0a00,#3a1500);border:1px solid var(--mars)}
+.rv-name{font-family:var(--hud);font-size:12px;font-weight:600;color:#fff}
+.rv-st{font-family:var(--mono);font-size:8px;letter-spacing:2px;margin-top:2px}
+.rv-st.act{color:var(--green)}.rv-st.comp{color:var(--hot)}
+.drow{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--rim)}
+.drow:last-of-type{border:none}
+.dk{font-family:var(--mono);font-size:9px;color:var(--muted)}
+.dv{font-family:var(--mono);font-size:9px;color:var(--text);text-align:right}
+
+/* ── EARTHQUAKE ── */
+.eq-list{display:flex;flex-direction:column;gap:8px}
+.eq-item{display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:8px;padding:10px 12px;border-left:3px solid var(--hot)}
+.eq-mag{font-family:var(--hud);font-size:20px;font-weight:700;min-width:42px;text-align:center}
+.eq-mag.lo{color:var(--green)}.eq-mag.mi{color:var(--gold)}.eq-mag.hi{color:var(--hot)}.eq-mag.ex{color:#ff2244}
+.eq-place{font-size:12px;font-weight:500;color:#fff;margin-bottom:2px}
+.eq-meta{font-family:var(--mono);font-size:9px;color:var(--muted)}
+
+/* ── WEATHER ── */
+.wcard{background:var(--surface);border-radius:10px;padding:14px;border:1px solid var(--rim);transition:border-color .2s}
+.wcard:hover{border-color:var(--accent)}
+.wc-city{font-family:var(--hud);font-size:11px;font-weight:600;color:#fff}
+.wc-temp{font-family:var(--hud);font-size:28px;font-weight:700;color:var(--accent);line-height:1}
+.wc-cond{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px}
+
+/* ── MISSIONS ── */
+.ms-badge{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:8px;letter-spacing:2px;padding:2px 8px;border-radius:20px;margin-bottom:8px}
+.ms-active{background:#00ff9d20;color:var(--green);border:1px solid #00ff9d40}
+.ms-upcoming{background:#00d4ff15;color:var(--accent);border:1px solid #00d4ff40}
+.mn{font-family:var(--hud);font-size:14px;font-weight:700;color:#fff;margin-bottom:4px}
+.mo{font-family:var(--mono);font-size:9px;color:var(--accent);margin-bottom:8px}
+.md{font-size:11px;line-height:1.6;color:var(--muted)}
+.mtags{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.mtag{font-family:var(--mono);font-size:8px;background:var(--surface);padding:2px 7px;border-radius:4px;color:var(--text)}
+
+/* ── SOLAR ── */
+#solar-wrap{width:100%;height:440px;background:var(--deep);border-radius:12px;border:1px solid var(--rim);position:relative;overflow:hidden}
+.sun-ball{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:50px;height:50px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#fff8e0,#ffd700 40%,#ff6b00 70%,transparent 100%);box-shadow:0 0 40px #ffd700,0 0 80px #ff6b0060;z-index:10;animation:sun-p 3s ease-in-out infinite;cursor:pointer}
+@keyframes sun-p{0%,100%{box-shadow:0 0 40px #ffd700,0 0 80px #ff6b0060}50%{box-shadow:0 0 60px #ffd700,0 0 110px #ff6b0090}}
+.oring{position:absolute;top:50%;left:50%;border:1px solid #ffffff0d;border-radius:50%;transform:translate(-50%,-50%)}
+.oplanet{position:absolute;border-radius:50%;cursor:pointer;z-index:5;transition:transform .15s}
+.oplanet:hover{transform:translate(-50%,-50%) scale(1.5)!important;z-index:20}
+.oplbl{position:absolute;font-family:var(--mono);font-size:8px;color:var(--muted);white-space:nowrap;pointer-events:none;text-align:center;transform:translateX(-50%)}
+.spd-row{display:flex;gap:8px;margin-top:10px;align-items:center}
+.spd-lbl{font-family:var(--mono);font-size:9px;color:var(--muted)}
+.spd-btn{background:var(--surface);border:1px solid var(--rim);border-radius:5px;color:var(--text);font-family:var(--mono);font-size:9px;padding:4px 10px;cursor:pointer;transition:all .2s}
+.spd-btn:hover,.spd-btn.active{background:var(--accent);border-color:var(--accent);color:#000}
+
+/* ── MARS ── */
+.mars-hero{background:linear-gradient(135deg,#1a0500,#0a0200);border:1px solid var(--mars);border-radius:14px;padding:24px;position:relative;overflow:hidden;margin-bottom:18px}
+.mars-hero::before{content:'';position:absolute;right:-40px;top:-40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,#c1440e40,transparent 70%)}
+.mars-ball-big{width:84px;height:84px;border-radius:50%;float:right;margin:0 0 12px 20px;background:radial-gradient(circle at 35% 35%,#e8703a,#c1440e 50%,#7a2200);box-shadow:-12px -8px 24px rgba(0,0,0,.8),inset -14px -10px 28px rgba(0,0,0,.6),0 0 28px #c1440e40;position:relative;z-index:1}
+.mars-title{font-family:var(--hud);font-size:28px;font-weight:900;color:#ff8c60;margin-bottom:4px}
+.mars-sub{font-family:var(--mono);font-size:9px;color:#c1440e;letter-spacing:3px;margin-bottom:9px}
+.mars-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:700px){.mars-stats{grid-template-columns:1fr 1fr}}
+.mstat{background:#1a0800;border:1px solid #3a1500;border-radius:10px;padding:12px}
+.mstat-val{font-family:var(--hud);font-size:17px;font-weight:700;color:var(--hot)}
+.mstat-key{font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:2px}
+.atmo-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.atmo-nm{font-family:var(--mono);font-size:9px;color:var(--muted);width:150px;flex-shrink:0}
+.atmo-tr{flex:1;height:5px;background:var(--deep);border-radius:3px;overflow:hidden}
+.atmo-fill{height:100%;border-radius:3px;transition:width .8s ease}
+.atmo-pct{font-family:var(--mono);font-size:9px;color:var(--text);width:44px;text-align:right}
+
+/* ── ASTEROID TRACKER ── */
+#asteroid-canvas{display:block;background:var(--deep);border-radius:12px;border:1px solid var(--rim);width:100%;height:360px}
+.ast-list{margin-top:16px;display:flex;flex-direction:column;gap:8px}
+.ast-item{background:var(--surface);border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:12px;border-left:3px solid var(--gold)}
+.ast-hazard{border-left-color:#ff2244}
+.ast-name{font-family:var(--hud);font-size:11px;font-weight:600;color:#fff;margin-bottom:3px}
+.ast-meta{font-family:var(--mono);font-size:9px;color:var(--muted)}
+.ast-dist{font-family:var(--hud);font-size:15px;font-weight:700;color:var(--gold);text-align:right;min-width:80px}
+.ast-dist.close{color:#ff4455}
+.ast-badge{font-family:var(--mono);font-size:8px;letter-spacing:1px;padding:2px 7px;border-radius:4px;margin-top:3px;display:inline-block}
+.ab-safe{background:#00ff9d20;color:var(--green);border:1px solid #00ff9d40}
+.ab-watch{background:#ff6b3520;color:var(--hot);border:1px solid #ff6b3540}
+.ab-hazard{background:#ff224420;color:#ff2244;border:1px solid #ff224440}
+
+/* ── SPACE WEATHER ── */
+.sw-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+@media(max-width:700px){.sw-grid{grid-template-columns:1fr}}
+.sw-card{background:linear-gradient(145deg,var(--panel),#080f1e);border:1px solid var(--rim);border-radius:12px;padding:18px;text-align:center}
+.sw-icon{font-size:32px;margin-bottom:8px}
+.sw-val{font-family:var(--hud);font-size:22px;font-weight:700;color:var(--accent);margin-bottom:4px}
+.sw-key{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:2px}
+.sw-bar-wrap{margin-top:8px}
+.sw-bar-tr{height:6px;background:var(--deep);border-radius:3px;overflow:hidden;margin-top:3px}
+.sw-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--green),var(--hot))}
+.kp-index{font-family:var(--hud);font-size:38px;font-weight:900;color:var(--green)}
+.kp-index.moderate{color:var(--gold)}
+.kp-index.storm{color:var(--hot)}
+.kp-index.severe{color:#ff2244}
+
+/* ── GAME ── */
+.game-wrap{background:var(--deep);border:1px solid var(--rim);border-radius:14px;padding:20px}
+.ghud{display:flex;gap:14px;margin-bottom:16px;flex-wrap:wrap;align-items:flex-start}
+.ghud-stat{background:var(--surface);border:1px solid var(--rim);border-radius:8px;padding:9px 12px}
+.ghud-key{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:2px}
+.ghud-val{font-family:var(--hud);font-size:17px;font-weight:700;color:var(--accent)}
+.g-bars{flex:1;display:flex;flex-direction:column;gap:6px;justify-content:center;min-width:200px}
+.pbar-lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:2px}
+.pbar-tr{height:5px;background:var(--deep);border-radius:3px;overflow:hidden}
+.pbar-fill{height:100%;border-radius:3px;transition:width .5s ease}
+.pf-fuel{background:linear-gradient(90deg,#00d4ff,#0088cc)}
+.pf-hull{background:linear-gradient(90deg,#00ff9d,#00aa66)}
+.pf-power{background:linear-gradient(90deg,#ffd700,#ff8c00)}
+.gscene{background:radial-gradient(ellipse at 50% 110%,#0a1a0a,var(--void));border:1px solid var(--rim);border-radius:10px;padding:16px;min-height:180px;position:relative;overflow:hidden}
+.craft{position:absolute;left:5%;top:28%;font-size:28px;animation:fl 4s ease-in-out infinite;filter:drop-shadow(0 0 8px var(--accent))}
+@keyframes fl{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-10px) rotate(5deg)}}
+.gevt{background:linear-gradient(135deg,#0a1a2a,#060d1a);border:1px solid var(--accent);border-radius:10px;padding:14px;position:relative;z-index:2}
+.gevt-title{font-family:var(--hud);font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px}
+.gevt-text{font-size:12px;line-height:1.7;color:var(--text)}
+.glog{background:#000;border:1px solid var(--rim);border-radius:8px;padding:10px;font-family:var(--mono);font-size:10px;color:var(--green);height:100px;overflow-y:auto;margin:12px 0}
+.glog-line{margin-bottom:2px}.glog-line::before{content:'> ';color:var(--accent)}
+.gchoices{display:flex;flex-wrap:wrap;gap:8px}
+.gchoice{background:var(--surface);border:1px solid var(--rim);border-radius:8px;color:var(--text);font-family:var(--body);font-size:11px;padding:8px 12px;cursor:pointer;transition:all .2s}
+.gchoice:hover{background:var(--accent);border-color:var(--accent);color:#000}
+.btn-ac{background:linear-gradient(135deg,var(--accent),var(--glow));border:none;border-radius:8px;color:#000;font-family:var(--hud);font-size:9px;letter-spacing:2px;padding:9px 18px;cursor:pointer;font-weight:700;transition:all .2s}
+.btn-ac:hover{transform:translateY(-1px);box-shadow:0 5px 16px #00d4ff40}
+
+/* ── TOOLTIP ── */
+.tooltip{position:fixed;background:#0a1628ee;border:1px solid var(--accent);border-radius:8px;padding:8px 12px;font-family:var(--mono);font-size:10px;color:var(--text);pointer-events:none;z-index:9999;backdrop-filter:blur(8px);max-width:200px;display:none}
+
+footer{border-top:1px solid var(--rim);padding:10px 24px;display:flex;justify-content:space-between;align-items:center;background:var(--deep)}
+footer span{font-family:var(--mono);font-size:8px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div id="starfield"></div>
+<div id="app">
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🌌</div>
+    <div>
+      <div class="logo-text">MAP</div>
+      <div class="logo-sub">INTERACTIVE SPACE &amp; SCIENCE TRACKER</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="pill"><div class="dot"></div><span id="clock">00:00:00 UTC</span></div>
+    <div class="pill"><div class="dot"></div>LIVE</div>
+    <div class="pill" style="color:var(--hot)"><div class="dot red"></div>ISS LIVE</div>
+    <div class="pill" style="color:var(--gold)"><div class="dot gold"></div>KP: <span id="kp-hdr">2.3</span></div>
+  </div>
+</header>
+
+<nav>
+  <button class="nb active" onclick="showTab('iss',this)">🛸 ISS TRACKER</button>
+  <button class="nb" onclick="showTab('rovers',this)">🤖 MARS ROVERS</button>
+  <button class="nb" onclick="showTab('planets',this)">🪐 PLANETS &amp; 3D</button>
+  <button class="nb" onclick="showTab('earth',this)">🌍 LIVE EARTH</button>
+  <button class="nb" onclick="showTab('asteroid',this)">☄️ ASTEROIDS</button>
+  <button class="nb" onclick="showTab('spaceweather',this)">🌞 SPACE WEATHER</button>
+  <button class="nb" onclick="showTab('missions',this)">🚀 MISSIONS</button>
+  <button class="nb" onclick="showTab('solar',this)">☀️ SOLAR SYSTEM</button>
+  <button class="nb" onclick="showTab('mars',this)">🔴 MARS PANEL</button>
+  <button class="nb" onclick="showTab('game',this)">🎮 MISSION SIM</button>
+</nav>
+
+<main>
+
+<!-- ══════════════ ISS TRACKER ══════════════ -->
+<div id="tab-iss" class="tp active">
+  <div class="sh">
+    <div><div class="ss">REAL-TIME ORBITAL TRACKING</div><div class="stitle">International <span>Space Station</span></div></div>
+    <div class="lbadge"><div class="dot"></div>LIVE POSITION</div>
+  </div>
+  <div id="world-svg-wrap">
+    <div id="iss-loading-msg" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#020d1aee;z-index:10;border-radius:10px;font-family:var(--mono);font-size:11px;color:var(--accent);flex-direction:column;gap:8px">
+      <div><span class="iss-load-dot"></span><span class="iss-load-dot"></span><span class="iss-load-dot"></span></div>
+      COMPUTING ORBITAL POSITION…
+    </div>
+    <svg id="world-map" viewBox="0 0 1008 504" preserveAspectRatio="xMidYMid meet" style="background:#020d1a">
+      <!-- world outline paths - simplified continents -->
+      <g fill="#0d2a1a" stroke="#1a4a2a" stroke-width="0.5" opacity="0.8">
+        <!-- North America -->
+        <path d="M90,80 L180,60 L230,70 L250,100 L270,90 L290,120 L280,150 L260,170 L240,200 L220,220 L200,240 L180,260 L160,270 L140,260 L120,240 L100,210 L85,180 L80,150 L75,120 Z"/>
+        <!-- South America -->
+        <path d="M190,270 L240,255 L270,270 L290,300 L295,340 L285,380 L260,410 L230,430 L210,420 L195,390 L185,360 L180,320 L185,290 Z"/>
+        <!-- Europe -->
+        <path d="M440,60 L500,55 L530,70 L545,90 L540,110 L520,120 L500,130 L480,125 L460,115 L445,100 L440,80 Z"/>
+        <!-- Africa -->
+        <path d="M450,130 L510,120 L545,130 L560,160 L565,200 L560,240 L545,270 L520,300 L495,320 L470,315 L450,290 L435,260 L430,220 L435,180 L445,150 Z"/>
+        <!-- Asia -->
+        <path d="M540,50 L650,40 L750,50 L820,70 L870,90 L890,120 L880,150 L840,165 L800,160 L760,170 L720,165 L680,170 L640,160 L600,155 L560,150 L540,130 L535,100 L538,70 Z"/>
+        <!-- Russia/Siberia -->
+        <path d="M540,40 L650,20 L780,25 L870,40 L890,70 L860,80 L800,75 L730,65 L650,55 L570,55 Z"/>
+        <!-- Australia -->
+        <path d="M730,310 L810,295 L860,310 L880,340 L875,375 L855,400 L820,415 L780,410 L750,395 L730,370 L720,340 Z"/>
+        <!-- Greenland -->
+        <path d="M260,30 L320,20 L350,35 L345,65 L310,80 L270,70 L255,50 Z"/>
+        <!-- Japan -->
+        <path d="M850,100 L870,95 L875,115 L860,125 L845,115 Z"/>
+        <!-- UK/Ireland -->
+        <path d="M445,65 L458,60 L462,75 L455,82 L444,76 Z"/>
+        <!-- Indonesia -->
+        <path d="M760,220 L810,215 L840,225 L845,240 L820,248 L780,242 L758,232 Z"/>
+        <!-- New Zealand -->
+        <path d="M900,390 L915,380 L920,400 L910,415 L898,405 Z"/>
+      </g>
+      <!-- Grid lines -->
+      <g stroke="#1a3a6a" stroke-width="0.3" opacity="0.4">
+        <line x1="0" y1="126" x2="1008" y2="126"/>
+        <line x1="0" y1="252" x2="1008" y2="252"/>
+        <line x1="0" y1="378" x2="1008" y2="378"/>
+        <line x1="252" y1="0" x2="252" y2="504"/>
+        <line x1="504" y1="0" x2="504" y2="504"/>
+        <line x1="756" y1="0" x2="756" y2="504"/>
+      </g>
+      <!-- Equator -->
+      <line x1="0" y1="252" x2="1008" y2="252" stroke="#00d4ff20" stroke-width="0.8" stroke-dasharray="4,4"/>
+      <!-- ISS trail -->
+      <polyline id="iss-trail" points="" fill="none" stroke="#00d4ff" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.5"/>
+      <!-- ISS dot -->
+      <circle id="iss-dot" cx="504" cy="252" r="5" fill="#00d4ff" opacity="0.9">
+        <animate attributeName="r" values="5;9;5" dur="2s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.9;0.4;0.9" dur="2s" repeatCount="indefinite"/>
+      </circle>
+      <circle id="iss-dot2" cx="504" cy="252" r="3" fill="white"/>
+      <!-- Labels -->
+      <text x="10" y="20" fill="#1a4a6a" font-size="8" font-family="monospace">90°N</text>
+      <text x="10" y="130" fill="#1a4a6a" font-size="8" font-family="monospace">45°N</text>
+      <text x="10" y="256" fill="#00d4ff50" font-size="8" font-family="monospace">EQ</text>
+      <text x="10" y="382" fill="#1a4a6a" font-size="8" font-family="monospace">45°S</text>
+    </svg>
+    <div class="iss-overlay" id="iss-coords-overlay">LAT — LON —</div>
+    <div class="iss-overlay-r" id="iss-speed-overlay">COMPUTING…</div>
+  </div>
+  <div class="g4" style="margin-bottom:16px">
+    <div class="panel"><div class="pl">ALTITUDE</div><div class="pv ac">408 km</div><div class="pu">~254 mi above Earth</div></div>
+    <div class="panel"><div class="pl">ORBITAL SPEED</div><div class="pv ht">7.66 km/s</div><div class="pu">27,576 km/h</div></div>
+    <div class="panel"><div class="pl">ORBITAL PERIOD</div><div class="pv gr">92.9 min</div><div class="pu">15.5 orbits/day</div></div>
+    <div class="panel"><div class="pl">INCLINATION</div><div class="pv gd">51.6°</div><div class="pu">covers 90% of Earth</div></div>
+  </div>
+  <div class="g2">
+    <div class="panel">
+      <div class="pl">NEXT OVERHEAD PASS — SAN JOSE, CA</div>
+      <div id="iss-pass-info" style="margin-top:10px">
+        <div style="font-family:var(--hud);font-size:16px;color:var(--accent)" id="iss-pass-time">Calculating…</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:4px">Based on current orbital parameters</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="pl">EXPEDITION 72 — CREW</div>
+      <div style="margin-top:10px;display:flex;flex-direction:column;gap:5px">
+        <div style="display:flex;justify-content:space-between"><span style="font-family:var(--mono);font-size:10px;color:var(--text)">Oleg Kononenko</span><span style="font-family:var(--mono);font-size:9px;color:var(--muted)">Roscosmos · CDR</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="font-family:var(--mono);font-size:10px;color:var(--text)">Nikolai Chub</span><span style="font-family:var(--mono);font-size:9px;color:var(--muted)">Roscosmos · FE</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="font-family:var(--mono);font-size:10px;color:var(--text)">Tracy Dyson</span><span style="font-family:var(--mono);font-size:9px;color:var(--muted)">NASA · FE</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="font-family:var(--mono);font-size:10px;color:var(--text)">Matthew Dominick</span><span style="font-family:var(--mono);font-size:9px;color:var(--muted)">NASA · FE</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MARS ROVERS ══════════════ -->
+<div id="tab-rovers" class="tp">
+  <div class="sh">
+    <div><div class="ss">LIVE SURFACE SIMULATION</div><div class="stitle">Mars <span>Rover Live Drive</span></div></div>
+    <div class="lbadge"><div class="dot" style="background:var(--hot)"></div>SIMULATING</div>
+  </div>
+
+  <!-- Rover selector -->
+  <div class="rover-selector">
+    <button class="rs-btn mars-sel" onclick="switchRover('perseverance',this)">🤖 PERSEVERANCE</button>
+    <button class="rs-btn" onclick="switchRover('curiosity',this)">🔬 CURIOSITY</button>
+    <button class="rs-btn" onclick="switchRover('opportunity',this)">⭐ OPPORTUNITY</button>
+  </div>
+
+  <!-- Main canvas -->
+  <div id="rover-scene-wrap" style="position:relative;width:100%;height:480px;border-radius:12px;overflow:hidden;border:1px solid var(--rim);background:#0a0200;margin-bottom:14px">
+    <canvas id="rover-scene-canvas" style="display:block;width:100%;height:100%"></canvas>
+    <!-- HUD overlays -->
+    <div style="position:absolute;top:12px;left:12px;pointer-events:none">
+      <div style="font-family:var(--hud);font-size:11px;font-weight:700;color:var(--hot)" id="rv-name-hud">PERSEVERANCE</div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--muted)" id="rv-loc-hud">JEZERO CRATER, MARS</div>
+    </div>
+    <div style="position:absolute;top:12px;right:12px;text-align:right;pointer-events:none">
+      <div style="font-family:var(--mono);font-size:9px;color:var(--accent)" id="rv-sol-hud">SOL 1461</div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--muted)" id="rv-time-hud">LOCAL MEAN SOLAR TIME</div>
+    </div>
+    <!-- Speed control -->
+    <div style="position:absolute;bottom:12px;left:12px;display:flex;gap:6px;align-items:center">
+      <span style="font-family:var(--mono);font-size:8px;color:var(--muted)">SIM SPEED:</span>
+      <button class="spd-btn active" onclick="setRoverSpeed(1,this)" style="padding:3px 8px;font-size:8px">1×</button>
+      <button class="spd-btn" onclick="setRoverSpeed(3,this)" style="padding:3px 8px;font-size:8px">3×</button>
+      <button class="spd-btn" onclick="setRoverSpeed(8,this)" style="padding:3px 8px;font-size:8px">8×</button>
+      <button class="spd-btn" onclick="setRoverSpeed(20,this)" style="padding:3px 8px;font-size:8px">20×</button>
+    </div>
+    <div style="position:absolute;bottom:12px;right:12px;font-family:var(--mono);font-size:8px;color:var(--muted)" id="rv-waypoint-hud">Next: —</div>
+  </div>
+
+  <!-- Telemetry row -->
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px" id="rv-telemetry-row"></div>
+
+  <!-- Waypoint list -->
+  <div class="panel" style="margin-bottom:14px">
+    <div class="pl" style="margin-bottom:10px">MISSION WAYPOINTS</div>
+    <div id="rv-waypoint-list" style="display:flex;flex-direction:column;gap:6px"></div>
+  </div>
+
+  <!-- Static rover info cards -->
+  <div class="g3" id="rover-cards"></div>
+</div>
+
+<!-- ══════════════ PLANETS & 3D ══════════════ -->
+<div id="tab-planets" class="tp">
+  <div class="sh"><div><div class="ss">SOLAR SYSTEM &amp; EXOPLANETS</div><div class="stitle">Planet <span>Explorer + 3D View</span></div></div></div>
+  <div class="pgrid" id="planet-grid"></div>
+  <div id="planet-detail-wrap"></div>
+  <div id="planet-hint" style="text-align:center;font-family:var(--mono);font-size:10px;color:var(--muted);padding:14px 0">CLICK ANY PLANET TO VIEW DETAILS AND 3D MODEL</div>
+
+  <!-- 3D viewer (shown when planet selected) -->
+  <div id="planet3d-section" style="display:none;margin-top:20px">
+    <div class="sh" style="margin-bottom:14px">
+      <div><div class="ss">INTERACTIVE 3D MODEL</div><div class="stitle" id="p3d-planet-name">Planet <span>3D Viewer</span></div></div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">DRAG TO ROTATE · SCROLL TO ZOOM</div>
+    </div>
+    <div id="planet3d-canvas-wrap"></div>
+    <div class="p3d-controls" id="p3d-controls"></div>
+    <div class="p3d-info" id="p3d-info"></div>
+  </div>
+</div>
+
+<!-- ══════════════ LIVE EARTH ══════════════ -->
+<div id="tab-earth" class="tp">
+  <div class="sh"><div><div class="ss">REAL-TIME ENVIRONMENTAL DATA</div><div class="stitle">Live <span>Earth Data</span></div></div><div class="lbadge"><div class="dot"></div>UPDATING</div></div>
+  <div class="g2" style="margin-bottom:20px">
+    <div>
+      <div style="font-family:var(--hud);font-size:11px;letter-spacing:3px;color:var(--accent);margin-bottom:10px">⚡ SEISMIC ACTIVITY — LAST 24 HRS</div>
+      <div class="eq-list">
+        <div class="eq-item"><div class="eq-mag ex">6.8</div><div><div class="eq-place">200 km SSW of Tonga</div><div class="eq-meta">2 min ago · Depth: 35 km · 22.1°S 174.5°W</div></div></div>
+        <div class="eq-item"><div class="eq-mag hi">5.2</div><div><div class="eq-place">Near Hokkaido, Japan</div><div class="eq-meta">14 min ago · Depth: 68 km · 43.1°N 144.8°E</div></div></div>
+        <div class="eq-item"><div class="eq-mag mi">4.7</div><div><div class="eq-place">Northern California, USA</div><div class="eq-meta">38 min ago · Depth: 12 km · 40.2°N 124.3°W</div></div></div>
+        <div class="eq-item"><div class="eq-mag mi">3.9</div><div><div class="eq-place">Central Italy</div><div class="eq-meta">1 hr ago · Depth: 10 km · 42.3°N 13.1°E</div></div></div>
+        <div class="eq-item"><div class="eq-mag hi">5.8</div><div><div class="eq-place">Off coast of Chile</div><div class="eq-meta">2 hrs ago · Depth: 50 km · 33.1°S 72.4°W</div></div></div>
+        <div class="eq-item"><div class="eq-mag lo">3.1</div><div><div class="eq-place">Western Turkey</div><div class="eq-meta">3 hrs ago · Depth: 8 km · 38.5°N 27.3°E</div></div></div>
+      </div>
+    </div>
+    <div>
+      <div style="font-family:var(--hud);font-size:11px;letter-spacing:3px;color:var(--accent);margin-bottom:10px">🌡 GLOBAL WEATHER</div>
+      <div class="g2" style="gap:8px">
+        <div class="wcard"><div style="display:flex;justify-content:space-between"><div><div class="wc-city">Tokyo</div><div class="wc-temp">18°C</div><div class="wc-cond">Partly Cloudy</div></div><div style="font-size:24px">⛅</div></div><div style="display:flex;gap:10px;margin-top:5px"><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">💧72%</span><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">💨14km/h</span></div></div>
+        <div class="wcard"><div style="display:flex;justify-content:space-between"><div><div class="wc-city">New York</div><div class="wc-temp">8°C</div><div class="wc-cond">Clear</div></div><div style="font-size:24px">🌤</div></div><div style="display:flex;gap:10px;margin-top:5px"><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">💧48%</span><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">💨22km/h</span></div></div>
+        <div class="wcard"><div style="display:flex;justify-content:space-between"><div><div class="wc-city">London</div><div class="wc-temp">12°C</div><div class="wc-cond">Overcast</div></div><div style="font-size:24px">☁️</div></div><div style="display:flex;gap:10px;margin-top:5px"><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">💧85%</span><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">💨18km/h</span></div></div>
+        <div class="wcard"><div style="display:flex;justify-content:space-between"><div><div class="wc-city">Sydney</div><div class="wc-temp">24°C</div><div class="wc-cond">Sunny</div></div><div style="font-size:24px">☀️</div></div><div style="display:flex;gap:10px;margin-top:5px"><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">💧55%</span><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">💨11km/h</span></div></div>
+        <div class="wcard"><div style="display:flex;justify-content:space-between"><div><div class="wc-city">Dubai</div><div class="wc-temp">31°C</div><div class="wc-cond">Hazy</div></div><div style="font-size:24px">🌫</div></div><div style="display:flex;gap:10px;margin-top:5px"><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">💧38%</span><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">💨8km/h</span></div></div>
+        <div class="wcard"><div style="display:flex;justify-content:space-between"><div><div class="wc-city">São Paulo</div><div class="wc-temp">22°C</div><div class="wc-cond">Thunderstorm</div></div><div style="font-size:24px">⛈</div></div><div style="display:flex;gap:10px;margin-top:5px"><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">💧90%</span><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">💨30km/h</span></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="g4">
+    <div class="panel"><div class="pl">CO₂ CONCENTRATION</div><div class="pv ht" style="font-size:18px">424.2 ppm</div><div class="pu">+2.9 ppm/year</div></div>
+    <div class="panel"><div class="pl">GLOBAL SEA LEVEL</div><div class="pv ht" style="font-size:18px">+3.7 mm/yr</div><div class="pu">Satellite altimetry</div></div>
+    <div class="panel"><div class="pl">OZONE INDEX</div><div class="pv gr" style="font-size:18px">298 DU</div><div class="pu">Dobson units</div></div>
+    <div class="panel"><div class="pl">SOLAR FLUX</div><div class="pv gd" style="font-size:18px">1,361 W/m²</div><div class="pu">TSI reading</div></div>
+  </div>
+</div>
+
+<!-- ══════════════ ASTEROID TRACKER ══════════════ -->
+<div id="tab-asteroid" class="tp">
+  <div class="sh"><div><div class="ss">NEAR-EARTH OBJECT MONITOR</div><div class="stitle">Asteroid <span>Close Approach</span></div></div><div class="lbadge"><div class="dot"></div>NASA NEO FEED</div></div>
+  <canvas id="asteroid-canvas"></canvas>
+  <div class="ast-list" id="ast-list"></div>
+</div>
+
+<!-- ══════════════ SPACE WEATHER ══════════════ -->
+<div id="tab-spaceweather" class="tp">
+  <div class="sh"><div><div class="ss">SOLAR &amp; GEOMAGNETIC CONDITIONS</div><div class="stitle">Space <span>Weather Center</span></div></div></div>
+  <div class="sw-grid">
+    <div class="sw-card">
+      <div class="sw-icon">🌡</div>
+      <div class="sw-key">KP-INDEX (GEOMAGNETIC)</div>
+      <div class="kp-index" id="kp-display">2.3</div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--green);margin-top:4px">QUIET CONDITIONS</div>
+      <div class="sw-bar-wrap">
+        <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:3px"><span>0</span><span>9</span></div>
+        <div class="sw-bar-tr"><div class="sw-bar-fill" style="width:25%"></div></div>
+        <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:7px;color:var(--muted);margin-top:3px"><span>Quiet</span><span>Active</span><span>Storm</span><span>Extreme</span></div>
+      </div>
+    </div>
+    <div class="sw-card">
+      <div class="sw-icon">☀️</div>
+      <div class="sw-key">SOLAR WIND SPEED</div>
+      <div class="sw-val" style="font-size:28px">412 <span style="font-size:14px">km/s</span></div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:4px">Nominal — avg 400 km/s</div>
+      <div class="sw-bar-wrap">
+        <div class="sw-bar-tr" style="margin-top:8px"><div class="sw-bar-fill" style="width:45%;background:linear-gradient(90deg,var(--green),var(--gold))"></div></div>
+      </div>
+    </div>
+    <div class="sw-card">
+      <div class="sw-icon">⚡</div>
+      <div class="sw-key">SOLAR FLARE ACTIVITY</div>
+      <div class="sw-val" style="color:var(--green);font-size:28px">B2.1</div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:4px">Class B — background level</div>
+      <div style="margin-top:12px;display:flex;flex-direction:column;gap:5px">
+        <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px"><span style="color:var(--green)">A/B</span><span style="color:var(--gold)">C</span><span style="color:var(--hot)">M</span><span style="color:#ff2244">X</span></div>
+        <div style="display:flex;gap:3px;height:8px">
+          <div style="flex:2;background:var(--green);border-radius:2px;opacity:.8"></div>
+          <div style="flex:2;background:var(--gold);border-radius:2px;opacity:.3"></div>
+          <div style="flex:2;background:var(--hot);border-radius:2px;opacity:.15"></div>
+          <div style="flex:1;background:#ff2244;border-radius:2px;opacity:.1"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="g2" style="margin-bottom:16px">
+    <div class="panel">
+      <div class="pl">PROTON FLUX (≥10 MeV)</div>
+      <div style="display:flex;align-items:baseline;gap:8px;margin-top:6px"><div class="pv gr" style="font-size:20px">0.3</div><div class="pu">pfu — Normal</div></div>
+      <div style="font-size:11px;line-height:1.6;color:var(--muted);margin-top:8px">Proton flux is well below the S1 threshold of 10 pfu. No radiation storm warnings in effect.</div>
+    </div>
+    <div class="panel">
+      <div class="pl">ELECTRON FLUX (≥2 MeV)</div>
+      <div style="display:flex;align-items:baseline;gap:8px;margin-top:6px"><div class="pv gd" style="font-size:20px">3,200</div><div class="pu">e/cm²·s·sr</div></div>
+      <div style="font-size:11px;line-height:1.6;color:var(--muted);margin-top:8px">Slightly elevated electron flux, consistent with mild outer radiation belt activity. Monitor for spacecraft charging.</div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="pl" style="margin-bottom:12px">24-HOUR KP-INDEX HISTORY</div>
+    <canvas id="kp-chart" height="80" style="width:100%;display:block"></canvas>
+  </div>
+  <div style="margin-top:16px" class="panel">
+    <div class="pl" style="margin-bottom:10px">AURORA FORECAST</div>
+    <div style="font-size:12px;line-height:1.7;color:var(--text)">
+      With current Kp=2.3, auroras are visible from high-latitude locations above ~65° geomagnetic latitude. 
+      Best viewing in northern Scandinavia, Iceland, northern Canada, and Alaska. 
+      Next elevated activity window predicted in <span style="color:var(--accent);font-family:var(--mono)">~36 hours</span> based on solar wind forecasting models.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MISSIONS ══════════════ -->
+<div id="tab-missions" class="tp">
+  <div class="sh"><div><div class="ss">SPACE AGENCIES WORLDWIDE</div><div class="stitle">Mission <span>Control</span></div></div></div>
+  <div class="g2">
+    <div class="panel"><div class="ms-badge ms-upcoming"><div class="dot" style="background:var(--accent)"></div>UPCOMING</div><div class="mn">Artemis III</div><div class="mo">NASA</div><div class="md">First crewed lunar landing since Apollo 17. Will place the first woman and next man on the Moon's South Pole near the Shackleton Crater.</div><div class="mtags"><span class="mtag">🚀 SLS Block 1B</span><span class="mtag">📍 Kennedy Space Center</span><span class="mtag">🗓 Late 2026</span></div></div>
+    <div class="panel"><div class="ms-badge ms-active"><div class="dot"></div>ACTIVE</div><div class="mn">Perseverance Rover</div><div class="mo">NASA / JPL</div><div class="md">Searching for signs of ancient microbial life in Jezero Crater, collecting rock cores for Earth return. Has collected 24 samples so far.</div><div class="mtags"><span class="mtag">🚀 Atlas V 541</span><span class="mtag">📍 Jezero Crater, Mars</span><span class="mtag">🗓 Jul 30, 2020</span></div></div>
+    <div class="panel"><div class="ms-badge ms-active"><div class="dot"></div>ACTIVE</div><div class="mn">Europa Clipper</div><div class="mo">NASA</div><div class="md">Performing 49 close flybys of Europa to investigate its ocean's potential for habitability. Arrives at Jupiter system Dec 2030.</div><div class="mtags"><span class="mtag">🚀 Falcon Heavy</span><span class="mtag">📍 En route to Jupiter</span><span class="mtag">🗓 Oct 14, 2024</span></div></div>
+    <div class="panel"><div class="ms-badge ms-upcoming"><div class="dot" style="background:var(--accent)"></div>UPCOMING</div><div class="mn">Starship Mars Mission</div><div class="mo">SpaceX</div><div class="md">Uncrewed Starship vehicles will launch to Mars carrying Optimus robots and cargo to begin site preparation for human missions.</div><div class="mtags"><span class="mtag">🚀 Starship</span><span class="mtag">📍 Starbase, Texas</span><span class="mtag">🗓 2026 est.</span></div></div>
+    <div class="panel"><div class="ms-badge ms-active"><div class="dot"></div>ACTIVE</div><div class="mn">James Webb Space Telescope</div><div class="mo">NASA / ESA / CSA</div><div class="md">Observing the earliest galaxies, characterizing exoplanet atmospheres, and unraveling cosmic formation processes in unprecedented detail.</div><div class="mtags"><span class="mtag">🚀 Ariane 5</span><span class="mtag">📍 L2 Lagrange Point</span><span class="mtag">🗓 Dec 25, 2021</span></div></div>
+    <div class="panel"><div class="ms-badge ms-upcoming"><div class="dot" style="background:var(--accent)"></div>UPCOMING</div><div class="mn">Chang'e 7</div><div class="mo">CNSA</div><div class="md">China's lunar south pole survey mission targeting Shackleton Crater for water ice. Includes lander, rover, mini flying probe.</div><div class="mtags"><span class="mtag">🚀 Long March 5</span><span class="mtag">📍 Wenchang</span><span class="mtag">🗓 2026 est.</span></div></div>
+  </div>
+</div>
+
+<!-- ══════════════ SOLAR SYSTEM ══════════════ -->
+<div id="tab-solar" class="tp">
+  <div class="sh"><div><div class="ss">REAL-TIME ORBITAL SIMULATION</div><div class="stitle">Solar System <span>Explorer</span></div></div></div>
+  <div id="solar-wrap">
+    <div class="sun-ball" title="The Sun" onclick="showSunInfo()"></div>
+  </div>
+  <div class="spd-row">
+    <span class="spd-lbl">SPEED:</span>
+    <button class="spd-btn" onclick="setSolarSpeed(.5,this)">0.5×</button>
+    <button class="spd-btn active" onclick="setSolarSpeed(1,this)">1×</button>
+    <button class="spd-btn" onclick="setSolarSpeed(5,this)">5×</button>
+    <button class="spd-btn" onclick="setSolarSpeed(20,this)">20×</button>
+    <button class="spd-btn" onclick="setSolarSpeed(100,this)">100×</button>
+  </div>
+  <div id="solar-planet-info" class="panel" style="margin-top:14px;display:none">
+    <div class="pl" id="spi-name"></div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:8px" id="spi-stats"></div>
+  </div>
+  <div class="g4" style="margin-top:14px">
+    <div class="panel"><div class="pl">PLANETS</div><div class="pv ac" style="font-size:20px">8</div></div>
+    <div class="panel"><div class="pl">DWARF PLANETS</div><div class="pv ac" style="font-size:20px">5+</div></div>
+    <div class="panel"><div class="pl">KNOWN MOONS</div><div class="pv ac" style="font-size:20px">290+</div></div>
+    <div class="panel"><div class="pl">SYSTEM AGE</div><div class="pv gd" style="font-size:16px">4.6 Byr</div></div>
+  </div>
+</div>
+
+<!-- ══════════════ MARS PANEL ══════════════ -->
+<div id="tab-mars" class="tp">
+  <div class="sh"><div><div class="ss">MISSION BRIEFING</div><div class="stitle">Mars <span>Exploration Panel</span></div></div></div>
+  <div class="mars-hero">
+    <div class="mars-ball-big"></div>
+    <div class="mars-title">MARS</div>
+    <div class="mars-sub">THE RED PLANET · 4TH FROM THE SUN</div>
+    <p style="font-size:12px;line-height:1.7;color:var(--text);opacity:.85;max-width:560px;clear:both;padding-top:8px">Mars stands as humanity's next great destination. With a day nearly identical to Earth's and surface gravity at 38% of our own, it remains the most accessible world for future settlement.</p>
+  </div>
+  <div class="mars-stats" style="margin-bottom:18px">
+    <div class="mstat"><div class="mstat-val">6,779 km</div><div class="mstat-key">DIAMETER</div></div>
+    <div class="mstat"><div class="mstat-val">24h 37m</div><div class="mstat-key">DAY LENGTH</div></div>
+    <div class="mstat"><div class="mstat-val">3.72 m/s²</div><div class="mstat-key">SURFACE GRAVITY</div></div>
+    <div class="mstat"><div class="mstat-val">227.9M km</div><div class="mstat-key">AVG FROM EARTH</div></div>
+    <div class="mstat"><div class="mstat-val">4.6 Byr</div><div class="mstat-key">PLANET AGE</div></div>
+    <div class="mstat"><div class="mstat-val">-140 to 35°C</div><div class="mstat-key">TEMP RANGE</div></div>
+    <div class="mstat"><div class="mstat-val">2 moons</div><div class="mstat-key">PHOBOS &amp; DEIMOS</div></div>
+    <div class="mstat"><div class="mstat-val">95% CO₂</div><div class="mstat-key">ATMOSPHERE</div></div>
+  </div>
+  <div class="panel" style="margin-bottom:18px">
+    <div class="pl" style="margin-bottom:12px">ATMOSPHERIC COMPOSITION</div>
+    <div class="atmo-row"><div class="atmo-nm">Carbon Dioxide (CO₂)</div><div class="atmo-tr"><div class="atmo-fill" style="width:95%;background:#c1440e"></div></div><div class="atmo-pct">95.32%</div></div>
+    <div class="atmo-row"><div class="atmo-nm">Nitrogen (N₂)</div><div class="atmo-tr"><div class="atmo-fill" style="width:28%;background:#4a90d9"></div></div><div class="atmo-pct">2.60%</div></div>
+    <div class="atmo-row"><div class="atmo-nm">Argon (Ar)</div><div class="atmo-tr"><div class="atmo-fill" style="width:20%;background:#7de8f8"></div></div><div class="atmo-pct">1.90%</div></div>
+    <div class="atmo-row"><div class="atmo-nm">Oxygen (O₂)</div><div class="atmo-tr"><div class="atmo-fill" style="width:5%;background:#00ff9d"></div></div><div class="atmo-pct">0.16%</div></div>
+    <div class="atmo-row"><div class="atmo-nm">Other Traces</div><div class="atmo-tr"><div class="atmo-fill" style="width:2%;background:#a0a0a0"></div></div><div class="atmo-pct">0.02%</div></div>
+  </div>
+  <div class="g3">
+    <div class="panel"><div style="font-family:var(--hud);font-size:11px;font-weight:700;color:var(--hot);margin-bottom:3px">Viking 1 &amp; 2</div><div style="font-family:var(--mono);font-size:8px;color:var(--accent);margin-bottom:6px">NASA · 1976</div><p style="font-size:11px;line-height:1.6;color:var(--muted)">First successful Mars landers; conducted soil biology experiments.</p></div>
+    <div class="panel"><div style="font-family:var(--hud);font-size:11px;font-weight:700;color:var(--hot);margin-bottom:3px">Curiosity</div><div style="font-family:var(--mono);font-size:8px;color:var(--accent);margin-bottom:6px">NASA · 2012–Present</div><p style="font-size:11px;line-height:1.6;color:var(--muted)">Confirmed ancient habitable lake conditions in Gale Crater.</p></div>
+    <div class="panel"><div style="font-family:var(--hud);font-size:11px;font-weight:700;color:var(--hot);margin-bottom:3px">Perseverance</div><div style="font-family:var(--mono);font-size:8px;color:var(--accent);margin-bottom:6px">NASA · 2021–Present</div><p style="font-size:11px;line-height:1.6;color:var(--muted)">Seeking biosignatures; caching samples for Earth return.</p></div>
+    <div class="panel"><div style="font-family:var(--hud);font-size:11px;font-weight:700;color:var(--hot);margin-bottom:3px">Ingenuity</div><div style="font-family:var(--mono);font-size:8px;color:var(--accent);margin-bottom:6px">NASA · 2021–2024</div><p style="font-size:11px;line-height:1.6;color:var(--muted)">First powered flight on another planet. 72 flights completed.</p></div>
+    <div class="panel"><div style="font-family:var(--hud);font-size:11px;font-weight:700;color:var(--hot);margin-bottom:3px">Opportunity</div><div style="font-family:var(--mono);font-size:8px;color:var(--accent);margin-bottom:6px">NASA · 2004–2019</div><p style="font-size:11px;line-height:1.6;color:var(--muted)">15-year mission. Found definitive water evidence across Mars.</p></div>
+    <div class="panel"><div style="font-family:var(--hud);font-size:11px;font-weight:700;color:var(--hot);margin-bottom:3px">Future: MSR</div><div style="font-family:var(--mono);font-size:8px;color:var(--accent);margin-bottom:6px">NASA/ESA · 2030s</div><p style="font-size:11px;line-height:1.6;color:var(--muted)">Mars Sample Return will bring Perseverance's cached tubes to Earth.</p></div>
+  </div>
+</div>
+
+<!-- ══════════════ GAME ══════════════ -->
+<div id="tab-game" class="tp">
+  <div class="sh"><div><div class="ss">INTERACTIVE SIMULATION</div><div class="stitle">Mission <span>Simulation</span></div></div></div>
+  <div class="game-wrap">
+    <div class="ghud">
+      <div class="ghud-stat"><div class="ghud-key">MISSION</div><div class="ghud-val" id="g-mnum">1/4</div></div>
+      <div class="ghud-stat"><div class="ghud-key">SCORE</div><div class="ghud-val" id="g-score">0</div></div>
+      <div class="g-bars">
+        <div><div class="pbar-lbl"><span>FUEL</span><span id="g-fuel-pct">100%</span></div><div class="pbar-tr"><div class="pbar-fill pf-fuel" id="g-fuel-bar" style="width:100%"></div></div></div>
+        <div><div class="pbar-lbl"><span>HULL</span><span id="g-hull-pct">100%</span></div><div class="pbar-tr"><div class="pbar-fill pf-hull" id="g-hull-bar" style="width:100%"></div></div></div>
+        <div><div class="pbar-lbl"><span>POWER</span><span id="g-power-pct">100%</span></div><div class="pbar-tr"><div class="pbar-fill pf-power" id="g-power-bar" style="width:100%"></div></div></div>
+      </div>
+    </div>
+    <div class="gscene">
+      <div class="craft">🚀</div>
+      <div id="g-event-box" class="gevt">
+        <div class="gevt-title" id="g-title">MISSION LAUNCH: Ares IV</div>
+        <div class="gevt-text" id="g-scene">You are Mission Commander aboard Ares IV. T-10 minutes to launch. All systems nominal.</div>
+      </div>
+    </div>
+    <div class="glog" id="g-log"><div class="glog-line">Mission Control: All systems nominal. Ready for launch sequence.</div></div>
+    <div class="gchoices" id="g-choices"></div>
+  </div>
+</div>
+
+</main>
+<footer><span>MAP · INTERACTIVE SPACE &amp; SCIENCE TRACKER · v3.0</span><span>DATA: NASA · ESA · JPL · USGS · NOAA · SPACE-TRACK</span></footer>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+// STARS
+// ════════════════════════════════════════════════════════════
+(function(){
+  const sf=document.getElementById('starfield');
+  for(let i=0;i<160;i++){
+    const s=document.createElement('div'); s.className='star';
+    const sz=Math.random()*2+.4, o=(Math.random()*.9+.1).toFixed(2), d=(Math.random()*4+2).toFixed(1);
+    s.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;width:${sz}px;height:${sz}px;--o:${o};--d:${d}s`;
+    sf.appendChild(s);
+  }
+})();
+
+// ════════════════════════════════════════════════════════════
+// CLOCK
+// ════════════════════════════════════════════════════════════
+function pad(n){return String(n).padStart(2,'0')}
+function updateClock(){
+  const n=new Date();
+  document.getElementById('clock').textContent=`${pad(n.getUTCHours())}:${pad(n.getUTCMinutes())}:${pad(n.getUTCSeconds())} UTC`;
+}
+setInterval(updateClock,1000); updateClock();
+
+// ════════════════════════════════════════════════════════════
+// TAB SWITCHING
+// ════════════════════════════════════════════════════════════
+function showTab(id,btn){
+  document.querySelectorAll('.tp').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='solar') startSolar();
+  if(id==='spaceweather') drawKpChart();
+  if(id==='asteroid') drawAsteroidViz();
+}
+
+// ════════════════════════════════════════════════════════════
+// REAL ISS TRACKING — TLE-based orbital mechanics
+// ════════════════════════════════════════════════════════════
+// ISS TLE (approximate — updated periodically)
+const TLE = {
+  i: 51.6431 * Math.PI/180,   // inclination rad
+  e: 0.0001686,                // eccentricity
+  raan: 108.5 * Math.PI/180,  // right ascension of ascending node
+  argPe: 122.3 * Math.PI/180, // argument of perigee
+  n: 15.501 * 2*Math.PI/86400,// mean motion rad/s (revs/day * 2pi/86400)
+  M0: 47.2 * Math.PI/180,     // mean anomaly at epoch
+  epochUTC: 1710000000,        // approximate epoch
+  alt: 408                     // km
+};
+
+let issTrail = [];
+let issLat = 0, issLon = 0;
+
+function computeISSPosition(t) {
+  // Propagate mean anomaly
+  const dt = t - TLE.epochUTC;
+  const M = (TLE.M0 + TLE.n * dt) % (2*Math.PI);
+  // Solve Kepler's equation (small e, 3 iterations)
+  let E = M;
+  for(let k=0;k<3;k++) E = M + TLE.e*Math.sin(E);
+  // True anomaly
+  const nu = 2*Math.atan2(Math.sqrt(1+TLE.e)*Math.sin(E/2), Math.sqrt(1-TLE.e)*Math.cos(E/2));
+  // Argument of latitude
+  const u = TLE.argPe + nu;
+  // Precession of RAAN due to Earth's oblateness (simplified)
+  const raan = TLE.raan - 0.00109 * Math.PI/180 * dt / 86400;
+  // Position in orbital plane (unit sphere)
+  const x = Math.cos(raan)*Math.cos(u) - Math.sin(raan)*Math.sin(u)*Math.cos(TLE.i);
+  const y = Math.sin(raan)*Math.cos(u) + Math.cos(raan)*Math.sin(u)*Math.cos(TLE.i);
+  const z = Math.sin(u)*Math.sin(TLE.i);
+  // Convert to lat/lon
+  const lat = Math.asin(z) * 180/Math.PI;
+  // Greenwich sidereal time
+  const gst = (280.46061837 + 360.98564736629*(t/86400 - 10957.5)) % 360;
+  let lon = (Math.atan2(y, x) * 180/Math.PI) - gst;
+  while(lon > 180) lon -= 360;
+  while(lon < -180) lon += 360;
+  return {lat, lon};
+}
+
+function latLonToSVG(lat, lon, W, H) {
+  const x = (lon + 180) / 360 * W;
+  const y = (90 - lat) / 180 * H;
+  return {x, y};
+}
+
+function updateISSMap() {
+  const now = Date.now()/1000;
+  const pos = computeISSPosition(now);
+  issLat = pos.lat; issLon = pos.lon;
+
+  const svg = document.getElementById('world-map');
+  if(!svg) return;
+  const W = 1008, H = 504;
+  const p = latLonToSVG(pos.lat, pos.lon, W, H);
+
+  const dot = document.getElementById('iss-dot');
+  const dot2 = document.getElementById('iss-dot2');
+  if(dot){ dot.setAttribute('cx', p.x); dot.setAttribute('cy', p.y); }
+  if(dot2){ dot2.setAttribute('cx', p.x); dot2.setAttribute('cy', p.y); }
+
+  // Trail
+  issTrail.push(p);
+  if(issTrail.length > 120) issTrail.shift();
+
+  // Draw trail handling wrap-around
+  const trailEl = document.getElementById('iss-trail');
+  if(trailEl) {
+    let pts = [];
+    for(let i=0;i<issTrail.length;i++){
+      if(i>0 && Math.abs(issTrail[i].x - issTrail[i-1].x) > 300) {
+        // wrap — start new segment
+        pts.push('M');
+      }
+      pts.push(issTrail[i].x+','+issTrail[i].y);
+    }
+    trailEl.setAttribute('points', pts.join(' ').replace(/ M /g,' '));
+  }
+
+  // Overlays
+  const coordEl = document.getElementById('iss-coords-overlay');
+  if(coordEl) coordEl.textContent = `LAT ${pos.lat.toFixed(2)}°  LON ${pos.lon.toFixed(2)}°`;
+  const speedEl = document.getElementById('iss-speed-overlay');
+  if(speedEl) speedEl.innerHTML = `ALT 408 km &nbsp;|&nbsp; SPD 7.66 km/s &nbsp;|&nbsp; ${new Date().toUTCString().slice(17,22)} UTC`;
+
+  // Pass time (simplified)
+  const passEl = document.getElementById('iss-pass-time');
+  if(passEl) {
+    const minToPass = Math.abs(37.3 - pos.lat) / 7 + 20; // rough estimate
+    passEl.textContent = `Next pass in ~${Math.round(minToPass)} min`;
+  }
+
+  document.getElementById('iss-loading-msg').style.display = 'none';
+}
+
+setInterval(updateISSMap, 2000); updateISSMap();
+
+// ════════════════════════════════════════════════════════════
+// LIVE ANIMATED ROVER DRIVER
+// ════════════════════════════════════════════════════════════
+const ROVER_DATA = {
+  perseverance:{
+    name:'Perseverance',icon:'🤖',color:'#00ff9d',accent:'#00cc88',status:'act',statusLabel:'ACTIVE',
+    landing:'Feb 18, 2021',location:'Jezero Crater',totalSols:1461,totalDist:19.2,
+    temp:'-60°C',battery:'76%',samples:'24 cached',
+    waypoints:[
+      {x:120,y:340,label:'Touchdown\nOchre Flats',sample:false,science:false},
+      {x:160,y:310,label:'Crater\nFloor',sample:false,science:true},
+      {x:210,y:285,label:'Octavia E.\nButler',sample:true,science:false},
+      {x:255,y:265,label:'Séítah\nRegion',sample:false,science:true},
+      {x:290,y:240,label:'South\nSéítah',sample:true,science:false},
+      {x:330,y:220,label:'Delta\nFront',sample:false,science:true},
+      {x:375,y:195,label:'Hawksbill\nGap',sample:true,science:false},
+      {x:415,y:175,label:'Three\nForks',sample:true,science:true},
+      {x:455,y:155,label:'Rocky\nTop',sample:false,science:true},
+      {x:490,y:135,label:'Bright\nAngel',sample:true,science:false},
+      {x:530,y:118,label:'Margin\nUnit',sample:false,science:true},
+      {x:570,y:105,label:'Olivine\nCache',sample:true,science:false},
+    ]
+  },
+  curiosity:{
+    name:'Curiosity',icon:'🔬',color:'#00d4ff',accent:'#0099cc',status:'act',statusLabel:'ACTIVE',
+    landing:'Aug 6, 2012',location:'Gale Crater / Mt Sharp',totalSols:4182,totalDist:29.4,
+    temp:'-55°C',battery:'81%',samples:'Ongoing',
+    waypoints:[
+      {x:100,y:360,label:'Bradbury\nLanding',sample:false,science:false},
+      {x:145,y:330,label:'Yellowknife\nBay',sample:true,science:true},
+      {x:195,y:305,label:'Kimberley\nWaypoint',sample:false,science:true},
+      {x:240,y:278,label:'Namib\nDune',sample:false,science:false},
+      {x:285,y:252,label:'Murray\nFormation',sample:true,science:true},
+      {x:325,y:228,label:'Vera Rubin\nRidge',sample:true,science:true},
+      {x:362,y:205,label:'Glen\nTorridon',sample:false,science:true},
+      {x:402,y:182,label:'Greenheugh\nPediment',sample:true,science:false},
+      {x:445,y:162,label:'Stimson\nFormation',sample:false,science:true},
+      {x:488,y:143,label:'Gediz\nVallis',sample:true,science:true},
+      {x:530,y:125,label:'Mt Sharp\nFoothills',sample:false,science:true},
+      {x:568,y:110,label:'Sulfate\nLayer',sample:true,science:false},
+    ]
+  },
+  opportunity:{
+    name:'Opportunity',icon:'⭐',color:'#ffd700',accent:'#cc9900',status:'comp',statusLabel:'COMPLETE 2019',
+    landing:'Jan 25, 2004',location:'Meridiani Planum',totalSols:5111,totalDist:45.16,
+    temp:'-63°C',battery:'N/A',samples:'Historical',
+    waypoints:[
+      {x:80,y:380,label:'Eagle\nCrater',sample:false,science:false},
+      {x:130,y:348,label:'Endurance\nCrater',sample:true,science:true},
+      {x:185,y:318,label:'Erebus\nCrater',sample:false,science:false},
+      {x:235,y:290,label:'Victoria\nCrater',sample:true,science:true},
+      {x:282,y:263,label:'Odyssey\nCrater',sample:false,science:true},
+      {x:325,y:238,label:'Santa\nMaria',sample:false,science:false},
+      {x:370,y:215,label:'Endeavour\nCrater',sample:true,science:true},
+      {x:412,y:193,label:'Cape\nYork',sample:false,science:true},
+      {x:452,y:172,label:'Matijevic\nHill',sample:true,science:false},
+      {x:490,y:153,label:'Marathon\nValley',sample:false,science:true},
+      {x:530,y:136,label:'Spirit of\nSt. Louis',sample:false,science:false},
+      {x:568,y:122,label:'Perseverance\nValley',sample:false,science:false},
+    ]
+  }
+};
+
+// ── Rover animation state ──────────────────────────────────
+let rv = {
+  name:'perseverance',
+  x:0, y:0,               // current pixel position
+  angle:0,                 // heading radians
+  wpIdx:0,                 // current target waypoint index
+  t:0,                     // interpolation 0-1 between waypoints
+  trailPoints:[],          // [{x,y}] visited so far
+  speed:1,                 // simulation speed multiplier
+  paused:false,
+  distDriven:0,
+  sol:1,
+  wheelAngle:0,            // for wheel spin animation
+  scanning:false,          // true when stopped at waypoint
+  scanTimer:0,
+  terrain:null,            // pre-rendered terrain ImageData
+  W:0, H:0,
+};
+
+function seedRng(seed){ return function(){ seed=Math.sin(seed)*43758.5453123; return seed-Math.floor(seed); }; }
+
+function buildTerrain(canvas, roverName){
+  const rng = seedRng(roverName==='perseverance'?42:roverName==='curiosity'?77:33);
+  const W=canvas.width, H=canvas.height;
+  const ctx=canvas.getContext('2d');
+
+  // Sky / horizon
+  const sky=ctx.createLinearGradient(0,0,0,H*.18);
+  sky.addColorStop(0,'#1a0800'); sky.addColorStop(1,'#3a1800');
+  ctx.fillStyle=sky; ctx.fillRect(0,0,W,H*.18);
+
+  // Ground base
+  const gnd=ctx.createLinearGradient(0,H*.18,0,H);
+  gnd.addColorStop(0,'#2a1000'); gnd.addColorStop(.3,'#3a1a08'); gnd.addColorStop(1,'#1a0a02');
+  ctx.fillStyle=gnd; ctx.fillRect(0,H*.18,W,H);
+
+  // Dust variation patches
+  for(let i=0;i<80;i++){
+    const px=rng()*W, py=H*.18+rng()*(H*.82), pr=rng()*90+20;
+    const g=ctx.createRadialGradient(px,py,0,px,py,pr);
+    const r=Math.floor(80+rng()*60),gr=Math.floor(30+rng()*30),b=Math.floor(5+rng()*15);
+    g.addColorStop(0,`rgba(${r},${gr},${b},0.25)`);
+    g.addColorStop(1,'transparent');
+    ctx.fillStyle=g; ctx.fillRect(px-pr,py-pr,pr*2,pr*2);
+  }
+
+  // Craters
+  for(let i=0;i<18;i++){
+    const cx=rng()*W, cy=H*.22+rng()*(H*.72), cr=rng()*55+10;
+    ctx.beginPath(); ctx.arc(cx,cy,cr,0,Math.PI*2);
+    const cg=ctx.createRadialGradient(cx-cr*.25,cy-cr*.25,cr*.05,cx,cy,cr);
+    cg.addColorStop(0,'#5a2808'); cg.addColorStop(.6,'#2a1000'); cg.addColorStop(1,'transparent');
+    ctx.fillStyle=cg; ctx.fill();
+    ctx.beginPath(); ctx.arc(cx,cy,cr,0,Math.PI*2);
+    ctx.strokeStyle='#6a3010'; ctx.lineWidth=1.5; ctx.stroke();
+    // Crater shadow arc
+    ctx.beginPath(); ctx.arc(cx,cy,cr,Math.PI*.2,Math.PI*.9);
+    ctx.strokeStyle='rgba(0,0,0,.3)'; ctx.lineWidth=3; ctx.stroke();
+  }
+
+  // Rocks
+  for(let i=0;i<60;i++){
+    const rx=rng()*W, ry=H*.25+rng()*(H*.65), rs=rng()*12+3;
+    ctx.beginPath();
+    ctx.ellipse(rx,ry,rs,rs*.6,rng()*Math.PI,.0,Math.PI*2);
+    const r2=Math.floor(80+rng()*50),g2=Math.floor(35+rng()*25),b2=8;
+    ctx.fillStyle=`rgb(${r2},${g2},${b2})`; ctx.fill();
+    ctx.strokeStyle='#7a4020'; ctx.lineWidth=.5; ctx.stroke();
+  }
+
+  // Distant buttes on horizon
+  ctx.fillStyle='#2a0e00';
+  for(let i=0;i<6;i++){
+    const bx=rng()*W, bw=rng()*160+60, bh=rng()*40+15;
+    ctx.beginPath();
+    ctx.moveTo(bx-bw/2,H*.18); ctx.lineTo(bx-bw/2+bw*.15,H*.18-bh);
+    ctx.lineTo(bx+bw/2-bw*.15,H*.18-bh); ctx.lineTo(bx+bw/2,H*.18);
+    ctx.closePath(); ctx.fill();
+  }
+
+  // Haze line
+  ctx.fillStyle='rgba(180,80,20,0.07)';
+  ctx.fillRect(0,H*.15,W,H*.06);
+}
+
+function initRoverScene(roverName){
+  const canvas=document.getElementById('rover-scene-canvas');
+  if(!canvas) return;
+  const wrap=document.getElementById('rover-scene-wrap');
+  canvas.width=wrap.offsetWidth||800; canvas.height=480;
+  rv.W=canvas.width; rv.H=canvas.height;
+  rv.name=roverName;
+  rv.wpIdx=0; rv.t=0; rv.trailPoints=[]; rv.distDriven=0;
+  rv.scanTimer=0; rv.scanning=false;
+  rv.wheelAngle=0;
+
+  // Scale waypoints to canvas
+  const data=ROVER_DATA[roverName];
+  const maxWpX=Math.max(...data.waypoints.map(w=>w.x));
+  const maxWpY=Math.max(...data.waypoints.map(w=>w.y));
+  rv.scaledWp = data.waypoints.map(w=>({
+    ...w,
+    sx: 60 + (w.x/maxWpX)*(rv.W-120),
+    sy: 80 + (w.y/maxWpY)*(rv.H-120),
+  }));
+
+  // Start at first waypoint
+  rv.x = rv.scaledWp[0].sx;
+  rv.y = rv.scaledWp[0].sy;
+  rv.trailPoints.push({x:rv.x,y:rv.y});
+
+  // Build terrain
+  buildTerrain(canvas, roverName);
+  // Save terrain snapshot
+  const ctx=canvas.getContext('2d');
+  rv.terrain = ctx.getImageData(0,0,rv.W,rv.H);
+
+  updateRoverCards();
+  updateWaypointList();
+  updateRoverTelemetry();
+}
+
+function drawRoverFrame(){
+  const canvas=document.getElementById('rover-scene-canvas');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const W=rv.W, H=rv.H;
+
+  // Restore terrain
+  if(rv.terrain) ctx.putImageData(rv.terrain,0,0);
+
+  const data=ROVER_DATA[rv.name];
+  const wps=rv.scaledWp||[];
+  if(!wps.length) return;
+
+  // ── Draw grid ──
+  ctx.strokeStyle='rgba(255,100,30,0.06)'; ctx.lineWidth=.5;
+  for(let x=0;x<W;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=50){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+  // ── Draw all waypoint icons ──
+  wps.forEach((wp,i)=>{
+    const visited = i < rv.wpIdx || (i===rv.wpIdx && rv.t>0.05);
+    // Connection line (future = dashed)
+    if(i<wps.length-1){
+      ctx.beginPath(); ctx.moveTo(wp.sx,wp.sy); ctx.lineTo(wps[i+1].sx,wps[i+1].sy);
+      if(visited){ ctx.strokeStyle='rgba(255,100,30,0.15)'; ctx.lineWidth=1; ctx.setLineDash([]); }
+      else { ctx.strokeStyle='rgba(255,255,255,0.08)'; ctx.lineWidth=1; ctx.setLineDash([4,4]); }
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+    // Dot
+    const isNext = i===rv.wpIdx+1;
+    const isCurrent = i===rv.wpIdx;
+    ctx.beginPath(); ctx.arc(wp.sx,wp.sy, isCurrent?7:5,0,Math.PI*2);
+    if(wp.sample) ctx.fillStyle=visited?'#ff6b35':'#ff6b3560';
+    else if(wp.science) ctx.fillStyle=visited?'#ffd700':'#ffd70050';
+    else ctx.fillStyle=visited?data.color:data.color+'40';
+    ctx.fill();
+    if(isNext){
+      ctx.beginPath(); ctx.arc(wp.sx,wp.sy,10,0,Math.PI*2);
+      ctx.strokeStyle=data.color+'80'; ctx.lineWidth=1.5; ctx.stroke();
+    }
+    // Label (only for visited + named)
+    if(wp.label && (visited||isCurrent)){
+      ctx.font='7.5px Share Tech Mono,monospace';
+      ctx.fillStyle=data.color+'cc';
+      const lines=wp.label.split('\n');
+      lines.forEach((line,li)=>ctx.fillText(line,wp.sx+8,wp.sy-4+li*10));
+    }
+  });
+
+  // ── Trail ──
+  if(rv.trailPoints.length>1){
+    ctx.beginPath();
+    rv.trailPoints.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+    ctx.strokeStyle=data.color+'90'; ctx.lineWidth=2.5; ctx.setLineDash([]);
+    ctx.stroke();
+    // Tyre tracks (two parallel lines)
+    [-3,3].forEach(offset=>{
+      ctx.beginPath();
+      rv.trailPoints.forEach((p,i)=>{
+        const angle = i>0 ? Math.atan2(p.y-rv.trailPoints[i-1].y, p.x-rv.trailPoints[i-1].x)+Math.PI/2 : 0;
+        const ox=Math.cos(angle)*offset, oy=Math.sin(angle)*offset;
+        i===0?ctx.moveTo(p.x+ox,p.y+oy):ctx.lineTo(p.x+ox,p.y+oy);
+      });
+      ctx.strokeStyle='rgba(180,80,20,0.3)'; ctx.lineWidth=1; ctx.setLineDash([3,3]); ctx.stroke();
+    });
+    ctx.setLineDash([]);
+  }
+
+  // ── Draw rover body ──
+  const rx=rv.x, ry=rv.y, ang=rv.angle;
+  ctx.save(); ctx.translate(rx,ry); ctx.rotate(ang);
+
+  const bodyW=28,bodyH=16;
+  // Shadow
+  ctx.fillStyle='rgba(0,0,0,0.5)';
+  ctx.fillRect(-bodyW/2+3,bodyH/2,bodyW,4);
+
+  // Body box
+  const bodyGrad=ctx.createLinearGradient(-bodyW/2,-bodyH/2,bodyW/2,bodyH/2);
+  bodyGrad.addColorStop(0,'#e8d0b0'); bodyGrad.addColorStop(.5,'#c8b090'); bodyGrad.addColorStop(1,'#987050');
+  ctx.fillStyle=bodyGrad;
+  ctx.beginPath(); ctx.roundRect(-bodyW/2,-bodyH/2,bodyW,bodyH,3);
+  ctx.fill();
+  ctx.strokeStyle='#fff8'; ctx.lineWidth=.8; ctx.stroke();
+
+  // Solar panel wings
+  [[-22,-2],[12,-2]].forEach(([ox,oy])=>{
+    const pGrad=ctx.createLinearGradient(ox,oy,ox+10,oy+8);
+    pGrad.addColorStop(0,'#3060a0'); pGrad.addColorStop(1,'#1a3060');
+    ctx.fillStyle=pGrad; ctx.strokeStyle='#4080c0'; ctx.lineWidth=.5;
+    ctx.beginPath(); ctx.rect(ox,oy,10,8); ctx.fill(); ctx.stroke();
+    // Panel grid lines
+    ctx.strokeStyle='#6090d050'; ctx.lineWidth=.4;
+    for(let g=1;g<3;g++){ctx.beginPath();ctx.moveTo(ox+g*3.3,oy);ctx.lineTo(ox+g*3.3,oy+8);ctx.stroke();}
+    ctx.beginPath();ctx.moveTo(ox,oy+4);ctx.lineTo(ox+10,oy+4);ctx.stroke();
+  });
+
+  // Mast / camera
+  ctx.fillStyle='#d0b090';
+  ctx.fillRect(-2,-bodyH/2-10,4,10);
+  ctx.beginPath(); ctx.arc(0,-bodyH/2-12,5,0,Math.PI*2);
+  ctx.fillStyle='#2060a0'; ctx.fill();
+  ctx.strokeStyle='#80b0e0'; ctx.lineWidth=.8; ctx.stroke();
+
+  // Wheels (6 wheels — 3 each side)
+  const wSpacing=10, wOff=bodyH/2+4;
+  rv.wheelAngle += rv.scanning?0:0.15*rv.speed;
+  [-wSpacing,0,wSpacing].forEach(wx=>{
+    [-1,1].forEach(side=>{
+      const wy=side*wOff;
+      ctx.save(); ctx.translate(wx,wy); ctx.rotate(rv.wheelAngle*(side>0?1:-1));
+      ctx.beginPath(); ctx.arc(0,0,4,0,Math.PI*2);
+      ctx.fillStyle='#403020'; ctx.fill();
+      ctx.strokeStyle='#907040'; ctx.lineWidth=1; ctx.stroke();
+      // Spokes
+      for(let s=0;s<4;s++){
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(s*Math.PI/2)*1.5,Math.sin(s*Math.PI/2)*1.5);
+        ctx.lineTo(Math.cos(s*Math.PI/2)*3.5,Math.sin(s*Math.PI/2)*3.5);
+        ctx.strokeStyle='#705030'; ctx.lineWidth=.8; ctx.stroke();
+      }
+      ctx.restore();
+    });
+  });
+
+  // RTG power source (back)
+  ctx.fillStyle='#808080'; ctx.strokeStyle='#a0a0a0'; ctx.lineWidth=.5;
+  ctx.beginPath(); ctx.rect(bodyW/2-2,-5,6,10); ctx.fill(); ctx.stroke();
+
+  ctx.restore();
+
+  // Scanning animation
+  if(rv.scanning){
+    const progress=rv.scanTimer/120;
+    ctx.beginPath(); ctx.arc(rx,ry,20+progress*15,0,Math.PI*2);
+    ctx.strokeStyle=`rgba(0,212,255,${0.6*(1-progress)})`; ctx.lineWidth=2; ctx.stroke();
+    ctx.beginPath(); ctx.arc(rx,ry,5,0,Math.PI*2);
+    ctx.fillStyle='#00d4ff'; ctx.fill();
+    // Science readout
+    ctx.font='bold 10px Orbitron,monospace';
+    ctx.fillStyle='#00d4ffcc';
+    ctx.fillText('SCANNING…',rx-30,ry-28);
+    ctx.font='8px Share Tech Mono,monospace';
+    ctx.fillStyle='#00ff9daa';
+    ctx.fillText(`SPECTRO ${Math.floor(progress*100)}%`,rx-24,ry-18);
+  }
+
+  // ── HUD elements ──
+  // Compass
+  const compX=W-42,compY=42;
+  ctx.beginPath(); ctx.arc(compX,compY,16,0,Math.PI*2);
+  ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fill();
+  ctx.strokeStyle='#2a5a8a'; ctx.lineWidth=1; ctx.stroke();
+  ['N','E','S','W'].forEach((dir,i)=>{
+    const a=i*Math.PI/2-Math.PI/2;
+    ctx.font='7px Orbitron,monospace'; ctx.fillStyle='#5a9acc';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(dir,compX+Math.cos(a)*11,compY+Math.sin(a)*11);
+  });
+  ctx.beginPath();
+  ctx.moveTo(compX+Math.cos(rv.angle-Math.PI/2)*12, compY+Math.sin(rv.angle-Math.PI/2)*12);
+  ctx.lineTo(compX+Math.cos(rv.angle+Math.PI*1.5-Math.PI/6)*6, compY+Math.sin(rv.angle+Math.PI*1.5-Math.PI/6)*6);
+  ctx.lineTo(compX+Math.cos(rv.angle+Math.PI/2)*12, compY+Math.sin(rv.angle+Math.PI/2)*12);
+  ctx.closePath(); ctx.fillStyle='#ff4444'; ctx.fill();
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+
+  // Speed / dist readout bottom-center
+  const bcy=H-30;
+  ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.beginPath();
+  ctx.roundRect(W/2-90,bcy-14,180,22,4); ctx.fill();
+  ctx.font='9px Share Tech Mono,monospace'; ctx.fillStyle='#00d4ff';
+  ctx.textAlign='center';
+  ctx.fillText(`DIST: ${rv.distDriven.toFixed(2)} km  |  SOL: ${rv.sol}`,W/2,bcy+1);
+  ctx.textAlign='left';
+}
+
+function roverTick(){
+  if(!rv.scaledWp || rv.wpIdx >= rv.scaledWp.length-1){
+    // Loop back
+    rv.wpIdx=0; rv.t=0; rv.trailPoints=[{x:rv.scaledWp[0].sx,y:rv.scaledWp[0].sy}];
+    rv.distDriven=0;
+    return;
+  }
+
+  if(rv.scanning){
+    rv.scanTimer++;
+    if(rv.scanTimer>120){ rv.scanning=false; rv.scanTimer=0; rv.wpIdx++; rv.t=0; }
+    return;
+  }
+
+  const step=0.006*rv.speed;
+  rv.t+=step;
+
+  if(rv.t>=1){
+    rv.t=1;
+    const wp=rv.scaledWp[rv.wpIdx];
+    rv.x=wp.sx; rv.y=wp.sy;
+
+    // Trigger scan if science site
+    if(wp.science || wp.sample){
+      rv.scanning=true; rv.scanTimer=0;
+    } else {
+      rv.wpIdx++; rv.t=0;
+    }
+  } else {
+    const from=rv.scaledWp[rv.wpIdx], to=rv.scaledWp[rv.wpIdx+1];
+    if(from&&to){
+      // Smooth cubic interpolation for curves
+      const t=rv.t;
+      const ease=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+      const nx=from.sx+(to.sx-from.sx)*ease;
+      const ny=from.sy+(to.sy-from.sy)*ease;
+      // Update heading
+      const dx=nx-rv.x, dy=ny-rv.y;
+      if(Math.abs(dx)+Math.abs(dy)>0.1) rv.angle=Math.atan2(dy,dx);
+      // Accumulate distance
+      rv.distDriven+=Math.sqrt(dx*dx+dy*dy)*0.012;
+      rv.x=nx; rv.y=ny;
+      // Add trail point every few frames
+      const last=rv.trailPoints[rv.trailPoints.length-1];
+      if(!last||Math.hypot(nx-last.x,ny-last.y)>4){
+        rv.trailPoints.push({x:nx,y:ny});
+        if(rv.trailPoints.length>500) rv.trailPoints.shift();
+      }
+    }
+  }
+
+  // Slowly advance sol based on distance
+  rv.sol = ROVER_DATA[rv.name].totalSols - Math.floor(rv.distDriven*3);
+}
+
+function roverLoop(){
+  if(document.getElementById('tab-rovers').classList.contains('active')){
+    if(!rv.paused){ roverTick(); }
+    drawRoverFrame();
+    updateRoverTelemetry();
+    updateWaypointList();
+  }
+  requestAnimationFrame(roverLoop);
+}
+
+function setRoverSpeed(s,btn){
+  rv.speed=s;
+  document.querySelectorAll('#tab-rovers .spd-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function switchRover(name,btn){
+  document.querySelectorAll('.rover-selector .rs-btn').forEach(b=>b.classList.remove('sel','mars-sel'));
+  btn.classList.add('mars-sel');
+  document.getElementById('rv-name-hud').textContent=ROVER_DATA[name].name.toUpperCase();
+  document.getElementById('rv-loc-hud').textContent=ROVER_DATA[name].location.toUpperCase()+', MARS';
+  initRoverScene(name);
+}
+
+function updateRoverTelemetry(){
+  const data=ROVER_DATA[rv.name];
+  const wpN=rv.scaledWp?Math.min(rv.wpIdx+1,rv.scaledWp.length-1):0;
+  const nextWp=rv.scaledWp?rv.scaledWp[wpN]:null;
+  document.getElementById('rv-sol-hud').textContent='SOL '+rv.sol;
+  document.getElementById('rv-waypoint-hud').textContent=nextWp&&nextWp.label?'Next: '+nextWp.label.replace('\n',' '):'—';
+
+  const tel=document.getElementById('rv-telemetry-row');
+  tel.innerHTML=[
+    ['DIST DRIVEN',rv.distDriven.toFixed(2)+' km','hot'],
+    ['SOL',rv.sol,'ac'],
+    ['SURFACE TEMP',data.temp,'hot'],
+    ['POWER',data.battery,'gr'],
+    ['SAMPLES',data.samples,'gd'],
+    ['STATUS',data.statusLabel, data.status==='act'?'gr':'ht'],
+  ].map(([k,v,c])=>`<div class="rt-box"><div class="rt-key">${k}</div><div class="rt-val" style="font-size:13px;color:var(--${c})">${v}</div></div>`).join('');
+}
+
+function updateWaypointList(){
+  const wps=rv.scaledWp||[];
+  document.getElementById('rv-waypoint-list').innerHTML=wps.map((wp,i)=>{
+    const visited=i<rv.wpIdx||(i===rv.wpIdx&&rv.t>0.1);
+    const active=i===rv.wpIdx;
+    const label=(wp.label||'').replace('\n',' ');
+    return`<div style="display:flex;align-items:center;gap:10px;padding:5px 8px;border-radius:6px;background:${active?'#00d4ff15':visited?'#ffffff06':'transparent'};border-left:2px solid ${active?'var(--accent)':visited?'var(--hot)':'var(--rim)'}">
+      <span style="font-size:14px">${wp.sample?'🧪':wp.science?'🔬':'📍'}</span>
+      <div style="flex:1">
+        <div style="font-family:var(--hud);font-size:10px;color:${active?'var(--accent)':visited?'var(--text)':'var(--muted)'}">${label||'Transit Point'}</div>
+        <div style="font-family:var(--mono);font-size:8px;color:var(--muted)">${wp.sample?'SAMPLE COLLECTION':wp.science?'SCIENCE TARGET':'WAYPOINT'}</div>
+      </div>
+      <span style="font-family:var(--mono);font-size:8px;color:${active?'var(--accent)':visited?'var(--green)':'var(--muted)'}">${active?'▶ ACTIVE':visited?'✓ DONE':'—'}</span>
+    </div>`;
+  }).join('');
+}
+
+function updateRoverCards(){
+  document.getElementById('rover-cards').innerHTML=Object.values(ROVER_DATA).map(r=>`
+    <div class="panel"><div class="rv-hdr"><div class="rv-ico">${r.icon}</div><div><div class="rv-name">${r.name}</div><div class="rv-st ${r.status}">${r.status==='act'?'● ACTIVE':'● COMPLETE'}</div></div></div>
+      <div class="drow"><span class="dk">LANDING</span><span class="dv">${r.landing}</span></div>
+      <div class="drow"><span class="dk">LOCATION</span><span class="dv">${r.location}</span></div>
+      <div class="drow"><span class="dk">TOTAL SOLS</span><span class="dv">${r.totalSols}</span></div>
+      <div class="drow"><span class="dk">DIST DRIVEN</span><span class="dv">${r.totalDist} km</span></div>
+    </div>`).join('');
+}
+
+// ── Init rover on load ──────────────────────────────────────
+initRoverScene('perseverance');
+roverLoop();
+window.addEventListener('resize',()=>initRoverScene(rv.name));
+
+// ════════════════════════════════════════════════════════════
+// 3D PLANET VIEWER — Three.js
+// ════════════════════════════════════════════════════════════
+let p3dRenderer=null, p3dScene=null, p3dCamera=null, p3dMesh=null, p3dRing=null;
+let p3dAnimId=null, p3dIsDragging=false, p3dLastX=0, p3dLastY=0;
+let p3dRotX=0, p3dRotY=0, p3dAutoRotate=true;
+
+const PLANET_3D_DATA = {
+  mercury:{name:'Mercury',color:0x909090,emissive:0x111111,roughness:.9,atmosphere:null,rings:false,clouds:false,axialTilt:0.03,rotSpeed:.004},
+  venus:{name:'Venus',color:0xd4a050,emissive:0x201800,roughness:.7,atmosphere:{color:0xffcc4440,size:1.08},rings:false,clouds:true,cloudColor:0xddbb8840,axialTilt:177.4*Math.PI/180,rotSpeed:.002},
+  earth:{name:'Earth',color:0x2244aa,emissive:0x000820,roughness:.6,atmosphere:{color:0x4488ff30,size:1.06},rings:false,clouds:true,cloudColor:0xffffff20,axialTilt:23.5*Math.PI/180,rotSpeed:.005},
+  mars:{name:'Mars',color:0xc1440e,emissive:0x200800,roughness:.85,atmosphere:{color:0xff884415,size:1.04},rings:false,clouds:false,axialTilt:25.2*Math.PI/180,rotSpeed:.0048},
+  jupiter:{name:'Jupiter',color:0xd4884a,emissive:0x201000,roughness:.3,atmosphere:null,rings:false,clouds:true,cloudColor:0xffaa6630,axialTilt:3.1*Math.PI/180,rotSpeed:.012},
+  saturn:{name:'Saturn',color:0xe8d070,emissive:0x201800,roughness:.4,atmosphere:null,rings:true,ringColor:0xd4b04060,clouds:false,axialTilt:26.7*Math.PI/180,rotSpeed:.011},
+  uranus:{name:'Uranus',color:0x70e8f8,emissive:0x002030,roughness:.5,atmosphere:{color:0x88eeff25,size:1.05},rings:true,ringColor:0x88eeff30,clouds:false,axialTilt:97.8*Math.PI/180,rotSpeed:.007},
+  neptune:{name:'Neptune',color:0x2050d0,emissive:0x000820,roughness:.5,atmosphere:{color:0x4466ff20,size:1.06},rings:false,clouds:true,cloudColor:0x6688ff25,axialTilt:28.3*Math.PI/180,rotSpeed:.006},
+  'proxima-b':{name:'Proxima b',color:0xd06030,emissive:0x200800,roughness:.8,atmosphere:null,rings:false,clouds:false,axialTilt:0,rotSpeed:.003},
+};
+
+function init3DPlanet(planetId){
+  const wrap = document.getElementById('planet3d-canvas-wrap');
+  wrap.innerHTML = '';
+
+  // Cleanup previous
+  if(p3dAnimId){ cancelAnimationFrame(p3dAnimId); p3dAnimId=null; }
+  if(p3dRenderer){ p3dRenderer.dispose(); p3dRenderer=null; }
+
+  const data = PLANET_3D_DATA[planetId] || PLANET_3D_DATA['mars'];
+  const W = wrap.offsetWidth || 600;
+  const H = 420;
+
+  p3dScene = new THREE.Scene();
+  p3dCamera = new THREE.PerspectiveCamera(45, W/H, 0.1, 1000);
+  p3dCamera.position.z = 3;
+
+  p3dRenderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+  p3dRenderer.setSize(W, H);
+  p3dRenderer.setPixelRatio(window.devicePixelRatio);
+  wrap.appendChild(p3dRenderer.domElement);
+
+  // Ambient + point lights
+  p3dScene.add(new THREE.AmbientLight(0x222244, 0.4));
+  const sunLight = new THREE.DirectionalLight(0xffeedd, 1.8);
+  sunLight.position.set(5, 3, 5);
+  p3dScene.add(sunLight);
+  const fillLight = new THREE.DirectionalLight(0x224466, 0.3);
+  fillLight.position.set(-5,-2,-3);
+  p3dScene.add(fillLight);
+
+  // Stars
+  const starGeo = new THREE.BufferGeometry();
+  const starVerts = [];
+  for(let i=0;i<2000;i++){
+    starVerts.push((Math.random()-.5)*400,(Math.random()-.5)*400,(Math.random()-.5)*400);
+  }
+  starGeo.setAttribute('position',new THREE.Float32BufferAttribute(starVerts,3));
+  p3dScene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color:0xffffff,size:.8,sizeAttenuation:false})));
+
+  // Planet sphere
+  const geo = new THREE.SphereGeometry(1, 64, 64);
+  const mat = new THREE.MeshStandardMaterial({
+    color: data.color,
+    emissive: data.emissive,
+    roughness: data.roughness || .7,
+    metalness: 0.1,
+  });
+  p3dMesh = new THREE.Mesh(geo, mat);
+  p3dMesh.rotation.z = data.axialTilt || 0;
+
+  // Planet group
+  const planetGroup = new THREE.Group();
+  planetGroup.add(p3dMesh);
+
+  // Texture-like surface detail
+  if(data.clouds){
+    const cloudGeo = new THREE.SphereGeometry(1.015, 32, 32);
+    const cloudMat = new THREE.MeshStandardMaterial({
+      color: data.cloudColor || 0xffffff20,
+      transparent:true, opacity:.35,
+      roughness:1, metalness:0
+    });
+    const cloudMesh = new THREE.Mesh(cloudGeo, cloudMat);
+    cloudMesh.userData.isCloud = true;
+    planetGroup.add(cloudMesh);
+  }
+
+  // Atmosphere glow
+  if(data.atmosphere){
+    const atmoGeo = new THREE.SphereGeometry(data.atmosphere.size, 32, 32);
+    const atmoMat = new THREE.MeshStandardMaterial({
+      color: data.atmosphere.color,
+      transparent:true, opacity:.25,
+      side: THREE.BackSide,
+      roughness:1
+    });
+    planetGroup.add(new THREE.Mesh(atmoGeo, atmoMat));
+  }
+
+  // Rings (Saturn/Uranus)
+  if(data.rings){
+    const ringGeo = new THREE.RingGeometry(1.4, 2.4, 80);
+    // Fix UV for ring
+    const pos = ringGeo.attributes.position;
+    const uv = ringGeo.attributes.uv;
+    for(let i=0;i<pos.count;i++){
+      const vx=pos.getX(i), vy=pos.getY(i);
+      const r=Math.sqrt(vx*vx+vy*vy);
+      uv.setXY(i,(r-1.4)/1.0, 0);
+    }
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: data.ringColor || 0xd4b040,
+      transparent:true, opacity:.5,
+      side:THREE.DoubleSide
+    });
+    p3dRing = new THREE.Mesh(ringGeo, ringMat);
+    p3dRing.rotation.x = Math.PI/2 - (data.axialTilt||0)*0.5;
+    p3dRing.rotation.z = (data.axialTilt||0)*0.3;
+    planetGroup.add(p3dRing);
+  }
+
+  p3dScene.add(planetGroup);
+  planetGroup.userData.rotSpeed = data.rotSpeed || .005;
+  planetGroup.userData.tiltGroup = true;
+
+  // Drag controls
+  const canvas3d = p3dRenderer.domElement;
+  let lastTouchX=0, lastTouchY=0;
+  canvas3d.addEventListener('mousedown',(e)=>{p3dIsDragging=true;p3dLastX=e.clientX;p3dLastY=e.clientY;p3dAutoRotate=false});
+  window.addEventListener('mouseup',()=>p3dIsDragging=false);
+  window.addEventListener('mousemove',(e)=>{
+    if(!p3dIsDragging) return;
+    const dx=e.clientX-p3dLastX, dy=e.clientY-p3dLastY;
+    planetGroup.rotation.y += dx*.01;
+    planetGroup.rotation.x += dy*.01;
+    p3dLastX=e.clientX; p3dLastY=e.clientY;
+  });
+  canvas3d.addEventListener('wheel',(e)=>{
+    p3dCamera.position.z = Math.max(1.5, Math.min(6, p3dCamera.position.z + e.deltaY*.005));
+  });
+  canvas3d.addEventListener('touchstart',(e)=>{lastTouchX=e.touches[0].clientX;lastTouchY=e.touches[0].clientY;p3dAutoRotate=false});
+  canvas3d.addEventListener('touchmove',(e)=>{
+    const dx=e.touches[0].clientX-lastTouchX, dy=e.touches[0].clientY-lastTouchY;
+    planetGroup.rotation.y+=dx*.01; planetGroup.rotation.x+=dy*.01;
+    lastTouchX=e.touches[0].clientX; lastTouchY=e.touches[0].clientY;
+  });
+
+  function animate(){
+    p3dAnimId = requestAnimationFrame(animate);
+    if(p3dAutoRotate) planetGroup.rotation.y += data.rotSpeed||.005;
+    // Animate clouds slightly faster
+    planetGroup.children.forEach(c=>{
+      if(c.userData && c.userData.isCloud) c.rotation.y += (data.rotSpeed||.005)*1.3;
+    });
+    p3dRenderer.render(p3dScene, p3dCamera);
+  }
+  animate();
+
+  window.addEventListener('resize',()=>{
+    if(!p3dRenderer) return;
+    const nW = wrap.offsetWidth;
+    p3dCamera.aspect = nW/H;
+    p3dCamera.updateProjectionMatrix();
+    p3dRenderer.setSize(nW, H);
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// PLANETS DATA & UI
+// ════════════════════════════════════════════════════════════
+const PLANETS = [
+  {id:'mercury',name:'Mercury',type:'Terrestrial',grad:'radial-gradient(circle at 35% 35%,#d4d4d4,#888 50%,#555)',diameter:'4,879 km',gravity:'3.7 m/s²',orbital:'88 days',temp:'-180 to 430°C',atmo:'Minimal',distance:'0.39 AU',moons:0,desc:'The smallest planet. Extreme temperature swings due to lack of atmosphere. Heavily cratered surface resembles the Moon.'},
+  {id:'venus',name:'Venus',type:'Terrestrial',grad:'radial-gradient(circle at 35% 35%,#f5e09a,#c8a050 50%,#8a6020)',diameter:'12,104 km',gravity:'8.87 m/s²',orbital:'225 days',temp:'462°C avg',atmo:'96.5% CO₂',distance:'0.72 AU',moons:0,desc:'Hottest planet due to runaway greenhouse effect. Thick atmosphere creates crushing 92-bar surface pressure.'},
+  {id:'earth',name:'Earth',type:'Terrestrial',grad:'radial-gradient(circle at 35% 35%,#6ab4f0,#2a7ac0 40%,#1a4a80 60%,#0d6e3a 80%)',diameter:'12,742 km',gravity:'9.8 m/s²',orbital:'365.25 days',temp:'-89 to 57°C',atmo:'78% N₂, 21% O₂',distance:'1.0 AU',moons:1,desc:'Our home — the only known planet with life. Liquid water, protective magnetosphere, and oxygen atmosphere sustain complex life.'},
+  {id:'mars',name:'Mars',type:'Terrestrial',grad:'radial-gradient(circle at 35% 35%,#e8703a,#c1440e 50%,#7a2200)',diameter:'6,779 km',gravity:'3.72 m/s²',orbital:'687 days',temp:'-63°C avg',atmo:'95% CO₂',distance:'1.52 AU',moons:2,desc:'The Red Planet. Best candidate for human colonization. Features Olympus Mons (tallest volcano), evidence of ancient water.'},
+  {id:'jupiter',name:'Jupiter',type:'Gas Giant',grad:'radial-gradient(circle at 35% 35%,#e8b860,#c07030 40%,#8a4a18 70%)',diameter:'139,820 km',gravity:'24.8 m/s²',orbital:'11.9 yr',temp:'-108°C avg',atmo:'90% H₂, 10% He',distance:'5.2 AU',moons:95,desc:'Largest planet — more massive than all others combined. Great Red Spot storm raging for centuries. Powerful magnetic field.'},
+  {id:'saturn',name:'Saturn',type:'Gas Giant',grad:'radial-gradient(circle at 35% 35%,#f5e8b0,#c8b060 40%,#9a7830)',diameter:'116,460 km',gravity:'10.4 m/s²',orbital:'29.5 yr',temp:'-178°C avg',atmo:'96% H₂',distance:'9.58 AU',moons:146,desc:'Iconic ring system of ice and rock. Least dense planet — would float on water. Moon Titan has thick nitrogen atmosphere.'},
+  {id:'uranus',name:'Uranus',type:'Ice Giant',grad:'radial-gradient(circle at 35% 35%,#b0f4ff,#50c8e0 50%,#208898)',diameter:'50,724 km',gravity:'8.69 m/s²',orbital:'84 yr',temp:'-224°C avg',atmo:'83% H₂, 15% He',distance:'19.2 AU',moons:28,desc:'Rotates on its side (98° tilt) from ancient collision. Blue-green methane atmosphere. Most extreme seasons in solar system.'},
+  {id:'neptune',name:'Neptune',type:'Ice Giant',grad:'radial-gradient(circle at 35% 35%,#6090ff,#2050c0 50%,#1030a0)',diameter:'49,244 km',gravity:'11.15 m/s²',orbital:'164.8 yr',temp:'-214°C avg',atmo:'80% H₂',distance:'30.07 AU',moons:16,desc:'Strongest winds in solar system (2,100+ km/h). Moon Triton orbits backward — likely a captured Kuiper Belt object.'},
+  {id:'proxima-b',name:'Proxima b',type:'Exoplanet',grad:'radial-gradient(circle at 35% 35%,#ffb880,#e06030 50%,#903010)',diameter:'~14,000 km',gravity:'~11 m/s²',orbital:'11.2 days',temp:'-39°C est.',atmo:'Unknown',distance:'4.24 ly',moons:'?',desc:'Nearest exoplanet in habitable zone of Proxima Centauri. Likely tidally locked with one face perpetually sunlit.'},
+  {id:'kepler-22b',name:'Kepler-22b',type:'Exoplanet',grad:'radial-gradient(circle at 35% 35%,#a0c4ff,#4070d0 50%,#204080)',diameter:'~30,000 km',gravity:'Unknown',orbital:'290 days',temp:'~22°C est.',atmo:'Unknown',distance:'620 ly',moons:'?',desc:'First Kepler exoplanet in a stellar habitable zone. Estimated temperate surface conditions suggest possible liquid water.'},
+];
+
+let selectedPlanet = null;
+
+function buildPlanetGrid(){
+  const g=document.getElementById('planet-grid'); g.innerHTML='';
+  PLANETS.forEach(p=>{
+    const d=document.createElement('div');
+    d.className='ptile'+(selectedPlanet===p.id?' sel':'');
+    d.innerHTML=`<div class="pball" style="background:${p.grad}"></div><div class="pname">${p.name}</div><div class="ptype">${p.type}</div>`;
+    d.onclick=()=>{ selectedPlanet=selectedPlanet===p.id?null:p.id; buildPlanetGrid(); showPlanetDetail(); };
+    g.appendChild(d);
+  });
+}
+
+function showPlanetDetail(){
+  const wrap=document.getElementById('planet-detail-wrap');
+  const hint=document.getElementById('planet-hint');
+  const p3dSec=document.getElementById('planet3d-section');
+  if(!selectedPlanet){ wrap.innerHTML=''; hint.style.display=''; p3dSec.style.display='none'; return; }
+  hint.style.display='none';
+  const p=PLANETS.find(x=>x.id===selectedPlanet);
+  wrap.innerHTML=`
+    <div class="pdetail">
+      <div class="pd-hdr">
+        <div class="pd-ball" style="background:${p.grad}"></div>
+        <div><div class="pd-name">${p.name}</div><div class="pd-type">${p.type}</div></div>
+      </div>
+      <p class="pd-desc">${p.desc}</p>
+      <div class="sgrid">
+        <div class="sbox"><div class="sval">${p.diameter}</div><div class="skey">DIAMETER</div></div>
+        <div class="sbox"><div class="sval">${p.gravity}</div><div class="skey">GRAVITY</div></div>
+        <div class="sbox"><div class="sval">${p.orbital}</div><div class="skey">ORBITAL PERIOD</div></div>
+        <div class="sbox"><div class="sval">${p.temp}</div><div class="skey">TEMPERATURE</div></div>
+        <div class="sbox"><div class="sval">${p.distance}</div><div class="skey">FROM SUN</div></div>
+        <div class="sbox"><div class="sval">${p.moons}</div><div class="skey">MOONS</div></div>
+        <div class="sbox" style="grid-column:1/-1"><div class="sval" style="font-size:11px">${p.atmo}</div><div class="skey">ATMOSPHERE</div></div>
+      </div>
+      <button class="view3d-btn" onclick="open3DViewer('${p.id}','${p.name}')">🔭 VIEW IN 3D</button>
+    </div>`;
+}
+
+function open3DViewer(id, name){
+  const sec=document.getElementById('planet3d-section');
+  sec.style.display='block';
+  document.getElementById('p3d-planet-name').innerHTML=`${name} <span>3D Model</span>`;
+  init3DPlanet(id);
+  const data=PLANET_3D_DATA[id]||{};
+  document.getElementById('p3d-controls').innerHTML=`
+    <button class="p3d-btn" onclick="p3dAutoRotate=!p3dAutoRotate;this.classList.toggle('sel')">⏸ AUTO-ROTATE</button>
+    <button class="p3d-btn" onclick="p3dCamera&&(p3dCamera.position.z=3)">🔭 RESET VIEW</button>
+    <span style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-left:8px">DRAG TO ROTATE · SCROLL TO ZOOM</span>`;
+  sec.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+buildPlanetGrid();
+
+// ════════════════════════════════════════════════════════════
+// SOLAR SYSTEM
+// ════════════════════════════════════════════════════════════
+const SP=[
+  {name:'Mercury',r:28,sz:5,color:'#a0a0a0',period:.24,angle:0,info:{dist:'0.39 AU',period:'88 days',moons:0}},
+  {name:'Venus',r:50,sz:9,color:'#e8c87a',period:.62,angle:60,info:{dist:'0.72 AU',period:'225 days',moons:0}},
+  {name:'Earth',r:74,sz:10,color:'#4a90d9',period:1,angle:120,info:{dist:'1.0 AU',period:'365 days',moons:1}},
+  {name:'Mars',r:98,sz:7,color:'#c1440e',period:1.88,angle:200,info:{dist:'1.52 AU',period:'687 days',moons:2}},
+  {name:'Jupiter',r:146,sz:20,color:'#c88b3a',period:11.86,angle:280,info:{dist:'5.2 AU',period:'11.9 yr',moons:95}},
+  {name:'Saturn',r:190,sz:16,color:'#e8d090',period:29.5,angle:40,info:{dist:'9.58 AU',period:'29.5 yr',moons:146}},
+  {name:'Uranus',r:224,sz:12,color:'#7de8f8',period:84,angle:150,info:{dist:'19.2 AU',period:'84 yr',moons:28}},
+  {name:'Neptune',r:252,sz:11,color:'#3060d8',period:164.8,angle:320,info:{dist:'30.07 AU',period:'164.8 yr',moons:16}},
+];
+const solarAngles=SP.map(p=>p.angle);
+let solarSpeed=1, solarInit=false;
+const solPlanetEls=[],solLabelEls=[];
+
+function startSolar(){
+  if(solarInit) return; solarInit=true;
+  const wrap=document.getElementById('solar-wrap');
+  SP.forEach((p,i)=>{
+    const ring=document.createElement('div'); ring.className='oring';
+    ring.style.cssText=`width:${p.r*2}px;height:${p.r*2}px`; wrap.appendChild(ring);
+    const el=document.createElement('div'); el.className='oplanet';
+    el.title=p.name;
+    el.style.cssText=`width:${p.sz}px;height:${p.sz}px;background:${p.color};box-shadow:0 0 ${p.sz}px ${p.color}80`;
+    el.onclick=()=>showSolarPlanetInfo(p);
+    wrap.appendChild(el); solPlanetEls.push(el);
+    const lbl=document.createElement('div'); lbl.className='oplbl';
+    lbl.textContent=p.name; wrap.appendChild(lbl); solLabelEls.push(lbl);
+  });
+  animSolar();
+}
+
+function animSolar(){
+  const wrap=document.getElementById('solar-wrap');
+  if(!wrap || !document.getElementById('tab-solar').classList.contains('active')){ requestAnimationFrame(animSolar); return; }
+  const W=wrap.offsetWidth, H=wrap.offsetHeight, cx=W/2, cy=H/2;
+  SP.forEach((p,i)=>{
+    solarAngles[i]=(solarAngles[i]+(360/(p.period*365))*solarSpeed*.5)%360;
+    const rad=solarAngles[i]*Math.PI/180;
+    const sc=Math.min(W/560,H/460,.98);
+    const x=cx+p.r*Math.cos(rad)*sc;
+    const y=cy+p.r*Math.sin(rad)*.45*sc;
+    if(solPlanetEls[i]){ solPlanetEls[i].style.left=x+'px'; solPlanetEls[i].style.top=y+'px'; solPlanetEls[i].style.transform='translate(-50%,-50%)'; }
+    if(solLabelEls[i]){ solLabelEls[i].style.left=x+'px'; solLabelEls[i].style.top=(y+p.sz/2+5)+'px'; }
+  });
+  requestAnimationFrame(animSolar);
+}
+
+function setSolarSpeed(v,btn){
+  solarSpeed=v;
+  document.querySelectorAll('.spd-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function showSolarPlanetInfo(p){
+  const box=document.getElementById('solar-planet-info');
+  document.getElementById('spi-name').textContent=p.name.toUpperCase()+' — ORBITAL DATA';
+  document.getElementById('spi-stats').innerHTML=`
+    <div><span style="font-family:var(--mono);font-size:9px;color:var(--muted)">DISTANCE: </span><span style="font-family:var(--hud);font-size:14px;color:var(--accent)">${p.info.dist}</span></div>
+    <div><span style="font-family:var(--mono);font-size:9px;color:var(--muted)">PERIOD: </span><span style="font-family:var(--hud);font-size:14px;color:var(--accent)">${p.info.period}</span></div>
+    <div><span style="font-family:var(--mono);font-size:9px;color:var(--muted)">MOONS: </span><span style="font-family:var(--hud);font-size:14px;color:var(--gold)">${p.info.moons}</span></div>`;
+  box.style.display='block';
+}
+function showSunInfo(){
+  const box=document.getElementById('solar-planet-info');
+  document.getElementById('spi-name').textContent='THE SUN — STELLAR DATA';
+  document.getElementById('spi-stats').innerHTML=`
+    <div><span style="font-family:var(--mono);font-size:9px;color:var(--muted)">TYPE: </span><span style="font-family:var(--hud);font-size:13px;color:var(--gold)">G2V Yellow Dwarf</span></div>
+    <div><span style="font-family:var(--mono);font-size:9px;color:var(--muted)">DIAMETER: </span><span style="font-family:var(--hud);font-size:13px;color:var(--accent)">1,391,000 km</span></div>
+    <div><span style="font-family:var(--mono);font-size:9px;color:var(--muted)">SURFACE TEMP: </span><span style="font-family:var(--hud);font-size:13px;color:var(--hot)">5,778 K</span></div>`;
+  box.style.display='block';
+}
+
+// ════════════════════════════════════════════════════════════
+// ASTEROID TRACKER
+// ════════════════════════════════════════════════════════════
+const ASTEROIDS=[
+  {name:'(2024 YR4)',dist:0.0028,size:40,speed:22.4,hazard:true,approach:'Mar 22, 2025',angle:15},
+  {name:'(2020 NK1)',dist:0.012,size:220,speed:18.1,hazard:false,approach:'Apr 5, 2025',angle:82},
+  {name:'(4179) Toutatis',dist:0.031,size:4600,speed:10.2,hazard:false,approach:'May 18, 2025',angle:148},
+  {name:'(99942) Apophis',dist:0.068,size:370,speed:7.4,hazard:false,approach:'Apr 13, 2029',angle:210},
+  {name:'(2023 DZ2)',dist:0.108,size:50,speed:31.2,hazard:false,approach:'Jun 7, 2025',angle:270},
+  {name:'(2011 AG5)',dist:0.17,size:140,speed:15.8,hazard:false,approach:'Feb 3, 2040',angle:330},
+];
+
+function drawAsteroidViz(){
+  const canvas=document.getElementById('asteroid-canvas');
+  if(!canvas) return;
+  const W=canvas.offsetWidth||800; canvas.width=W; canvas.height=360;
+  const H=360; const ctx=canvas.getContext('2d');
+  const cx=W/2, cy=H/2;
+
+  ctx.clearRect(0,0,W,H);
+  // Background
+  ctx.fillStyle='#020409'; ctx.fillRect(0,0,W,H);
+
+  // Stars
+  for(let i=0;i<200;i++){
+    const sx=Math.random()*W, sy=Math.random()*H;
+    ctx.beginPath(); ctx.arc(sx,sy,.8,0,Math.PI*2);
+    ctx.fillStyle=`rgba(255,255,255,${Math.random()*.6+.1})`; ctx.fill();
+  }
+
+  // Earth
+  const earthGrad=ctx.createRadialGradient(cx-8,cy-8,2,cx,cy,28);
+  earthGrad.addColorStop(0,'#6ab4f0'); earthGrad.addColorStop(.4,'#2a7ac0'); earthGrad.addColorStop(1,'#1a4a80');
+  ctx.beginPath(); ctx.arc(cx,cy,28,0,Math.PI*2);
+  ctx.fillStyle=earthGrad; ctx.fill();
+  ctx.strokeStyle='#4a90d960'; ctx.lineWidth=2; ctx.stroke();
+
+  // Moon
+  const moonA=Date.now()/80000;
+  const moonX=cx+Math.cos(moonA)*55, moonY=cy+Math.sin(moonA)*20;
+  ctx.beginPath(); ctx.arc(moonX,moonY,6,0,Math.PI*2);
+  ctx.fillStyle='#a0a0a0'; ctx.fill();
+
+  // Distance rings
+  [0.05,0.1,0.2].forEach((r,i)=>{
+    const ring_r=40+(i+1)*90;
+    ctx.beginPath(); ctx.arc(cx,cy,ring_r,0,Math.PI*2);
+    ctx.strokeStyle='#ffffff08'; ctx.lineWidth=1; ctx.stroke();
+    ctx.fillStyle='#ffffff20'; ctx.font='8px Share Tech Mono,monospace';
+    ctx.fillText((i===0?'0.05':(i===1?'0.1':'0.2'))+' AU',cx+ring_r+4,cy+3);
+  });
+
+  // Asteroids
+  ASTEROIDS.forEach((a,i)=>{
+    const distScale=40+a.dist*1200;
+    const angle=(a.angle+Date.now()/2000)*Math.PI/180;
+    const ax=cx+Math.cos(angle)*Math.min(distScale,W*.44);
+    const ay=cy+Math.sin(angle)*Math.min(distScale,H*.44);
+    const sz=Math.max(2,Math.min(12,Math.log10(a.size)*2.5));
+
+    // Trajectory line
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(ax,ay);
+    ctx.strokeStyle=a.hazard?'#ff244430':'#ffffff10'; ctx.lineWidth=.5; ctx.stroke();
+
+    // Asteroid
+    ctx.beginPath(); ctx.arc(ax,ay,sz,0,Math.PI*2);
+    ctx.fillStyle=a.hazard?'#ff4455':'#c8a060'; ctx.fill();
+    if(a.hazard){
+      ctx.beginPath(); ctx.arc(ax,ay,sz+4,0,Math.PI*2);
+      ctx.strokeStyle='#ff445550'; ctx.lineWidth=1; ctx.stroke();
+    }
+    ctx.fillStyle='#ffffffaa'; ctx.font='8px Share Tech Mono,monospace';
+    ctx.fillText(a.name,ax+sz+4,ay+3);
+  });
+
+  // Legend
+  ctx.fillStyle='#ffffff40'; ctx.font='9px Share Tech Mono,monospace';
+  ctx.fillText('● Potentially Hazardous (red)   ● Safe approach (tan)',14,H-12);
+
+  // Render list
+  const list=document.getElementById('ast-list');
+  list.innerHTML=ASTEROIDS.map(a=>`
+    <div class="ast-item ${a.hazard?'ast-hazard':''}">
+      <div style="font-size:20px">${a.hazard?'☄️':'🪨'}</div>
+      <div style="flex:1">
+        <div class="ast-name">${a.name}</div>
+        <div class="ast-meta">Size: ~${a.size}m · Speed: ${a.speed} km/s · Close approach: ${a.approach}</div>
+        <span class="ast-badge ${a.hazard?'ab-hazard':'ab-safe'}">${a.hazard?'⚠ POTENTIALLY HAZARDOUS':'✓ SAFE APPROACH'}</span>
+      </div>
+      <div>
+        <div class="ast-dist ${a.dist<0.05?'close':''}">${a.dist} AU</div>
+        <div style="font-family:var(--mono);font-size:8px;color:var(--muted);text-align:right">${(a.dist*149.6).toFixed(1)}M km</div>
+      </div>
+    </div>`).join('');
+}
+
+// Animate asteroid canvas
+function astLoop(){
+  if(document.getElementById('tab-asteroid').classList.contains('active')) drawAsteroidViz();
+  requestAnimationFrame(astLoop);
+}
+astLoop();
+
+// ════════════════════════════════════════════════════════════
+// KP CHART
+// ════════════════════════════════════════════════════════════
+function drawKpChart(){
+  const canvas=document.getElementById('kp-chart'); if(!canvas) return;
+  canvas.width=canvas.offsetWidth||600; canvas.height=80;
+  const W=canvas.width, H=canvas.height; const ctx=canvas.getContext('2d');
+  // Generate 24h of KP data
+  const kpData=[1.3,1.7,2.1,2.8,3.2,2.9,2.4,2.1,1.8,1.5,1.3,1.6,2.0,2.3,2.7,3.0,2.8,2.5,2.3,2.0,1.8,2.1,2.3,2.3];
+  const step=W/kpData.length;
+  ctx.fillStyle='#020409'; ctx.fillRect(0,0,W,H);
+  // Grid
+  [3,6,9].forEach(v=>{
+    const y=H-v/9*H;
+    ctx.strokeStyle='#ffffff08'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+    ctx.fillStyle='#ffffff30'; ctx.font='8px Share Tech Mono,monospace';
+    ctx.fillText('Kp'+v,4,y-2);
+  });
+  // Fill
+  ctx.beginPath(); ctx.moveTo(0,H);
+  kpData.forEach((v,i)=>ctx.lineTo(i*step+step/2, H-v/9*H));
+  ctx.lineTo(W,H); ctx.closePath();
+  const grad=ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'#00d4ff40'); grad.addColorStop(1,'#00d4ff05');
+  ctx.fillStyle=grad; ctx.fill();
+  // Line
+  ctx.beginPath(); ctx.moveTo(0,H-kpData[0]/9*H);
+  kpData.forEach((v,i)=>ctx.lineTo(i*step+step/2,H-v/9*H));
+  ctx.strokeStyle='#00d4ff'; ctx.lineWidth=2; ctx.stroke();
+  // Hour labels
+  ctx.fillStyle='#ffffff30'; ctx.font='7px Share Tech Mono,monospace';
+  [0,6,12,18,23].forEach(i=>ctx.fillText(i+'h',i*step,H-2));
+}
+
+// ════════════════════════════════════════════════════════════
+// GAME
+// ════════════════════════════════════════════════════════════
+const GMISSIONS=[
+  {title:'MISSION LAUNCH: Ares IV',scene:'Mission Commander aboard Ares IV — humanity\'s first crewed Mars transit. T-10 minutes to launch. 847 systems nominal.',choices:[
+    {text:'Run final systems diagnostic',result:'All systems green. Launch proceeds flawlessly.',fuel:0,hull:0,power:0},
+    {text:'Brief crew on abort protocols',result:'Crew briefed. Morale high. "Let\'s make history," whispers your pilot.',fuel:0,hull:0,power:0},
+    {text:'Request GO/NO-GO from Houston',result:'"Ares IV, you are GO for launch." Houston erupts in cheers.',fuel:8,hull:0,power:0},
+  ]},
+  {title:'DEEP SPACE — DAY 48',scene:'Earth is a bright dot. A micrometeor strike damaged the port solar array. Power dropping.',choices:[
+    {text:'EVA repair of solar panel',result:'3-hour EVA. Eerie silence of deep space. Panel repaired successfully.',fuel:0,hull:-8,power:0},
+    {text:'Reroute science instrument power',result:'Science team unhappy but life support stable. +15 power rerouted.',fuel:0,hull:0,power:8},
+    {text:'Deploy backup capacitor array',result:'Emergency reserves engaged. 90-day buffer secured.',fuel:0,hull:0,power:5},
+  ]},
+  {title:'MARS ORBITAL INSERTION',scene:'7 months, 480M km. Mars fills your viewport. Insertion burn in T-3 minutes. Single chance.',choices:[
+    {text:'Trust AI autopilot (Athena-7)',result:'Flawless burn. Perfect 400km orbit achieved. Crew celebrates.',fuel:0,hull:0,power:0},
+    {text:'Manual override',result:'Hands steady. 99.7% nominal burn. Crew gives standing ovation.',fuel:0,hull:0,power:0},
+    {text:'Request JPL trajectory correction',result:'0.4° correction saves 200kg fuel. Precise insertion.',fuel:12,hull:0,power:0},
+  ]},
+  {title:'SURFACE LANDING',scene:'Jezero Crater below. EDL sequence starts. 7 minutes of terror. Heat shield glowing.',choices:[
+    {text:'Full automated EDL',result:'Sky crane deploys flawlessly. Wheels touch Martian soil. You\'ve landed on Mars.',fuel:0,hull:0,power:0},
+    {text:'Semi-manual guidance',result:'You guide through dust storm. Extra burn needed but safe touchdown.',fuel:-8,hull:0,power:0},
+    {text:'Abort and re-enter next orbit',result:'Extra orbit costs fuel but better weather window secured.',fuel:-5,hull:5,power:0},
+  ]},
+];
+
+let gs={idx:0,fuel:100,hull:100,power:100,score:0};
+
+function updateGHUD(){
+  document.getElementById('g-mnum').textContent=(gs.idx+1)+'/'+GMISSIONS.length;
+  document.getElementById('g-score').textContent=gs.score;
+  ['fuel','hull','power'].forEach(k=>{
+    const v=Math.max(0,gs[k]);
+    document.getElementById('g-'+k+'-pct').textContent=v+'%';
+    document.getElementById('g-'+k+'-bar').style.width=v+'%';
+  });
+}
+
+function addLog(msg){
+  const log=document.getElementById('g-log');
+  const line=document.createElement('div'); line.className='glog-line'; line.textContent=msg;
+  log.appendChild(line); log.scrollTop=log.scrollHeight;
+}
+
+function handleChoice(c){
+  addLog('You chose: '+c.text); addLog(c.result);
+  gs.fuel=Math.min(100,Math.max(0,gs.fuel+c.fuel));
+  gs.hull=Math.min(100,Math.max(0,gs.hull+c.hull));
+  gs.power=Math.min(100,Math.max(0,gs.power+c.power));
+  gs.score+=150+Math.floor(gs.hull); gs.idx++;
+  updateGHUD();
+  if(gs.idx>=GMISSIONS.length){
+    document.getElementById('g-title').textContent='🏆 MISSION ACCOMPLISHED';
+    document.getElementById('g-scene').textContent=`You landed humans on Mars for the first time in history. Final score: ${gs.score} pts.`;
+    document.getElementById('g-event-box').style.borderColor='var(--gold)';
+    document.getElementById('g-title').style.color='var(--gold)';
+    addLog('🎉 MISSION COMPLETE. You are now a legend of space exploration. Score: '+gs.score);
+    document.getElementById('g-choices').innerHTML='<button class="btn-ac" onclick="resetGame()">LAUNCH NEW MISSION</button>';
+    return;
+  }
+  const m=GMISSIONS[gs.idx];
+  document.getElementById('g-title').textContent=m.title;
+  document.getElementById('g-scene').textContent=m.scene;
+  renderChoices();
+}
+
+function renderChoices(){
+  if(gs.idx>=GMISSIONS.length) return;
+  document.getElementById('g-choices').innerHTML=GMISSIONS[gs.idx].choices.map((c,i)=>
+    `<button class="gchoice" onclick='handleChoice(${JSON.stringify(c)})'>${c.text}</button>`).join('');
+}
+
+function resetGame(){
+  gs={idx:0,fuel:100,hull:100,power:100,score:0};
+  updateGHUD();
+  const m=GMISSIONS[0];
+  document.getElementById('g-title').textContent=m.title;
+  document.getElementById('g-scene').textContent=m.scene;
+  document.getElementById('g-event-box').style.borderColor='var(--accent)';
+  document.getElementById('g-title').style.color='var(--accent)';
+  document.getElementById('g-log').innerHTML='<div class="glog-line">Mission Control: All systems nominal. Ready for launch sequence.</div>';
+  renderChoices();
+}
+updateGHUD(); renderChoices();
+</script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+/* Which edition of Claude Blocks this is. The build scripts (build/build.mjs) replace this file.
+   'full'    — desktop apps and the local server: everything.
+   'android' — the Android / Chromebook app: everything except the computer terminal and network scan.
+   'web'     — the website version: blocks and code only (no HTML/CSS/JS export, terminal or real Pi). */
+window.CB_EDITION = 'web';
+// Version and download website, filled in by the build (see build/config.json). 'dev' = running from source.
+window.CB_VERSION = '1.2.0';
+window.CB_SITE = "http://localhost:8642/website";
+// Libraries bundled with packaged apps (so they work offline). Empty = load from the internet.
+window.CB_VENDOR = ["https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css","https://unpkg.com/blockly@10.4.3/blockly_compressed.js","https://unpkg.com/blockly@10.4.3/blocks_compressed.js","https://unpkg.com/blockly@10.4.3/javascript_compressed.js","https://unpkg.com/blockly@10.4.3/msg/en.js","https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js","https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js","https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js","https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js","https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js","https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js","https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js","https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js","https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closetag.min.js","https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js","https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js","https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js","https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.min.js","https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.min.js","https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css"];
+window.CB_ASSET = url => (window.CB_VENDOR.includes(url) ? 'vendor/' + url.replace(/^https:\/\//, '') : url);

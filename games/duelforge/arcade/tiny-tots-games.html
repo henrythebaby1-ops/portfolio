@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PixelSprout Tiny Tots | Ages 1-4</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chewy&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="tiny-tots-games.css" />
+</head>
+<body data-app="tiny-tots">
+  <main class="shell">
+    <header class="hero">
+      <p class="eyebrow">Ages 1-4 Play Zone</p>
+      <h1>Tiny Tots Game Garden</h1>
+      <p>Large buttons, simple goals, colorful low-poly style, and gentle music.</p>
+      <div class="row">
+        <a class="btn soft" href="index.html">Back to Arcade</a>
+        <a class="btn soft" href="kids-games.html">Go to Ages 1-10</a>
+        <button class="btn primary" type="button" data-music-toggle>Play Music</button>
+      </div>
+      <p class="note" data-music-status>Music is paused.</p>
+    </header>
+
+    <section class="card" id="color-tap">
+      <h2>Color Tap Parade</h2>
+      <p>Tap only the target color.</p>
+      <div class="row">
+        <button class="btn primary" data-color-start type="button">Start</button>
+        <span class="pill" data-color-target>Target: Pink</span>
+        <span class="pill" data-color-score>Score: 0</span>
+      </div>
+      <div class="grid" data-color-grid></div>
+    </section>
+
+    <section class="card" id="bubble-count">
+      <h2>Bubble Count</h2>
+      <p>Count bubbles and pick the right number.</p>
+      <div class="row">
+        <button class="btn primary" data-bubble-start type="button">New Round</button>
+        <span class="pill" data-bubble-score>Correct: 0</span>
+      </div>
+      <div class="bubble-view" data-bubble-view></div>
+      <div class="row" data-bubble-options></div>
+    </section>
+
+    <section class="card" id="nursery-piano">
+      <h2>Nursery Piano</h2>
+      <p>Tap keys to make happy sounds.</p>
+      <div class="row" data-piano-keys>
+        <button class="key" data-note="261.63" type="button">Do</button>
+        <button class="key" data-note="293.66" type="button">Re</button>
+        <button class="key" data-note="329.63" type="button">Mi</button>
+        <button class="key" data-note="349.23" type="button">Fa</button>
+        <button class="key" data-note="392" type="button">So</button>
+      </div>
+    </section>
+
+    <section class="card" id="icon-match">
+      <h2>Icon Match</h2>
+      <p>Tap the same icon shown in the prompt.</p>
+      <div class="row">
+        <button class="btn primary" data-emoji-start type="button">Start</button>
+        <span class="pill" data-emoji-target>Find: Sun</span>
+        <span class="pill" data-emoji-score>Streak: 0</span>
+      </div>
+      <div class="grid" data-emoji-grid></div>
+    </section>
+
+    <section class="card" id="pond-tap">
+      <h2>Pond Tap</h2>
+      <p>Tap fish and ducks when they appear.</p>
+      <div class="row">
+        <button class="btn primary" data-pond-start type="button">Start Pond Game</button>
+        <span class="pill" data-pond-score>Caught: 0</span>
+        <span class="pill" data-pond-time>Time: 20</span>
+      </div>
+      <div class="pond" data-pond>
+        <button class="swim swim-fish" data-pond-swim type="button"></button>
+      </div>
+    </section>
+  </main>
+
+  <script src="tiny-tots-games.js"></script>
+</body>
+</html>

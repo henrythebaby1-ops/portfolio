@@ -1,0 +1,357 @@
+:root {
+  --bg: #07111e;
+  --bg-soft: rgba(13, 24, 42, 0.82);
+  --card: rgba(12, 23, 40, 0.9);
+  --card-strong: rgba(20, 34, 57, 0.96);
+  --line: rgba(167, 194, 255, 0.16);
+  --text: #f4f7fb;
+  --muted: #90a4c8;
+  --accent: #72f0c6;
+  --accent-strong: #29c18f;
+  --danger: #ff5f7a;
+  --danger-strong: #ff3d5d;
+  --shadow: 0 24px 80px rgba(0, 0, 0, 0.38);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Avenir Next", "Trebuchet MS", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top, rgba(72, 130, 255, 0.28), transparent 30%),
+    radial-gradient(circle at bottom left, rgba(12, 196, 155, 0.16), transparent 32%),
+    linear-gradient(180deg, #06101b 0%, #0a1423 52%, #08101a 100%);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.app-shell {
+  width: min(100%, 440px);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 24px 18px 28px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: 0.7rem;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 2rem;
+}
+
+.ghost-button,
+.pill-button,
+.icon-button,
+.key,
+.control-button,
+.secondary-call-button,
+.call-button,
+.end-button {
+  border: 0;
+  cursor: pointer;
+}
+
+.ghost-button,
+.pill-button,
+.icon-button,
+.key,
+.control-button,
+.secondary-call-button {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line);
+}
+
+.ghost-button {
+  padding: 10px 14px;
+  border-radius: 999px;
+}
+
+.screen {
+  display: grid;
+  gap: 18px;
+}
+
+.hero-card,
+.dialer-panel,
+.list-card,
+.overlay-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(16px);
+}
+
+.hero-card {
+  padding: 20px;
+  border-radius: 28px;
+}
+
+.hero-label,
+.sub-text,
+.status-text {
+  color: var(--muted);
+}
+
+.display-number {
+  margin: 14px 0 18px;
+  font-size: 2rem;
+  font-weight: 700;
+  min-height: 48px;
+  word-break: break-word;
+}
+
+.quick-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.pill-button {
+  padding: 11px 15px;
+  border-radius: 999px;
+  flex: 1;
+}
+
+.pill-button.active,
+.control-button.active {
+  background: rgba(114, 240, 198, 0.18);
+  border-color: rgba(114, 240, 198, 0.45);
+}
+
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+.dialer-panel,
+.list-card {
+  border-radius: 30px;
+  padding: 18px;
+}
+
+.number-input-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+#numberInput {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+}
+
+#numberInput::placeholder {
+  color: #7f92b4;
+}
+
+.icon-button {
+  width: 52px;
+  border-radius: 18px;
+}
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.key {
+  min-height: 78px;
+  border-radius: 24px;
+  display: grid;
+  place-items: center;
+  padding: 8px;
+}
+
+.key span {
+  display: block;
+  font-size: 1.7rem;
+  font-weight: 700;
+}
+
+.key small {
+  color: var(--muted);
+  letter-spacing: 0.14em;
+}
+
+.call-button,
+.end-button {
+  width: 100%;
+  min-height: 60px;
+  border-radius: 999px;
+  font-weight: 700;
+  color: #04110d;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+}
+
+.call-button {
+  margin-top: 18px;
+}
+
+.call-button.accept {
+  margin-top: 0;
+}
+
+.secondary-call-button {
+  min-height: 56px;
+  border-radius: 999px;
+  padding: 0 24px;
+}
+
+.contact-item,
+.recent-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(167, 194, 255, 0.12);
+}
+
+.contact-item:last-child,
+.recent-item:last-child {
+  border-bottom: 0;
+}
+
+.avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  color: #051019;
+  background: linear-gradient(135deg, #74ecff 0%, #72f0c6 100%);
+}
+
+.contact-meta,
+.recent-meta {
+  flex: 1;
+}
+
+.contact-name,
+.recent-name {
+  font-weight: 700;
+}
+
+.contact-number,
+.recent-time {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.mini-call {
+  padding: 10px 14px;
+  border-radius: 999px;
+  color: #04110d;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(3, 8, 14, 0.72);
+  backdrop-filter: blur(22px);
+}
+
+.overlay.hidden,
+.incoming.hidden {
+  display: none;
+}
+
+.overlay-card {
+  width: min(100%, 380px);
+  padding: 28px 22px;
+  border-radius: 34px;
+  text-align: center;
+  background:
+    radial-gradient(circle at top, rgba(114, 240, 198, 0.18), transparent 30%),
+    var(--card-strong);
+}
+
+.overlay-card h2 {
+  font-size: 2rem;
+  margin-top: 8px;
+}
+
+.timer {
+  margin: 20px 0 28px;
+  font-size: 2.6rem;
+  font-weight: 700;
+}
+
+.call-controls,
+.call-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.call-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 20px;
+}
+
+.control-button {
+  min-height: 60px;
+  border-radius: 22px;
+}
+
+.end-button {
+  margin-top: 20px;
+  color: white;
+  background: linear-gradient(135deg, var(--danger) 0%, var(--danger-strong) 100%);
+}
+
+@media (max-width: 480px) {
+  .app-shell {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .display-number {
+    font-size: 1.65rem;
+  }
+
+  .key {
+    min-height: 72px;
+  }
+}

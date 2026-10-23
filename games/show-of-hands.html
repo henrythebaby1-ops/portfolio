@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHOW OF HANDS — Gesture Arcade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0e0c;
+    --panel:#111713;
+    --panel2:#151c17;
+    --line:#25322b;
+    --text:#e8ece7;
+    --muted:#87988e;
+    --accent:#39ff88;
+    --accent-dim:#1f8f52;
+    --accent2:#ffb84d;
+    --danger:#ff5d5d;
+    --mono:'IBM Plex Mono', monospace;
+    --sans:'IBM Plex Sans', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 3px),
+      radial-gradient(ellipse at 20% -10%, #12251a 0%, var(--bg) 45%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--accent);color:#04140a;}
+  a{color:inherit;}
+
+  .scanline-overlay{
+    pointer-events:none;
+    position:fixed; inset:0;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px, rgba(0,0,0,0.06) 3px);
+    z-index:9999;
+    mix-blend-mode:overlay;
+    opacity:.5;
+  }
+
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:22px 32px;
+    border-bottom:1px solid var(--line);
+    position:sticky; top:0; z-index:50;
+    background:rgba(11,14,12,0.85);
+    backdrop-filter:blur(6px);
+  }
+  .brand{
+    font-family:var(--mono); font-weight:700; letter-spacing:0.04em;
+    font-size:15px; display:flex; align-items:center; gap:10px; cursor:pointer;
+  }
+  .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse 2s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+  nav{font-family:var(--mono); font-size:12px; color:var(--muted); letter-spacing:.08em;}
+
+  main{max-width:1080px; margin:0 auto; padding:0 32px 80px;}
+
+  /* ---------- HOME ---------- */
+  .hero{
+    padding:72px 0 40px;
+    display:grid; grid-template-columns:1.1fr .9fr; gap:48px; align-items:center;
+  }
+  .eyebrow{
+    font-family:var(--mono); font-size:12px; color:var(--accent); letter-spacing:.15em;
+    display:flex; align-items:center; gap:10px; margin-bottom:18px;
+  }
+  .eyebrow::before{content:'';width:22px;height:1px;background:var(--accent);}
+  h1{
+    font-family:var(--mono); font-size:clamp(36px,5vw,58px); line-height:1.02; letter-spacing:-0.01em;
+    margin:0 0 20px; font-weight:700;
+  }
+  h1 span{color:var(--accent);}
+  .lede{color:var(--muted); font-size:16px; line-height:1.6; max-width:46ch; margin-bottom:28px;}
+  .cta-row{display:flex; gap:14px; flex-wrap:wrap;}
+  .btn{
+    font-family:var(--mono); font-size:13px; letter-spacing:.04em; font-weight:600;
+    padding:13px 22px; border-radius:2px; border:1px solid var(--accent); color:#04140a;
+    background:var(--accent); cursor:pointer; transition:all .15s ease;
+  }
+  .btn:hover{background:var(--accent2); border-color:var(--accent2);}
+  .btn.ghost{background:transparent; color:var(--text); border-color:var(--line);}
+  .btn.ghost:hover{border-color:var(--muted); color:var(--accent);}
+  .btn:disabled{opacity:.4; cursor:not-allowed;}
+
+  .viewfinder{
+    position:relative; aspect-ratio:4/3; border:1px solid var(--line); background:var(--panel);
+    overflow:hidden;
+  }
+  .corner{position:absolute; width:22px; height:22px; border-color:var(--accent); opacity:.8;}
+  .corner.tl{top:-1px;left:-1px;border-top:2px solid;border-left:2px solid;}
+  .corner.tr{top:-1px;right:-1px;border-top:2px solid;border-right:2px solid;}
+  .corner.bl{bottom:-1px;left:-1px;border-bottom:2px solid;border-left:2px solid;}
+  .corner.br{bottom:-1px;right:-1px;border-bottom:2px solid;border-right:2px solid;}
+  .vf-label{
+    position:absolute; top:10px; left:14px; font-family:var(--mono); font-size:10px;
+    color:var(--accent); letter-spacing:.1em;
+  }
+  .vf-glyph{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:64px; opacity:.25;
+  }
+  .vf-readout{
+    position:absolute; bottom:10px; right:14px; font-family:var(--mono); font-size:10px; color:var(--muted);
+  }
+
+  .section-label{
+    font-family:var(--mono); font-size:12px; color:var(--muted); letter-spacing:.14em;
+    display:flex; align-items:center; gap:10px; margin:64px 0 20px;
+  }
+  .section-label::after{content:'';flex:1;height:1px;background:var(--line);}
+
+  .grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:18px;}
+  .card{
+    background:var(--panel); border:1px solid var(--line); padding:24px; position:relative;
+    display:flex; flex-direction:column; gap:12px; cursor:pointer; transition:border-color .15s, transform .15s;
+  }
+  .card:hover{border-color:var(--accent); transform:translateY(-2px);}
+  .card .tag{
+    font-family:var(--mono); font-size:10px; letter-spacing:.1em; color:var(--accent2);
+    border:1px solid var(--accent2); display:inline-block; padding:3px 8px; width:fit-content;
+  }
+  .card h3{margin:0; font-family:var(--mono); font-size:19px; font-weight:700;}
+  .card p{margin:0; color:var(--muted); font-size:13.5px; line-height:1.55;}
+  .card .go{font-family:var(--mono); font-size:12px; color:var(--accent); margin-top:auto;}
+
+  .howrow{display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:12px;}
+  .how{border:1px solid var(--line); padding:18px; background:var(--panel2);}
+  .how .n{font-family:var(--mono); color:var(--accent); font-size:12px; margin-bottom:8px;}
+  .how h4{margin:0 0 6px; font-size:14.5px;}
+  .how p{margin:0; color:var(--muted); font-size:13px; line-height:1.5;}
+
+  footer{border-top:1px solid var(--line); padding:26px 32px; font-family:var(--mono); font-size:11px; color:var(--muted); display:flex; justify-content:space-between;}
+
+  /* ---------- GAME SHELL ---------- */
+  .game-view{display:none;}
+  .game-view.active{display:block;}
+  .home-view{display:none;}
+  .home-view.active{display:block;}
+
+  .game-header{display:flex; align-items:center; justify-content:space-between; padding:28px 0 18px;}
+  .backlink{font-family:var(--mono); font-size:12px; color:var(--muted); cursor:pointer; display:flex; align-items:center; gap:8px;}
+  .backlink:hover{color:var(--accent);}
+  .game-title{font-family:var(--mono); font-size:22px; font-weight:700;}
+
+  .stage{
+    display:grid; grid-template-columns:1.3fr .9fr; gap:20px;
+  }
+  @media(max-width:820px){.stage{grid-template-columns:1fr;} .hero{grid-template-columns:1fr;}}
+
+  .cam-wrap{
+    position:relative; background:#000; border:1px solid var(--line); overflow:hidden; aspect-ratio:4/3;
+  }
+  .cam-wrap video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transform:scaleX(-1); opacity:0;}
+  .cam-wrap canvas{position:absolute; inset:0; width:100%; height:100%;}
+  .cam-status{
+    position:absolute; top:10px; left:12px; font-family:var(--mono); font-size:10px; color:var(--accent);
+    letter-spacing:.08em; display:flex; align-items:center; gap:6px; z-index:5;
+  }
+  .cam-status .d{width:6px;height:6px;border-radius:50%;background:var(--accent); animation:pulse 1.6s infinite;}
+  .cam-overlay-msg{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:14px;
+    background:rgba(0,0,0,0.75); text-align:center; padding:24px; z-index:6;
+  }
+  .cam-overlay-msg p{color:var(--muted); font-size:13px; max-width:34ch; margin:0;}
+
+  .side-panel{display:flex; flex-direction:column; gap:14px;}
+  .panel-box{border:1px solid var(--line); background:var(--panel); padding:18px;}
+  .panel-box h4{margin:0 0 10px; font-family:var(--mono); font-size:12px; letter-spacing:.1em; color:var(--muted);}
+  .score-row{display:flex; justify-content:space-between; align-items:center; font-family:var(--mono);}
+  .score-row .who{font-size:12px; color:var(--muted);}
+  .score-row .val{font-size:30px; font-weight:700; color:var(--accent);}
+  .vs{font-family:var(--mono); color:var(--line); font-size:20px;}
+
+  .result-banner{
+    font-family:var(--mono); font-size:15px; padding:12px 14px; border:1px solid var(--line);
+    background:var(--panel2); min-height:20px;
+  }
+  .result-banner.win{color:var(--accent); border-color:var(--accent);}
+  .result-banner.lose{color:var(--danger); border-color:var(--danger);}
+  .result-banner.tie{color:var(--accent2); border-color:var(--accent2);}
+
+  .gesture-chip{font-family:var(--mono); font-size:12px; padding:6px 10px; border:1px solid var(--line); display:inline-block; margin-top:4px;}
+  .tips li{color:var(--muted); font-size:12.5px; line-height:1.6;}
+  .tips{margin:0; padding-left:18px;}
+
+  .countdown-num{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-size:120px; font-weight:700; color:var(--accent);
+    text-shadow:0 0 30px rgba(57,255,136,0.6); z-index:7; pointer-events:none;
+  }
+</style>
+</head>
+<body>
+<div class="scanline-overlay"></div>
+
+<header>
+  <div class="brand" id="logoHome"><span class="dot"></span>SHOW OF HANDS</div>
+  <nav id="navStatus">GESTURE ARCADE // v1.0</nav>
+</header>
+
+<main>
+
+  <!-- ================= HOME ================= -->
+  <section class="home-view active" id="homeView">
+    <div class="hero">
+      <div>
+        <div class="eyebrow">CAMERA-CONTROLLED GAMES</div>
+        <h1>Play with<br>your <span>bare hands.</span></h1>
+        <p class="lede">Point your webcam at yourself, throw a shape, and the games read it in real time. No controller, no keyboard — just your hand in frame. Works solo or head-to-head with a friend sharing one camera.</p>
+        <div class="cta-row">
+          <button class="btn" onclick="document.getElementById('gameGrid').scrollIntoView({behavior:'smooth'})">Choose a game</button>
+          <button class="btn ghost" onclick="document.getElementById('howSection').scrollIntoView({behavior:'smooth'})">How it works</button>
+        </div>
+      </div>
+      <div class="viewfinder">
+        <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+        <div class="vf-label">● TRACKING_IDLE</div>
+        <div class="vf-glyph">✋</div>
+        <div class="vf-readout">21 LANDMARKS / HAND</div>
+      </div>
+    </div>
+
+    <div class="section-label">SELECT GAME</div>
+    <div class="grid" id="gameGrid">
+      <div class="card" onclick="goTo('rps1p')">
+        <span class="tag">1 PLAYER</span>
+        <h3>Rock Paper Scissors</h3>
+        <p>Throw your shape when the countdown hits zero. The house plays back instantly — best of anything, no limit.</p>
+        <span class="go">PLAY →</span>
+      </div>
+      <div class="card" onclick="goTo('rps2p')">
+        <span class="tag">2 PLAYER</span>
+        <h3>Duel: RPS Face-Off</h3>
+        <p>Two players, one camera. Stand left and right of frame, both throw on the count, first to 5 wins the duel.</p>
+        <span class="go">PLAY →</span>
+      </div>
+      <div class="card" onclick="goTo('pong2p')">
+        <span class="tag">2 PLAYER</span>
+        <h3>Hand Pong</h3>
+        <p>Left hand controls the left paddle, right hand controls the right. Raise and lower your open palm to rally.</p>
+        <span class="go">PLAY →</span>
+      </div>
+      <div class="card" onclick="goTo('quickdraw')">
+        <span class="tag">2 PLAYER</span>
+        <h3>Quick Draw Duel</h3>
+        <p>Wait for it... wait for it... first player to throw an open palm after "DRAW!" takes the round. Jumping the gun costs you.</p>
+        <span class="go">PLAY →</span>
+      </div>
+      <div class="card" onclick="goTo('tug')">
+        <span class="tag">2 PLAYER</span>
+        <h3>Tug of War</h3>
+        <p>Both players make a fist and pump it to pull the rope toward their side. First to drag it to the edge wins.</p>
+        <span class="go">PLAY →</span>
+      </div>
+      <div class="card" onclick="goTo('simon')">
+        <span class="tag">1 PLAYER</span>
+        <h3>Gesture Simon</h3>
+        <p>Watch the sequence, then repeat it back with your hand — rock, paper, scissors, in order. It gets longer every round.</p>
+        <span class="go">PLAY →</span>
+      </div>
+    </div>
+
+    <div class="section-label" id="howSection">HOW IT WORKS</div>
+    <div class="howrow">
+      <div class="how"><div class="n">01</div><h4>Grant camera access</h4><p>Detection runs locally in your browser. Nothing is recorded or sent anywhere.</p></div>
+      <div class="how"><div class="n">02</div><h4>Get in frame</h4><p>Keep your hand(s) visible and reasonably lit. The viewfinder brackets show what's tracked.</p></div>
+      <div class="how"><div class="n">03</div><h4>Gesture on cue</h4><p>Rock = closed fist. Paper = open palm. Scissors = index + middle finger only.</p></div>
+    </div>
+  </section>
+
+  <!-- ================= RPS 1P ================= -->
+  <section class="game-view" id="view-rps1p">
+    <div class="game-header">
+      <div class="backlink" onclick="goHome()">← BACK TO ARCADE</div>
+      <div class="game-title">Rock Paper Scissors <span style="color:var(--muted)">/ Solo</span></div>
+      <div></div>
+    </div>
+    <div class="stage">
+      <div class="cam-wrap" id="cam1">
+        <video id="video1" autoplay playsinline muted></video>
+        <canvas id="canvas1"></canvas>
+        <div class="cam-status"><span class="d"></span>LIVE</div>
+        <div class="countdown-num" id="cd1" style="display:none;"></div>
+        <div class="cam-overlay-msg" id="msg1">
+          <p>Camera access is needed to detect your hand gesture.</p>
+          <button class="btn" onclick="startCam('rps1p')">Enable camera & start</button>
+        </div>
+      </div>
+      <div class="side-panel">
+        <div class="panel-box">
+          <h4>SCORE</h4>
+          <div class="score-row"><span class="who">YOU</span><span class="val" id="s1you">0</span><span class="vs">—</span><span class="val" id="s1cpu">0</span><span class="who">CPU</span></div>
+        </div>
+        <div class="panel-box">
+          <h4>ROUND</h4>
+          <div class="result-banner" id="banner1">Press START to throw your first round.</div>
+          <div style="margin-top:10px; display:flex; gap:10px;">
+            <div><div style="font-size:11px;color:var(--muted);font-family:var(--mono)">YOUR GESTURE</div><div class="gesture-chip" id="yourGesture1">—</div></div>
+            <div><div style="font-size:11px;color:var(--muted);font-family:var(--mono)">CPU GESTURE</div><div class="gesture-chip" id="cpuGesture1">—</div></div>
+          </div>
+          <button class="btn" style="margin-top:14px;width:100%;" id="startBtn1" onclick="startRound1P()">Start round</button>
+        </div>
+        <div class="panel-box">
+          <h4>TIPS</h4>
+          <ul class="tips">
+            <li>Hold your gesture steady when the counter hits "0".</li>
+            <li>Keep your whole hand inside the frame.</li>
+            <li>Fist = Rock, flat palm = Paper, two fingers = Scissors.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= RPS 2P ================= -->
+  <section class="game-view" id="view-rps2p">
+    <div class="game-header">
+      <div class="backlink" onclick="goHome()">← BACK TO ARCADE</div>
+      <div class="game-title">RPS Face-Off <span style="color:var(--muted)">/ 2 Player</span></div>
+      <div></div>
+    </div>
+    <div class="stage">
+      <div class="cam-wrap" id="cam2">
+        <video id="video2" autoplay playsinline muted></video>
+        <canvas id="canvas2"></canvas>
+        <div class="cam-status"><span class="d"></span>LIVE</div>
+        <div class="countdown-num" id="cd2" style="display:none;"></div>
+        <div class="cam-overlay-msg" id="msg2">
+          <p>Stand so Player 1 is on the left of frame and Player 2 is on the right.</p>
+          <button class="btn" onclick="startCam('rps2p')">Enable camera & start</button>
+        </div>
+      </div>
+      <div class="side-panel">
+        <div class="panel-box">
+          <h4>SCORE — FIRST TO 5</h4>
+          <div class="score-row"><span class="who">P1 (LEFT)</span><span class="val" id="s2p1">0</span><span class="vs">—</span><span class="val" id="s2p2">0</span><span class="who">P2 (RIGHT)</span></div>
+        </div>
+        <div class="panel-box">
+          <h4>ROUND</h4>
+          <div class="result-banner" id="banner2">Both players get in frame, then start.</div>
+          <div style="margin-top:10px; display:flex; gap:10px;">
+            <div><div style="font-size:11px;color:var(--muted);font-family:var(--mono)">P1 GESTURE</div><div class="gesture-chip" id="p1Gesture">—</div></div>
+            <div><div style="font-size:11px;color:var(--muted);font-family:var(--mono)">P2 GESTURE</div><div class="gesture-chip" id="p2Gesture">—</div></div>
+          </div>
+          <button class="btn" style="margin-top:14px;width:100%;" id="startBtn2" onclick="startRound2P()">Start round</button>
+        </div>
+        <div class="panel-box">
+          <h4>TIPS</h4>
+          <ul class="tips">
+            <li>Only one hand per player, please — the leftmost hand is P1, rightmost is P2.</li>
+            <li>Hold gestures steady through "0".</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PONG 2P ================= -->
+  <section class="game-view" id="view-pong2p">
+    <div class="game-header">
+      <div class="backlink" onclick="goHome()">← BACK TO ARCADE</div>
+      <div class="game-title">Hand Pong <span style="color:var(--muted)">/ 2 Player</span></div>
+      <div></div>
+    </div>
+    <div class="stage">
+      <div class="cam-wrap" id="cam3" style="aspect-ratio:16/10;">
+        <video id="video3" autoplay playsinline muted></video>
+        <canvas id="canvas3"></canvas>
+        <canvas id="pongCanvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+        <div class="cam-status"><span class="d"></span>LIVE</div>
+        <div class="cam-overlay-msg" id="msg3">
+          <p>Left player's raised hand moves the left paddle, right player's hand moves the right paddle. Move up/down to rally.</p>
+          <button class="btn" onclick="startCam('pong2p')">Enable camera & start</button>
+        </div>
+      </div>
+      <div class="side-panel">
+        <div class="panel-box">
+          <h4>SCORE — FIRST TO 7</h4>
+          <div class="score-row"><span class="who">P1</span><span class="val" id="s3p1">0</span><span class="vs">—</span><span class="val" id="s3p2">0</span><span class="who">P2</span></div>
+        </div>
+        <div class="panel-box">
+          <h4>MATCH</h4>
+          <div class="result-banner" id="banner3">Get both hands in frame to begin the rally.</div>
+          <button class="btn" style="margin-top:14px;width:100%;" id="startBtn3" onclick="startPongMatch()">Start match</button>
+        </div>
+        <div class="panel-box">
+          <h4>TIPS</h4>
+          <ul class="tips">
+            <li>Any open hand works — the game just tracks vertical position.</li>
+            <li>Stay roughly on your side of frame.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= QUICK DRAW 2P ================= -->
+  <section class="game-view" id="view-quickdraw">
+    <div class="game-header">
+      <div class="backlink" onclick="goHome()">← BACK TO ARCADE</div>
+      <div class="game-title">Quick Draw Duel <span style="color:var(--muted)">/ 2 Player</span></div>
+      <div></div>
+    </div>
+    <div class="stage">
+      <div class="cam-wrap" id="cam4">
+        <video id="video4" autoplay playsinline muted></video>
+        <canvas id="canvas4"></canvas>
+        <div class="cam-status"><span class="d"></span>LIVE</div>
+        <div class="countdown-num" id="cd4" style="display:none;"></div>
+        <div class="cam-overlay-msg" id="msg4">
+          <p>Stand left/right of frame. Wait for "DRAW!" then throw an open palm as fast as you can.</p>
+          <button class="btn" onclick="startCam('quickdraw')">Enable camera & start</button>
+        </div>
+      </div>
+      <div class="side-panel">
+        <div class="panel-box">
+          <h4>SCORE — FIRST TO 5</h4>
+          <div class="score-row"><span class="who">P1 (LEFT)</span><span class="val" id="s4p1">0</span><span class="vs">—</span><span class="val" id="s4p2">0</span><span class="who">P2 (RIGHT)</span></div>
+        </div>
+        <div class="panel-box">
+          <h4>ROUND</h4>
+          <div class="result-banner" id="banner4">Both players get in frame, then start.</div>
+          <button class="btn" style="margin-top:14px;width:100%;" id="startBtn4" onclick="startQuickDraw()">Start round</button>
+        </div>
+        <div class="panel-box">
+          <h4>TIPS</h4>
+          <ul class="tips">
+            <li>Throwing any clear gesture before "DRAW!" is a false start — you lose the round.</li>
+            <li>Keep hands lowered or out of frame until the cue.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= TUG OF WAR 2P ================= -->
+  <section class="game-view" id="view-tug">
+    <div class="game-header">
+      <div class="backlink" onclick="goHome()">← BACK TO ARCADE</div>
+      <div class="game-title">Tug of War <span style="color:var(--muted)">/ 2 Player</span></div>
+      <div></div>
+    </div>
+    <div class="stage">
+      <div class="cam-wrap" id="cam6" style="aspect-ratio:16/10;">
+        <video id="video6" autoplay playsinline muted></video>
+        <canvas id="canvas6"></canvas>
+        <canvas id="tugCanvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+        <div class="cam-status"><span class="d"></span>LIVE</div>
+        <div class="cam-overlay-msg" id="msg6">
+          <p>Left player pulls left, right player pulls right. Open your hand to a fist repeatedly to pump the rope your way.</p>
+          <button class="btn" onclick="startCam('tug')">Enable camera & start</button>
+        </div>
+      </div>
+      <div class="side-panel">
+        <div class="panel-box">
+          <h4>MATCH</h4>
+          <div class="result-banner" id="banner6">Get both hands in frame, then start pulling.</div>
+          <button class="btn" style="margin-top:14px;width:100%;" id="startBtn6" onclick="startTug()">Start match</button>
+        </div>
+        <div class="panel-box">
+          <h4>TIPS</h4>
+          <ul class="tips">
+            <li>A held fist pulls steadily — pumping (fist → open → fist) pulls harder.</li>
+            <li>Stay roughly on your side of frame.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= GESTURE SIMON 1P ================= -->
+  <section class="game-view" id="view-simon">
+    <div class="game-header">
+      <div class="backlink" onclick="goHome()">← BACK TO ARCADE</div>
+      <div class="game-title">Gesture Simon <span style="color:var(--muted)">/ Solo</span></div>
+      <div></div>
+    </div>
+    <div class="stage">
+      <div class="cam-wrap" id="cam5">
+        <video id="video5" autoplay playsinline muted></video>
+        <canvas id="canvas5"></canvas>
+        <div class="cam-status"><span class="d"></span>LIVE</div>
+        <div class="vf-glyph" id="simonPrompt" style="opacity:.9; display:none;"></div>
+        <div class="cam-overlay-msg" id="msg5">
+          <p>Camera access is needed to detect your hand gesture.</p>
+          <button class="btn" onclick="startCam('simon')">Enable camera & start</button>
+        </div>
+      </div>
+      <div class="side-panel">
+        <div class="panel-box">
+          <h4>LEVEL</h4>
+          <div class="score-row"><span class="who">CURRENT</span><span class="val" id="simonLevel">0</span><span class="vs">/</span><span class="val" id="simonBest">0</span><span class="who">BEST</span></div>
+        </div>
+        <div class="panel-box">
+          <h4>ROUND</h4>
+          <div class="result-banner" id="banner5">Press START to see the first sequence.</div>
+          <div style="margin-top:10px;">
+            <div style="font-size:11px;color:var(--muted);font-family:var(--mono)">YOUR GESTURE</div>
+            <div class="gesture-chip" id="yourGesture5">—</div>
+          </div>
+          <button class="btn" style="margin-top:14px;width:100%;" id="startBtn5" onclick="startSimon()">Start game</button>
+        </div>
+        <div class="panel-box">
+          <h4>TIPS</h4>
+          <ul class="tips">
+            <li>Watch the icon sequence, then reproduce it in the same order.</li>
+            <li>Hold each gesture steady for about a second to register it.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <span>SHOW OF HANDS — GESTURE ARCADE</span>
+  <span id="engineStatus">ENGINE: NOT LOADED</span>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+
+<script>
+/* ---------------------------------------------------------
+   NAVIGATION
+--------------------------------------------------------- */
+let currentView = 'home';
+let activeCamKey = null; // which game's camera is running
+let hands, cameraInst, currentVideo, currentCanvas, currentCtx;
+let latestHandResults = []; // [{x, y, gesture, landmarks}]
+
+function goHome(){
+  stopCam();
+  document.querySelectorAll('.game-view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('homeView').classList.add('active');
+  currentView = 'home';
+}
+function goTo(id){
+  document.getElementById('homeView').classList.remove('active');
+  document.querySelectorAll('.game-view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  currentView = id;
+  window.scrollTo({top:0,behavior:'instant'});
+}
+document.getElementById('logoHome').addEventListener('click', goHome);
+
+/* ---------------------------------------------------------
+   MEDIAPIPE HANDS ENGINE (shared)
+--------------------------------------------------------- */
+let engineReady = false;
+function initEngine(){
+  if(engineReady) return;
+  hands = new Hands({locateFile:(f)=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`});
+  hands.setOptions({
+    maxNumHands:2,
+    modelComplexity:1,
+    minDetectionConfidence:0.6,
+    minTrackingConfidence:0.6
+  });
+  hands.onResults(onHandResults);
+  engineReady = true;
+  document.getElementById('engineStatus').textContent = 'ENGINE: READY';
+}
+
+function classifyGesture(landmarks){
+  // landmarks: 21 points, normalized [0..1], y grows downward
+  const tips = [8,12,16,20]; // index, middle, ring, pinky
+  const pips = [6,10,14,18];
+  let extended = 0;
+  let extendedMap = [];
+  for(let i=0;i<4;i++){
+    const tip = landmarks[tips[i]];
+    const pip = landmarks[pips[i]];
+    const isExt = tip.y < pip.y - 0.02;
+    extendedMap.push(isExt);
+    if(isExt) extended++;
+  }
+  if(extended === 0) return 'rock';
+  if(extended >= 4) return 'paper';
+  if(extended === 2 && extendedMap[0] && extendedMap[1]) return 'scissors';
+  if(extended <= 1) return 'rock';
+  return 'unknown';
+}
+
+function onHandResults(results){
+  if(!currentCtx) return;
+  const ctx = currentCtx;
+  const w = currentCanvas.width, h = currentCanvas.height;
+  ctx.save();
+  ctx.clearRect(0,0,w,h);
+  // mirror to match the video's CSS mirror
+  ctx.translate(w,0); ctx.scale(-1,1);
+
+  latestHandResults = [];
+  if(results.multiHandLandmarks && results.multiHandLandmarks.length){
+    for(const lm of results.multiHandLandmarks){
+      const gesture = classifyGesture(lm);
+      // centroid x (in unmirrored/raw coordinate, 0=left of raw frame)
+      const cx = lm[9].x; // middle finger MCP as centroid-ish
+      const cy = lm[9].y;
+      latestHandResults.push({x:cx, y:cy, gesture, landmarks:lm});
+
+      if(typeof drawConnectors === 'function'){
+        drawConnectors(ctx, lm, HAND_CONNECTIONS, {color: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#39ff88', lineWidth:2});
+        drawLandmarks(ctx, lm, {color:'#ffb84d', lineWidth:1, radius:2.5});
+      }
+    }
+  }
+  ctx.restore();
+
+  if(pongMatchActive) updatePongFromHands();
+}
+
+/* ---------------------------------------------------------
+   CAMERA LIFECYCLE
+--------------------------------------------------------- */
+const GAME_IDS = {
+  rps1p:   {video:'video1', canvas:'canvas1', msg:'msg1'},
+  rps2p:   {video:'video2', canvas:'canvas2', msg:'msg2'},
+  pong2p:  {video:'video3', canvas:'canvas3', msg:'msg3', extraCanvas:'pongCanvas', onReady:()=>initPong()},
+  quickdraw:{video:'video4', canvas:'canvas4', msg:'msg4'},
+  simon:   {video:'video5', canvas:'canvas5', msg:'msg5'},
+  tug:     {video:'video6', canvas:'canvas6', msg:'msg6', extraCanvas:'tugCanvas', onReady:()=>initTug()},
+};
+
+async function startCam(key){
+  initEngine();
+  activeCamKey = key;
+  const cfg = GAME_IDS[key];
+
+  currentVideo = document.getElementById(cfg.video);
+  currentCanvas = document.getElementById(cfg.canvas);
+  currentCtx = currentCanvas.getContext('2d');
+
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({video:{width:640,height:480}, audio:false});
+    currentVideo.srcObject = stream;
+    await currentVideo.play();
+    document.getElementById(cfg.msg).style.display = 'none';
+
+    const resize = ()=>{
+      currentCanvas.width = currentVideo.videoWidth || 640;
+      currentCanvas.height = currentVideo.videoHeight || 480;
+      if(cfg.extraCanvas){
+        const ec = document.getElementById(cfg.extraCanvas);
+        ec.width = currentCanvas.width; ec.height = currentCanvas.height;
+      }
+    };
+    currentVideo.addEventListener('loadedmetadata', resize, {once:true});
+    resize();
+
+    cameraInst = new Camera(currentVideo, {
+      onFrame: async ()=>{ if(hands && activeCamKey===key) await hands.send({image: currentVideo}); },
+      width:640, height:480
+    });
+    cameraInst.start();
+
+    if(cfg.onReady) cfg.onReady();
+  }catch(err){
+    document.getElementById(cfg.msg).innerHTML = `<p style="color:var(--danger)">Camera access failed: ${err.message}. Check your browser's camera permissions and try again.</p><button class="btn" onclick="startCam('${key}')">Retry</button>`;
+    document.getElementById(cfg.msg).style.display = 'flex';
+  }
+}
+
+function stopCam(){
+  activeCamKey = null;
+  if(cameraInst){ cameraInst.stop(); cameraInst = null; }
+  if(currentVideo && currentVideo.srcObject){
+    currentVideo.srcObject.getTracks().forEach(t=>t.stop());
+    currentVideo.srcObject = null;
+  }
+  pongMatchActive = false;
+  tugMatchActive = false;
+  simonAcceptingInput = false;
+  currentVideo = null; currentCanvas = null; currentCtx = null;
+}
+
+/* ---------------------------------------------------------
+   GAME 1: RPS SOLO
+--------------------------------------------------------- */
+let score1you=0, score1cpu=0;
+const GESTURE_LABEL = {rock:'✊ ROCK', paper:'✋ PAPER', scissors:'✌️ SCISSORS', unknown:'—'};
+
+function startRound1P(){
+  if(activeCamKey!=='rps1p'){ return; }
+  const btn = document.getElementById('startBtn1');
+  btn.disabled = true;
+  const cdEl = document.getElementById('cd1');
+  document.getElementById('banner1').className = 'result-banner';
+  document.getElementById('banner1').textContent = 'Get ready...';
+  let n = 3;
+  cdEl.style.display='flex'; cdEl.textContent = n;
+  const timer = setInterval(()=>{
+    n--;
+    if(n>0){ cdEl.textContent = n; }
+    else{
+      cdEl.textContent = 'THROW!';
+      clearInterval(timer);
+      setTimeout(()=>{
+        cdEl.style.display='none';
+        resolveRound1P();
+        btn.disabled = false;
+      }, 500);
+    }
+  }, 700);
+}
+
+function resolveRound1P(){
+  const hand = latestHandResults[0];
+  const yourGesture = (hand && hand.gesture !== 'unknown') ? hand.gesture : ['rock','paper','scissors'][Math.floor(Math.random()*3)];
+  const cpuGesture = ['rock','paper','scissors'][Math.floor(Math.random()*3)];
+  document.getElementById('yourGesture1').textContent = GESTURE_LABEL[yourGesture] || '—';
+  document.getElementById('cpuGesture1').textContent = GESTURE_LABEL[cpuGesture];
+
+  const outcome = judge(yourGesture, cpuGesture);
+  const banner = document.getElementById('banner1');
+  if(outcome === 'win'){ score1you++; banner.textContent = 'You win the round!'; banner.className='result-banner win'; }
+  else if(outcome === 'lose'){ score1cpu++; banner.textContent = 'CPU takes it.'; banner.className='result-banner lose'; }
+  else{ banner.textContent = "It's a tie — throw again."; banner.className='result-banner tie'; }
+  document.getElementById('s1you').textContent = score1you;
+  document.getElementById('s1cpu').textContent = score1cpu;
+}
+
+function judge(a,b){
+  if(a===b) return 'tie';
+  const beats = {rock:'scissors', paper:'rock', scissors:'paper'};
+  return beats[a]===b ? 'win' : 'lose';
+}
+
+/* ---------------------------------------------------------
+   GAME 2: RPS DUEL (2P)
+--------------------------------------------------------- */
+let score2p1=0, score2p2=0;
+
+function startRound2P(){
+  if(activeCamKey!=='rps2p') return;
+  const btn = document.getElementById('startBtn2');
+  btn.disabled = true;
+  const cdEl = document.getElementById('cd2');
+  document.getElementById('banner2').className = 'result-banner';
+  document.getElementById('banner2').textContent = 'Get ready...';
+  let n = 3;
+  cdEl.style.display='flex'; cdEl.textContent = n;
+  const timer = setInterval(()=>{
+    n--;
+    if(n>0){ cdEl.textContent = n; }
+    else{
+      cdEl.textContent = 'THROW!';
+      clearInterval(timer);
+      setTimeout(()=>{
+        cdEl.style.display='none';
+        resolveRound2P();
+        btn.disabled = false;
+      }, 500);
+    }
+  }, 700);
+}
+
+function resolveRound2P(){
+  const hs = [...latestHandResults].sort((a,b)=>a.x-b.x); // raw x: smaller = camera-left = mirrored to viewer's... treat raw left as P1
+  const banner = document.getElementById('banner2');
+  if(hs.length < 2){
+    banner.textContent = 'Could only see one hand — make sure both players are in frame.';
+    banner.className = 'result-banner tie';
+    return;
+  }
+  const p1g = hs[0].gesture === 'unknown' ? 'rock' : hs[0].gesture;
+  const p2g = hs[1].gesture === 'unknown' ? 'rock' : hs[1].gesture;
+  document.getElementById('p1Gesture').textContent = GESTURE_LABEL[p1g];
+  document.getElementById('p2Gesture').textContent = GESTURE_LABEL[p2g];
+
+  const outcome = judge(p1g, p2g);
+  if(outcome==='win'){ score2p1++; banner.textContent='Player 1 wins the round!'; banner.className='result-banner win'; }
+  else if(outcome==='lose'){ score2p2++; banner.textContent='Player 2 wins the round!'; banner.className='result-banner lose'; }
+  else{ banner.textContent="Tie — throw again."; banner.className='result-banner tie'; }
+  document.getElementById('s2p1').textContent = score2p1;
+  document.getElementById('s2p2').textContent = score2p2;
+
+  if(score2p1>=5 || score2p2>=5){
+    banner.textContent = (score2p1>=5?'PLAYER 1 WINS THE DUEL 🏆':'PLAYER 2 WINS THE DUEL 🏆');
+    banner.className='result-banner win';
+    score2p1=0; score2p2=0;
+    setTimeout(()=>{document.getElementById('s2p1').textContent=0;document.getElementById('s2p2').textContent=0;},1500);
+  }
+}
+
+/* ---------------------------------------------------------
+   GAME 3: HAND PONG (2P)
+--------------------------------------------------------- */
+let pongMatchActive = false;
+let pong = null;
+
+function initPong(){
+  const c = document.getElementById('pongCanvas');
+  pong = {
+    canvas:c,
+    ctx:c.getContext('2d'),
+    p1y:0.5, p2y:0.5, // normalized 0..1
+    ballX:0.5, ballY:0.5, ballVX:0.012, ballVY:0.008,
+    score1:0, score2:0,
+    paddleH:0.22, paddleW:0.02
+  };
+  drawPong();
+}
+
+function startPongMatch(){
+  if(activeCamKey!=='pong2p') return;
+  pongMatchActive = true;
+  pong.score1=0; pong.score2=0;
+  document.getElementById('s3p1').textContent=0;
+  document.getElementById('s3p2').textContent=0;
+  document.getElementById('banner3').textContent = 'Rally on!';
+  document.getElementById('banner3').className='result-banner';
+  document.getElementById('startBtn3').textContent = 'Restart match';
+  resetBall();
+  requestAnimationFrame(pongLoop);
+}
+
+function resetBall(){
+  pong.ballX = 0.5; pong.ballY = 0.5;
+  pong.ballVX = (Math.random()<0.5?-1:1) * 0.012;
+  pong.ballVY = (Math.random()<0.5?-1:1) * 0.008;
+}
+
+function updatePongFromHands(){
+  if(!pong) return;
+  // raw x < 0.5 -> left side (P1), raw x >= 0.5 -> right side (P2)
+  let leftHand=null, rightHand=null;
+  for(const h of latestHandResults){
+    if(h.x < 0.5){ if(!leftHand || h.x<leftHand.x) leftHand=h; }
+    else{ if(!rightHand || h.x>rightHand.x) rightHand=h; }
+  }
+  if(leftHand) pong.p1y = leftHand.y;
+  if(rightHand) pong.p2y = rightHand.y;
+}
+
+function pongLoop(){
+  if(!pongMatchActive) return;
+  const p = pong;
+  p.ballX += p.ballVX;
+  p.ballY += p.ballVY;
+
+  if(p.ballY < 0.02 || p.ballY > 0.98) p.ballVY *= -1;
+
+  // left paddle collision (P1 at x ~0.04)
+  if(p.ballX <= 0.06 && Math.abs(p.ballY - p.p1y) < p.paddleH/2 + 0.03){
+    p.ballVX = Math.abs(p.ballVX) * 1.03;
+    p.ballVY += (p.ballY - p.p1y) * 0.05;
+  }
+  // right paddle collision (P2 at x ~0.96)
+  if(p.ballX >= 0.94 && Math.abs(p.ballY - p.p2y) < p.paddleH/2 + 0.03){
+    p.ballVX = -Math.abs(p.ballVX) * 1.03;
+    p.ballVY += (p.ballY - p.p2y) * 0.05;
+  }
+
+  if(p.ballX < 0){ p.score2++; document.getElementById('s3p2').textContent=p.score2; afterScore('P2'); }
+  if(p.ballX > 1){ p.score1++; document.getElementById('s3p1').textContent=p.score1; afterScore('P1'); }
+
+  drawPong();
+  if(pongMatchActive) requestAnimationFrame(pongLoop);
+}
+
+function afterScore(who){
+  const banner = document.getElementById('banner3');
+  if(pong.score1>=7 || pong.score2>=7){
+    pongMatchActive = false;
+    banner.textContent = (pong.score1>=7?'PLAYER 1 WINS THE MATCH 🏆':'PLAYER 2 WINS THE MATCH 🏆');
+    banner.className='result-banner win';
+    return;
+  }
+  banner.textContent = who + ' scores!';
+  banner.className = 'result-banner tie';
+  resetBall();
+}
+
+function drawPong(){
+  if(!pong) return;
+  const ctx = pong.ctx, w = pong.canvas.width, h = pong.canvas.height;
+  if(!w || !h) return;
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle = 'rgba(232,236,231,0.15)';
+  ctx.setLineDash([6,8]);
+  ctx.beginPath(); ctx.moveTo(w/2,0); ctx.lineTo(w/2,h); ctx.stroke();
+  ctx.setLineDash([]);
+
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#39ff88';
+  const accent2 = getComputedStyle(document.documentElement).getPropertyValue('--accent2').trim() || '#ffb84d';
+
+  ctx.fillStyle = accent;
+  ctx.fillRect(0.02*w, (pong.p1y - pong.paddleH/2)*h, pong.paddleW*w, pong.paddleH*h);
+  ctx.fillStyle = accent2;
+  ctx.fillRect((0.98-pong.paddleW)*w, (pong.p2y - pong.paddleH/2)*h, pong.paddleW*w, pong.paddleH*h);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.arc(pong.ballX*w, pong.ballY*h, Math.max(5, 0.012*w), 0, Math.PI*2);
+  ctx.fill();
+}
+
+/* ---------------------------------------------------------
+   GAME 4: QUICK DRAW DUEL (2P)
+--------------------------------------------------------- */
+let score4p1=0, score4p2=0;
+let qdPhase = 'idle'; // idle | waiting | live
+let qdStartTime = 0;
+let qdRAF = null;
+
+function startQuickDraw(){
+  if(activeCamKey!=='quickdraw') return;
+  const btn = document.getElementById('startBtn4');
+  btn.disabled = true;
+  const cdEl = document.getElementById('cd4');
+  const banner = document.getElementById('banner4');
+  banner.className = 'result-banner';
+  banner.textContent = 'Hands down... wait for it...';
+  qdPhase = 'waiting';
+  cdEl.style.display = 'flex';
+  cdEl.style.color = 'var(--accent2)';
+  cdEl.textContent = '•••';
+
+  const delay = 1500 + Math.random()*2500;
+  setTimeout(()=>{
+    if(activeCamKey!=='quickdraw'){ btn.disabled=false; return; }
+    // false-start check: anyone already showing a clear gesture loses
+    const hs = [...latestHandResults].sort((a,b)=>a.x-b.x);
+    const leftEarly = hs[0] && hs[0].gesture!=='unknown';
+    const rightEarly = hs[1] && hs[1].gesture!=='unknown';
+    if(leftEarly || rightEarly){
+      cdEl.style.display='none';
+      finishQuickDrawRound(leftEarly && rightEarly ? null : (leftEarly ? 'p2' : 'p1'), true);
+      btn.disabled = false;
+      return;
+    }
+    qdPhase = 'live';
+    qdStartTime = performance.now();
+    cdEl.style.color = 'var(--accent)';
+    cdEl.textContent = 'DRAW!';
+    qdRAF = requestAnimationFrame(quickDrawPoll);
+  }, delay);
+}
+
+function quickDrawPoll(){
+  if(qdPhase !== 'live') return;
+  const hs = [...latestHandResults].sort((a,b)=>a.x-b.x);
+  const leftReady = hs[0] && hs[0].gesture!=='unknown';
+  const rightReady = hs[1] && hs[1].gesture!=='unknown';
+  if(leftReady || rightReady){
+    document.getElementById('cd4').style.display='none';
+    finishQuickDrawRound(leftReady && rightReady ? null : (leftReady ? 'p1' : 'p2'), false);
+    document.getElementById('startBtn4').disabled = false;
+    return;
+  }
+  if(performance.now() - qdStartTime > 6000){
+    document.getElementById('cd4').style.display='none';
+    document.getElementById('banner4').textContent = "Nobody drew in time — round scrapped.";
+    document.getElementById('banner4').className = 'result-banner tie';
+    document.getElementById('startBtn4').disabled = false;
+    qdPhase = 'idle';
+    return;
+  }
+  qdRAF = requestAnimationFrame(quickDrawPoll);
+}
+
+function finishQuickDrawRound(winner, falseStart){
+  qdPhase = 'idle';
+  const banner = document.getElementById('banner4');
+  if(!winner){
+    banner.textContent = falseStart ? "Both jumped the gun — replay the round." : "Too close to call — replay the round.";
+    banner.className = 'result-banner tie';
+    return;
+  }
+  if(winner==='p1'){ score4p1++; banner.textContent = falseStart ? 'Player 2 false-started — Player 1 wins the round!' : 'Player 1 drew first!'; banner.className='result-banner win'; }
+  else{ score4p2++; banner.textContent = falseStart ? 'Player 1 false-started — Player 2 wins the round!' : 'Player 2 drew first!'; banner.className='result-banner lose'; }
+  document.getElementById('s4p1').textContent = score4p1;
+  document.getElementById('s4p2').textContent = score4p2;
+  if(score4p1>=5 || score4p2>=5){
+    banner.textContent = (score4p1>=5?'PLAYER 1 WINS THE DUEL 🏆':'PLAYER 2 WINS THE DUEL 🏆');
+    banner.className='result-banner win';
+    score4p1=0; score4p2=0;
+    setTimeout(()=>{document.getElementById('s4p1').textContent=0;document.getElementById('s4p2').textContent=0;},1500);
+  }
+}
+
+/* ---------------------------------------------------------
+   GAME 5: GESTURE SIMON (1P)
+--------------------------------------------------------- */
+const SIMON_MOVES = ['rock','paper','scissors'];
+const SIMON_GLYPH = {rock:'✊', paper:'✋', scissors:'✌️'};
+let simonSeq = [];
+let simonBest = 0;
+let simonAcceptingInput = false;
+let simonInputIndex = 0;
+let simonHoldTimer = null;
+let simonLastSeenGesture = null;
+let simonHoldStart = 0;
+
+function startSimon(){
+  if(activeCamKey!=='simon') return;
+  simonSeq = [];
+  simonAcceptingInput = false;
+  document.getElementById('startBtn5').disabled = true;
+  document.getElementById('simonLevel').textContent = 0;
+  advanceSimon();
+}
+
+function advanceSimon(){
+  simonSeq.push(SIMON_MOVES[Math.floor(Math.random()*3)]);
+  document.getElementById('simonLevel').textContent = simonSeq.length;
+  const banner = document.getElementById('banner5');
+  banner.className = 'result-banner';
+  banner.textContent = 'Watch closely...';
+  playSimonSequence(0);
+}
+
+function playSimonSequence(i){
+  const promptEl = document.getElementById('simonPrompt');
+  if(i >= simonSeq.length){
+    promptEl.style.display = 'none';
+    simonAcceptingInput = true;
+    simonInputIndex = 0;
+    simonLastSeenGesture = null;
+    document.getElementById('banner5').textContent = 'Your turn — repeat the sequence.';
+    simonHoldTimer = setInterval(simonCheckInput, 120);
+    return;
+  }
+  promptEl.style.display = 'flex';
+  promptEl.textContent = SIMON_GLYPH[simonSeq[i]];
+  promptEl.style.color = 'var(--accent)';
+  setTimeout(()=>{
+    promptEl.style.display = 'none';
+    setTimeout(()=>playSimonSequence(i+1), 250);
+  }, 700);
+}
+
+function simonCheckInput(){
+  if(!simonAcceptingInput) return;
+  const hand = latestHandResults[0];
+  const g = hand ? hand.gesture : 'unknown';
+  document.getElementById('yourGesture5').textContent = GESTURE_LABEL[g] || '—';
+
+  if(g === 'unknown' || g !== simonLastSeenGesture){
+    simonLastSeenGesture = g;
+    simonHoldStart = performance.now();
+    return;
+  }
+  if(performance.now() - simonHoldStart > 550){
+    // gesture confirmed
+    simonAcceptingInput = false;
+    clearInterval(simonHoldTimer);
+    const expected = simonSeq[simonInputIndex];
+    const banner = document.getElementById('banner5');
+    if(g !== expected){
+      banner.textContent = `Wrong move — expected ${GESTURE_LABEL[expected]}. Game over at level ${simonSeq.length}.`;
+      banner.className = 'result-banner lose';
+      simonBest = Math.max(simonBest, simonSeq.length-1);
+      document.getElementById('simonBest').textContent = simonBest;
+      document.getElementById('startBtn5').disabled = false;
+      document.getElementById('startBtn5').textContent = 'Play again';
+      return;
+    }
+    simonInputIndex++;
+    if(simonInputIndex >= simonSeq.length){
+      banner.textContent = 'Sequence correct! Next round...';
+      banner.className = 'result-banner win';
+      simonBest = Math.max(simonBest, simonSeq.length);
+      document.getElementById('simonBest').textContent = simonBest;
+      setTimeout(advanceSimon, 900);
+    }else{
+      simonAcceptingInput = true;
+      simonLastSeenGesture = null;
+      simonHoldTimer = setInterval(simonCheckInput, 120);
+    }
+  }
+}
+
+/* ---------------------------------------------------------
+   GAME 6: TUG OF WAR (2P)
+--------------------------------------------------------- */
+let tugMatchActive = false;
+let tug = null;
+
+function initTug(){
+  const c = document.getElementById('tugCanvas');
+  tug = {
+    canvas:c, ctx:c.getContext('2d'),
+    rope:0.5, // 0 = P1 edge, 1 = P2 edge
+    p1WasFist:false, p2WasFist:false
+  };
+  drawTug();
+}
+
+function startTug(){
+  if(activeCamKey!=='tug') return;
+  tugMatchActive = true;
+  tug.rope = 0.5;
+  tug.p1WasFist = false; tug.p2WasFist = false;
+  document.getElementById('banner6').textContent = 'Pull!';
+  document.getElementById('banner6').className = 'result-banner';
+  document.getElementById('startBtn6').textContent = 'Restart match';
+  requestAnimationFrame(tugLoop);
+}
+
+function tugLoop(){
+  if(!tugMatchActive) return;
+  let leftHand=null, rightHand=null;
+  for(const h of latestHandResults){
+    if(h.x < 0.5){ if(!leftHand || h.x<leftHand.x) leftHand=h; }
+    else{ if(!rightHand || h.x>rightHand.x) rightHand=h; }
+  }
+  const p1Fist = !!leftHand && leftHand.gesture==='rock';
+  const p2Fist = !!rightHand && rightHand.gesture==='rock';
+
+  // steady pull + bonus for a fresh pump (open->fist transition)
+  if(p1Fist){ tug.rope -= 0.0022 + (!tug.p1WasFist ? 0.012 : 0); }
+  if(p2Fist){ tug.rope += 0.0022 + (!tug.p2WasFist ? 0.012 : 0); }
+  tug.p1WasFist = p1Fist; tug.p2WasFist = p2Fist;
+  tug.rope = Math.max(0, Math.min(1, tug.rope));
+
+  drawTug();
+
+  if(tug.rope <= 0.04 || tug.rope >= 0.96){
+    tugMatchActive = false;
+    const banner = document.getElementById('banner6');
+    banner.textContent = (tug.rope <= 0.04 ? 'PLAYER 1 WINS THE TUG 🏆' : 'PLAYER 2 WINS THE TUG 🏆');
+    banner.className = 'result-banner win';
+    return;
+  }
+  requestAnimationFrame(tugLoop);
+}
+
+function drawTug(){
+  if(!tug) return;
+  const ctx = tug.ctx, w = tug.canvas.width, h = tug.canvas.height;
+  if(!w || !h) return;
+  ctx.clearRect(0,0,w,h);
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#39ff88';
+  const accent2 = getComputedStyle(document.documentElement).getPropertyValue('--accent2').trim() || '#ffb84d';
+
+  const midY = h*0.5;
+  ctx.strokeStyle = 'rgba(232,236,231,0.25)';
+  ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(0.04*w, midY); ctx.lineTo(0.96*w, midY); ctx.stroke();
+
+  // center marker
+  ctx.strokeStyle = 'rgba(232,236,231,0.35)';
+  ctx.setLineDash([4,6]); ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(w/2,midY-30); ctx.lineTo(w/2,midY+30); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // knot
+  const kx = (0.04 + tug.rope*0.92) * w;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(kx, midY, 12, 0, Math.PI*2); ctx.fill();
+
+  ctx.fillStyle = accent;
+  ctx.font = '700 13px IBM Plex Mono, monospace';
+  ctx.fillText('P1', 0.05*w, midY-24);
+  ctx.fillStyle = accent2;
+  ctx.fillText('P2', 0.90*w, midY-24);
+}
+</script>
+</body>
+</html>

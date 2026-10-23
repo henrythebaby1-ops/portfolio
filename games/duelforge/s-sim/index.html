@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>S Sim | Autopilot + Robot Lab</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body data-app="autopilot-sim">
+  <div class="site-shell">
+    <header class="top-bar">
+      <div>
+        <h1 class="brand">S Sim</h1>
+        <p class="tagline">Autopilot displays, flight AI, and playful robots in one website.</p>
+      </div>
+      <span class="path-tag" data-path-tag></span>
+    </header>
+
+    <nav class="nav-grid">
+      <a class="nav-link" href="../index.html">Back to DuelForge</a>
+      <a class="nav-link" href="#sim">Car Autopilot</a>
+      <a class="nav-link" href="#flight">Plane Autopilot</a>
+      <a class="nav-link" href="#arcade">Autopilot Arcade</a>
+      <a class="nav-link" href="#robots">Robot Zone</a>
+    </nav>
+
+    <section class="section-card" id="sim">
+      <h2>Tablet-Style Driving View</h2>
+      <p class="note">Educational simulation inspired by modern driver-assist interfaces. This is not real vehicle software.</p>
+
+      <div class="sim-layout">
+        <div class="sim-tablet">
+          <canvas id="autopilot-canvas" width="420" height="640" aria-label="Autopilot road simulation"></canvas>
+        </div>
+
+        <div class="sim-panel">
+          <h3>Vehicle Controls</h3>
+          <div class="button-row">
+            <button class="btn btn-primary" id="sim-start" type="button">Start</button>
+            <button class="btn btn-outline" id="sim-pause" type="button">Pause</button>
+            <button class="btn btn-outline" id="sim-reset" type="button">Reset</button>
+          </div>
+
+          <h4>Road Mode</h4>
+          <div class="button-row">
+            <button class="btn btn-primary" id="sim-city" type="button">City Streets</button>
+            <button class="btn btn-outline" id="sim-highway" type="button">Highway / Freeway</button>
+            <button class="btn btn-outline" id="sim-road-change" type="button">Change Road</button>
+          </div>
+
+          <label class="checkbox-line">
+            <input id="sim-autopilot" type="checkbox" checked />
+            Enable autopilot
+          </label>
+
+          <div class="button-row">
+            <button class="btn btn-outline" id="sim-traffic" type="button">Add Traffic</button>
+            <button class="btn btn-outline" id="sim-clear" type="button">Clear Traffic</button>
+          </div>
+
+          <h4>Autopilot Destination</h4>
+          <div class="button-row">
+            <button class="btn btn-outline" type="button" data-destination="Downtown">Downtown</button>
+            <button class="btn btn-outline" type="button" data-destination="Airport">Airport</button>
+            <button class="btn btn-outline" type="button" data-destination="Mall">Mall</button>
+          </div>
+
+          <div class="sim-stats">
+            <p><strong>Status:</strong> <span data-sim-status>Ready</span></p>
+            <p><strong>Speed:</strong> <span data-sim-speed>0</span> mph</p>
+            <p><strong>Lane:</strong> <span data-sim-lane>Center</span></p>
+            <p><strong>Road Type:</strong> <span data-sim-roadtype>City Streets</span></p>
+            <p><strong>Destination:</strong> <span data-sim-destination>Free Drive</span></p>
+            <p><strong>Traffic Light:</strong> <span data-sim-light>N/A</span></p>
+            <p><strong>Law:</strong> <span data-sim-law>CLEAR</span></p>
+            <p><strong>Prison Count:</strong> <span data-sim-prison>0</span></p>
+            <p><strong>Objects Detected:</strong> <span data-sim-objects>0</span></p>
+          </div>
+
+          <h4>Manual Mode Keys</h4>
+          <ul class="model-list">
+            <li><strong>Arrow Up:</strong> speed up</li>
+            <li><strong>Arrow Down:</strong> slow down</li>
+            <li><strong>Arrow Left / Right:</strong> steer lanes</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-card" id="flight">
+      <h2>2D Plane Autopilot Simulator</h2>
+      <p class="note">A 2D autopilot map view that holds altitude and heading while tracking nearby traffic. New planes appear every 3 minutes.</p>
+
+      <div class="sim-layout">
+        <div class="sim-tablet flight-tablet">
+          <canvas id="flight-canvas" width="640" height="360" aria-label="2D plane autopilot simulation"></canvas>
+        </div>
+
+        <div class="sim-panel">
+          <h3>Flight Controls</h3>
+          <div class="button-row">
+            <button class="btn btn-primary" id="flight-start" type="button">Start Flight</button>
+            <button class="btn btn-outline" id="flight-pause" type="button">Pause Flight</button>
+            <button class="btn btn-outline" id="flight-reset" type="button">Reset Flight</button>
+          </div>
+
+          <div class="sim-stats">
+            <p><strong>Flight Status:</strong> <span data-flight-status>Ready</span></p>
+            <p><strong>Autopilot:</strong> <span data-flight-autopilot>ON</span></p>
+            <p><strong>Cruise Speed:</strong> <span data-flight-speed>0</span> mph</p>
+            <p><strong>Altitude:</strong> <span data-flight-altitude>0</span> ft</p>
+            <p><strong>Visible Planes:</strong> <span data-flight-traffic>0</span></p>
+            <p><strong>Next Spawn:</strong> <span data-flight-next>180</span> s</p>
+          </div>
+
+          <p class="note no-margin">Autopilot tracks a 2D route map and keeps a stable flight corridor.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-card" id="arcade">
+      <h2>Autopilot Arcade</h2>
+      <p class="note">Game AIs controlling gameplay on their own, including a Chrome dino-style auto-jump bot.</p>
+
+      <div class="topic-grid arcade-grid">
+        <article class="topic-card">
+          <h3>Dino Auto-Pilot</h3>
+          <p class="note">The AI jumps over obstacles automatically, inspired by the Chrome dino style.</p>
+          <canvas id="dino-canvas" class="arcade-canvas" width="560" height="180" aria-label="Dino autopilot game"></canvas>
+          <div class="button-row">
+            <button class="btn btn-outline" id="dino-start" type="button">Start Dino</button>
+            <button class="btn btn-outline" id="dino-pause" type="button">Pause</button>
+            <button class="btn btn-outline" id="dino-reset" type="button">Reset</button>
+          </div>
+          <div class="sim-stats">
+            <p><strong>Status:</strong> <span data-dino-status>Ready</span></p>
+            <p><strong>Score:</strong> <span data-dino-score>0</span></p>
+            <p><strong>Best:</strong> <span data-dino-best>0</span></p>
+          </div>
+        </article>
+
+        <article class="topic-card">
+          <h3>Pong Auto-Pilot</h3>
+          <p class="note">Both paddles are AI-controlled and try to keep endless rallies alive.</p>
+          <canvas id="pong-canvas" class="arcade-canvas" width="560" height="220" aria-label="Pong autopilot game"></canvas>
+          <div class="button-row">
+            <button class="btn btn-outline" id="pong-start" type="button">Start Pong</button>
+            <button class="btn btn-outline" id="pong-pause" type="button">Pause</button>
+            <button class="btn btn-outline" id="pong-reset" type="button">Reset</button>
+          </div>
+          <div class="sim-stats">
+            <p><strong>Status:</strong> <span data-pong-status>Ready</span></p>
+            <p><strong>Rally:</strong> <span data-pong-rally>0</span></p>
+            <p><strong>Best Rally:</strong> <span data-pong-best>0</span></p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section-card" id="robots">
+      <h2>Robot Zone</h2>
+
+      <div class="topic-grid robot-grid">
+        <article class="topic-card robot-card">
+          <h3>Rock Paper Robot</h3>
+          <p class="note">Starts camera, "reads" your move, and picks the winning counter-move every round.</p>
+
+          <video id="rps-camera" class="camera-feed" autoplay playsinline muted></video>
+
+          <div class="button-row">
+            <button class="btn btn-primary" id="rps-camera-start" type="button">Enable Camera</button>
+            <button class="btn btn-outline" id="rps-reset" type="button">Reset Match</button>
+          </div>
+
+          <p class="note">Show your hand to the camera: fist = rock, open hand = paper, two fingers = scissors.</p>
+
+          <div class="robot-light-box" aria-label="Robot selected move">
+            <div class="robot-light" data-robot-light="rock">
+              <span class="light-dot"></span>
+              <span>Rock</span>
+            </div>
+            <div class="robot-light" data-robot-light="paper">
+              <span class="light-dot"></span>
+              <span>Paper</span>
+            </div>
+            <div class="robot-light" data-robot-light="scissors">
+              <span class="light-dot"></span>
+              <span>Scissors</span>
+            </div>
+          </div>
+
+          <div class="sim-stats">
+            <p><strong>Vision:</strong> <span data-rps-vision>Offline</span></p>
+            <p><strong>Detected Gesture:</strong> <span data-rps-detected>None</span></p>
+            <p><strong>You Played:</strong> <span data-rps-user>None</span></p>
+            <p><strong>Robot Played:</strong> <span data-rps-bot>None</span></p>
+            <p><strong>Result:</strong> <span data-rps-result>Ready</span></p>
+            <p><strong>Score:</strong> <span data-rps-score>You 0 - 0 Robot</span></p>
+          </div>
+        </article>
+
+        <article class="topic-card robot-card">
+          <h3>One-Word Chat Robot</h3>
+          <p class="note">Sends only one-word responses on purpose.</p>
+
+          <div class="chat-box one-word-chat">
+            <div class="chat-log" id="oneword-log" aria-live="polite"></div>
+            <form class="chat-form" id="oneword-form">
+              <input id="oneword-input" type="text" placeholder="Ask anything..." required />
+              <button class="btn btn-primary" type="submit">Send</button>
+            </form>
+          </div>
+        </article>
+
+        <article class="topic-card robot-card">
+          <h3>Fortune Robot</h3>
+          <p class="note">Gives dramatic prediction lines to hype your simulation show.</p>
+          <div class="button-row">
+            <button class="btn btn-outline" id="fortune-roll" type="button">Get Prediction</button>
+          </div>
+          <div class="sim-stats">
+            <p><strong>Forecast:</strong> <span data-fortune-output>Press the button.</span></p>
+          </div>
+        </article>
+
+        <article class="topic-card robot-card">
+          <h3>Reflex Robot</h3>
+          <p class="note">Tests your reaction time with random light signals.</p>
+          <div class="button-row">
+            <button class="btn btn-outline" id="reflex-start" type="button">Start Reflex Test</button>
+            <button class="btn btn-outline" id="reflex-stop" type="button">Stop</button>
+          </div>
+          <div class="sim-stats">
+            <p><strong>Signal:</strong> <span data-reflex-signal>Idle</span></p>
+            <p><strong>Best Reaction:</strong> <span data-reflex-best>-- ms</span></p>
+          </div>
+        </article>
+      </div>
+
+      <h3>More Robots</h3>
+      <div class="topic-grid robot-grid more-robot-grid">
+        <article class="topic-card robot-card">
+          <h3>Dice Robot</h3>
+          <p class="note">Rolls a random number to decide your next challenge.</p>
+          <div class="button-row">
+            <button class="btn btn-outline" id="dice-roll" type="button">Roll Dice</button>
+          </div>
+          <div class="sim-stats">
+            <p><strong>Result:</strong> <span data-dice-output>Roll to begin.</span></p>
+          </div>
+        </article>
+
+        <article class="topic-card robot-card">
+          <h3>Hype Robot</h3>
+          <p class="note">Generates short lines to hype your simulator show.</p>
+          <div class="button-row">
+            <button class="btn btn-outline" id="hype-run" type="button">Generate Hype</button>
+          </div>
+          <div class="sim-stats">
+            <p><strong>Hype:</strong> <span data-hype-output>Ready.</span></p>
+          </div>
+        </article>
+
+        <article class="topic-card robot-card">
+          <h3>Do-Nothing AI</h3>
+          <p class="note"><strong>I AM AN AI WHO DOES NOTHING.</strong> Click prank mode to fake a virus visual. It is harmless.</p>
+          <div class="button-row">
+            <button class="btn btn-outline" id="fake-virus-start" type="button">Prank Mode (Long)</button>
+            <button class="btn btn-outline" id="fake-virus-stop" type="button">Stop Prank</button>
+          </div>
+          <div class="sim-stats">
+            <p><strong>Status:</strong> <span data-virus-status>Idle</span></p>
+          </div>
+        </article>
+
+        <article class="topic-card robot-card">
+          <h3>UNO Auto-Pilot Robots</h3>
+          <p class="note">Four robot players run a full UNO match automatically.</p>
+          <div class="button-row">
+            <button class="btn btn-outline" id="uno-start" type="button">Start UNO</button>
+            <button class="btn btn-outline" id="uno-pause" type="button">Pause</button>
+            <button class="btn btn-outline" id="uno-reset" type="button">Reset</button>
+          </div>
+          <div class="sim-stats">
+            <p><strong>Top Card:</strong> <span data-uno-top>None</span></p>
+            <p><strong>Turn:</strong> <span data-uno-turn>Robot 1</span></p>
+            <p><strong>Status:</strong> <span data-uno-status>Ready</span></p>
+            <p><strong>Hands:</strong> <span data-uno-hands>R1:0 R2:0 R3:0 R4:0</span></p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <footer>S Sim experience with autopilot and robots.</footer>
+  </div>
+
+  <div class="virus-overlay" id="virus-overlay" aria-hidden="true">
+    <div class="virus-panel">
+      <strong id="virus-title">WannaCry-Style Simulation</strong>
+      <p><strong>SIMULATION ONLY:</strong> this does not encrypt, delete, or upload anything.</p>
+      <p class="virus-countdown">Countdown: <span id="virus-countdown">30</span>s</p>
+      <div class="virus-feed" id="virus-feed"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14"></script>
+  <script src="./autopilot-sim.js"></script>
+</body>
+</html>

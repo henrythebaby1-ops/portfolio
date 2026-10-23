@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Start Coding — RVR Dynamics</title>
+
+<!--
+  ============================================================
+  HOW TO EDIT THIS PAGE
+  ============================================================
+  This page now has a real, working code editor (CodeMirror)
+  with three tabs — HTML, CSS, and JS/React — and a live
+  preview on the right that runs whatever you write.
+
+  1. Starter code in each tab -> search "STARTER CODE" in the
+     <script> at the bottom.
+  2. Editor theme (currently "material-darker") -> the two
+     CodeMirror <link> tags in <head>, and CODEMIRROR_THEME
+     in the script.
+  3. Everything above the editor (headline, badge, intro,
+     language pills) -> same as before, edit the HTML directly.
+  4. React/Babel are loaded in the preview iframe only, so you
+     can write JSX in the JS tab. Remove the two script tags in
+     buildPreviewDoc() if you don't want React support.
+  ============================================================
+-->
+
+<!-- CodeMirror core + theme -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.21/lib/codemirror.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.21/theme/material-darker.min.css" />
+
+<style>
+  :root {
+    --color-bg: #F6EFE2;
+    --color-text: #221C15;
+    --color-text-muted: #6B6151;
+    --color-accent: #E8724A;
+    --color-accent-text: #FFFFFF;
+    --color-pill: #E7DFCE;
+    --color-card: #EFE6D6;
+    --font-display: "Quicksand", "Baloo 2", "Segoe UI", sans-serif;
+    --font-body: "Inter", "Segoe UI", sans-serif;
+    --radius-lg: 24px;
+    --radius-pill: 999px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+  }
+
+  .wrap {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 64px 40px 100px;
+  }
+
+  a.back-link {
+    display: inline-block;
+    margin-bottom: 40px;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    font-size: 15px;
+  }
+  a.back-link:hover { color: var(--color-accent); }
+
+  .top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(32px, 5vw, 48px);
+    margin: 0 0 16px;
+    opacity: 0;
+    transform: translateY(16px);
+    animation: fadeUp .7s ease forwards;
+  }
+
+  .free-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--color-pill);
+    color: var(--color-text);
+    padding: 8px 16px;
+    border-radius: var(--radius-pill);
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: 0;
+    animation: fadeUp .7s ease forwards;
+    animation-delay: .1s;
+  }
+  .free-badge .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #3FA36B;
+    display: inline-block;
+  }
+
+  p.intro {
+    color: var(--color-text-muted);
+    font-size: 17px;
+    margin: 0 0 32px;
+    max-width: 620px;
+    opacity: 0;
+    transform: translateY(16px);
+    animation: fadeUp .7s ease forwards;
+    animation-delay: .15s;
+  }
+
+  .lang-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 32px;
+    opacity: 0;
+    transform: translateY(16px);
+    animation: fadeUp .7s ease forwards;
+    animation-delay: .2s;
+  }
+  .lang-pill {
+    background: var(--color-card);
+    color: var(--color-text);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: var(--radius-pill);
+  }
+
+  /* ================= Editor ================= */
+  .editor-shell {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: #1c2128;
+    box-shadow: 0 20px 60px rgba(34, 28, 21, 0.14);
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeUp .8s ease forwards;
+    animation-delay: .3s;
+  }
+
+  .editor-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    background: #262c36;
+    flex-wrap: wrap;
+  }
+
+  .tabs { display: flex; gap: 6px; }
+  .tab-btn {
+    background: transparent;
+    border: none;
+    color: #9aa4b2;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+  }
+  .tab-btn:hover { color: #fff; }
+  .tab-btn.active { background: var(--color-accent); color: #fff; }
+
+  .run-btn {
+    background: var(--color-accent);
+    color: #fff;
+    border: none;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 700;
+    padding: 9px 20px;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .run-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(232,114,74,0.4); }
+  .run-btn svg { width: 12px; height: 12px; }
+
+  .editor-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .editor-pane { position: relative; min-height: 420px; }
+  .editor-pane .CodeMirror {
+    height: 420px;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+  .cm-host { display: none; height: 100%; }
+  .cm-host.active { display: block; }
+
+  .preview-pane {
+    background: #fff;
+    border-left: 1px solid #2f3742;
+  }
+  .preview-pane iframe {
+    width: 100%;
+    height: 420px;
+    border: none;
+    display: block;
+    background: #fff;
+  }
+
+  @keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    h1, .free-badge, p.intro, .lang-row, .editor-shell {
+      animation: none !important;
+      opacity: 1 !important;
+      transform: none !important;
+    }
+  }
+
+  @media (max-width: 860px) {
+    .wrap { padding: 48px 20px 72px; }
+    .top-row { flex-direction: column; align-items: flex-start; }
+    .editor-body { grid-template-columns: 1fr; }
+    .preview-pane { border-left: none; border-top: 1px solid #2f3742; }
+    .editor-pane .CodeMirror, .preview-pane iframe { height: 320px; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="wrap">
+    <a href="index.html" class="back-link">&larr; Back to home</a>
+
+    <div class="top-row">
+      <h1>Start coding</h1>
+      <span class="free-badge"><span class="dot"></span>Free — no login required</span>
+    </div>
+
+    <p class="intro">Write HTML, CSS, and React right in the browser to program your robot's interface and behavior. Nothing to install, nothing to sign up for — hit Run and see it live.</p>
+
+    <div class="lang-row">
+      <span class="lang-pill">HTML</span>
+      <span class="lang-pill">CSS</span>
+      <span class="lang-pill">React</span>
+      <span class="lang-pill">JavaScript</span>
+    </div>
+
+    <div class="editor-shell">
+      <div class="editor-toolbar">
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="html" type="button">HTML</button>
+          <button class="tab-btn" data-tab="css" type="button">CSS</button>
+          <button class="tab-btn" data-tab="js" type="button">JS (React)</button>
+        </div>
+        <button class="run-btn" id="runBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          Run
+        </button>
+      </div>
+
+      <div class="editor-body">
+        <div class="editor-pane">
+          <div class="cm-host active" id="host-html"><textarea id="cm-html"></textarea></div>
+          <div class="cm-host" id="host-css"><textarea id="cm-css"></textarea></div>
+          <div class="cm-host" id="host-js"><textarea id="cm-js"></textarea></div>
+        </div>
+        <div class="preview-pane">
+          <iframe id="preview" title="Live preview" sandbox="allow-scripts"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CodeMirror core -->
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.21/lib/codemirror.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.21/mode/xml/xml.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.21/mode/css/css.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.21/mode/javascript/javascript.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.21/mode/htmlmixed/htmlmixed.min.js"></script>
+
+  <script>
+    const CODEMIRROR_THEME = 'material-darker';
+
+    // ---- STARTER CODE ----
+    // Edit these three strings to change what loads by default.
+    const STARTER_HTML = '<div id="root"></div>\n';
+
+    const STARTER_CSS =
+      'body {\n' +
+      '  margin: 0;\n' +
+      '  font-family: -apple-system, sans-serif;\n' +
+      '  background: #F6EFE2;\n' +
+      '  color: #221C15;\n' +
+      '  display: flex;\n' +
+      '  align-items: center;\n' +
+      '  justify-content: center;\n' +
+      '  min-height: 100vh;\n' +
+      '  text-align: center;\n' +
+      '}\n' +
+      'button {\n' +
+      '  background: #E8724A;\n' +
+      '  color: #fff;\n' +
+      '  border: none;\n' +
+      '  padding: 10px 20px;\n' +
+      '  border-radius: 999px;\n' +
+      '  font-size: 15px;\n' +
+      '  font-weight: 600;\n' +
+      '  cursor: pointer;\n' +
+      '}\n';
+
+    const STARTER_JS =
+      "function App() {\n" +
+      "  const [count, setCount] = React.useState(0);\n" +
+      "  return (\n" +
+      "    <div>\n" +
+      "      <h1>Hello, RVR Dynamics 👋</h1>\n" +
+      "      <p>Edit the HTML, CSS, or this JS/React tab, then hit Run.</p>\n" +
+      "      <button onClick={() => setCount(count + 1)}>Clicked {count} times</button>\n" +
+      "    </div>\n" +
+      "  );\n" +
+      "}\n\n" +
+      "ReactDOM.createRoot(document.getElementById('root')).render(<App />);\n";
+
+    // ---- Set up the three CodeMirror instances ----
+    const cmHtml = CodeMirror.fromTextArea(document.getElementById('cm-html'), {
+      mode: 'htmlmixed', theme: CODEMIRROR_THEME, lineNumbers: true, tabSize: 2, viewportMargin: Infinity
+    });
+    const cmCss = CodeMirror.fromTextArea(document.getElementById('cm-css'), {
+      mode: 'css', theme: CODEMIRROR_THEME, lineNumbers: true, tabSize: 2, viewportMargin: Infinity
+    });
+    const cmJs = CodeMirror.fromTextArea(document.getElementById('cm-js'), {
+      mode: 'jsx', theme: CODEMIRROR_THEME, lineNumbers: true, tabSize: 2, viewportMargin: Infinity
+    });
+
+    cmHtml.setValue(STARTER_HTML);
+    cmCss.setValue(STARTER_CSS);
+    cmJs.setValue(STARTER_JS);
+
+    // ---- Tab switching ----
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const hosts = {
+      html: document.getElementById('host-html'),
+      css: document.getElementById('host-css'),
+      js: document.getElementById('host-js')
+    };
+    const editors = { html: cmHtml, css: cmCss, js: cmJs };
+
+    tabButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        tabButtons.forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        Object.values(hosts).forEach((h) => h.classList.remove('active'));
+        const tab = btn.dataset.tab;
+        hosts[tab].classList.add('active');
+        editors[tab].refresh();
+      });
+    });
+
+    // ---- Build the preview document and run it ----
+    function buildPreviewDoc() {
+      return (
+        '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+        '<style>' + cmCss.getValue() + '</style>' +
+        '<script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"><\/script>' +
+        '<script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"><\/script>' +
+        '<script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"><\/script>' +
+        '</head><body>' +
+        cmHtml.getValue() +
+        '<script type="text/babel">' + cmJs.getValue() + '<\/script>' +
+        '</body></html>'
+      );
+    }
+
+    function runPreview() {
+      document.getElementById('preview').srcdoc = buildPreviewDoc();
+    }
+
+    document.getElementById('runBtn').addEventListener('click', runPreview);
+
+    // Run once on load so there's something to see immediately.
+    window.addEventListener('load', runPreview);
+  </script>
+
+</body>
+</html>

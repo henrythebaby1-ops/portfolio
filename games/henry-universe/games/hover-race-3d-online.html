@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Hover Race 3D Online</title>
+<style>body{margin:0;background:#04070f;color:#dbeafe;font-family:Trebuchet MS,Segoe UI,sans-serif;overflow:hidden}#ui{position:fixed;top:10px;left:10px;background:#111b2ecf;border:1px solid #2c456d;border-radius:10px;padding:10px;width:330px;z-index:20}input,button{border-radius:8px;border:1px solid #36537f;background:#0a1322;color:#dbeafe;padding:7px;font-weight:700}button{cursor:pointer}.r{display:flex;gap:6px;margin-top:6px}#s,#lb{font-size:12px;color:#93c5fd;margin-top:6px;line-height:1.35}</style>
+</head><body>
+<div id="ui"><div style="font-weight:900">Hover Race 3D Online</div><div class="r"><input id="name" value="Racer"/><input id="room" placeholder="Room ID"/></div><div class="r"><button id="host">Host</button><button id="join">Join</button><button id="leave">Leave</button></div><div id="s">Host shares room ID. Up to many players.</div><div id="lb"></div></div>
+<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script><script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x050912);const cam=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.1,2000);const ren=new THREE.WebGLRenderer({antialias:true});ren.setSize(innerWidth,innerHeight);document.body.appendChild(ren.domElement);
+scene.add(new THREE.HemisphereLight(0xaac8ff,0x223344,1));const d=new THREE.DirectionalLight(0xffffff,.8);d.position.set(10,16,5);scene.add(d);
+const track=new THREE.Mesh(new THREE.TorusGeometry(35,6,24,200),new THREE.MeshStandardMaterial({color:0x1b2a45,metalness:.15,roughness:.85}));track.rotation.x=Math.PI/2;scene.add(track);
+const marks=[];for(let i=0;i<42;i++){const a=i/42*Math.PI*2,m=new THREE.Mesh(new THREE.BoxGeometry(1,0.2,0.7),new THREE.MeshStandardMaterial({color:i%2?0x6ee7b7:0x22d3ee}));m.position.set(Math.cos(a)*35,0.8,Math.sin(a)*35);m.lookAt(0,0,0);scene.add(m);marks.push(m)}
+const ui={name:document.getElementById('name'),room:document.getElementById('room'),s:document.getElementById('s'),lb:document.getElementById('lb')};
+let peer=null,isHost=false,hostConn=null,myId=null,conns={},players={},meshes={},laps={};
+const me={a:0,s:0.02,l:0,color:'#f97316',name:'Racer',t:0}; const keys={}; addEventListener('keydown',e=>keys[e.key.toLowerCase()]=true); addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+function st(t){ui.s.textContent=t;} function send(c,o){if(c&&c.open)c.send(o)} function bc(o){Object.values(conns).forEach(c=>send(c,o));}
+function boot(cb){if(peer){cb&&cb();return;} peer=new Peer(); peer.on('open',id=>{myId=id;cb&&cb();}); peer.on('connection',c=>setConn(c)); peer.on('error',e=>st('Peer error: '+e.type));}
+function setConn(c){conns[c.peer]=c;c.on('data',m=>onMsg(c,m));c.on('close',()=>{delete conns[c.peer];delete players[c.peer];delete laps[c.peer];});}
+function onMsg(c,m){if(isHost){if(m.t==='join'){players[c.peer]={a:0,s:.02,l:0,name:m.name,color:m.color,t:Date.now()};laps[c.peer]=0;send(c,{t:'hello',id:c.peer});} if(m.t==='state'){players[c.peer]=Object.assign(players[c.peer]||{},m.p);}} else {if(m.t==='snapshot'){players=m.players||{};laps=m.laps||{};}}}
+function host(){boot(()=>{isHost=true;ui.room.value=myId;players[myId]=Object.assign({},me,{name:ui.name.value});laps[myId]=0;st('Hosting '+myId);});}
+function join(){const room=ui.room.value.trim();if(!room)return;boot(()=>{isHost=false;hostConn=peer.connect(room,{reliable:true});hostConn.on('open',()=>{setConn(hostConn);send(hostConn,{t:'join',name:ui.name.value||'Racer',color:me.color});st('Joined '+room);});});}
+function leave(){try{peer&&peer.destroy()}catch{}peer=null;isHost=false;hostConn=null;conns={};players={};laps={};Object.values(meshes).forEach(m=>scene.remove(m));meshes={};st('Disconnected');}
+document.getElementById('host').onclick=host;document.getElementById('join').onclick=join;document.getElementById('leave').onclick=leave;
+function ensure(id,p){if(meshes[id])return;const m=new THREE.Mesh(new THREE.BoxGeometry(1.4,.7,2.5),new THREE.MeshStandardMaterial({color:p.color||'#fff'}));scene.add(m);meshes[id]=m;}
+let n=0;
+function tick(){
+  if(keys['a']||keys['arrowleft'])me.a-=0.045; if(keys['d']||keys['arrowright'])me.a+=0.045; if(keys['w']||keys['arrowup'])me.s=Math.min(.08,me.s+.0012); else me.s=Math.max(.018,me.s*.996); if(keys['s']||keys['arrowdown'])me.s=Math.max(.012,me.s-.0015);
+  const prev=me.l; me.l=(me.l+me.s)%(Math.PI*2); if(prev>me.l) laps[myId]=(laps[myId]||0)+1; players[myId]=Object.assign(players[myId]||{},me,{name:ui.name.value||'Racer',t:Date.now()});
+  if(isHost){Object.keys(players).forEach(id=>{if(id!==myId&&Date.now()-(players[id].t||0)>10000){delete players[id];delete laps[id];}}); if(n++%2===0)bc({t:'snapshot',players,laps});}
+  else if(hostConn&&hostConn.open&&n++%2===0)send(hostConn,{t:'state',p:Object.assign({},me,{name:ui.name.value||'Racer',t:Date.now()})});
+}
+function render(){
+  Object.keys(players).forEach(id=>{ensure(id,players[id]);const p=players[id],r=35+((id===myId)?0:0.4);const x=Math.cos(p.l||0)*r,z=Math.sin(p.l||0)*r,m=meshes[id];m.position.set(x,1.3,z);m.lookAt(Math.cos((p.l||0)+0.2)*r,1.3,Math.sin((p.l||0)+0.2)*r);if(id===myId)m.material.emissive.setHex(0x114422);});
+  Object.keys(meshes).forEach(id=>{if(!players[id]){scene.remove(meshes[id]);delete meshes[id];}});
+  const rank=Object.keys(players).map(id=>({id,n:players[id].name||id.slice(0,5),lap:laps[id]||0,prog:players[id].l||0})).sort((a,b)=>b.lap-a.lap||b.prog-a.prog).slice(0,6);
+  ui.lb.innerHTML=rank.map((r,i)=>`${i+1}. ${r.n} - Lap ${r.lap}`).join('<br>');
+  const mx=Math.cos(me.l)*43,mz=Math.sin(me.l)*43; cam.position.set(mx,16,mz); cam.lookAt(Math.cos(me.l)*35,0,Math.sin(me.l)*35);
+}
+function loop(){requestAnimationFrame(loop);tick();render();ren.render(scene,cam);} loop(); addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();ren.setSize(innerWidth,innerHeight)});
+</script></body></html>

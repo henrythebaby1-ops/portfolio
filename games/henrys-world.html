@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Henry's World Studio</title>
+  <style>
+    :root {
+      --bg: #090c12;
+      --panel: #121a29;
+      --panel-2: #18243a;
+      --line: #253655;
+      --text: #e9f0ff;
+      --muted: #9bb1d6;
+      --accent: #24c0ff;
+      --accent-2: #59f5bc;
+      --danger: #ff6584;
+      --shadow: 0 20px 70px rgba(0, 0, 0, 0.45);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 20%, #14305c 0%, transparent 35%),
+        radial-gradient(circle at 90% 10%, #1a3f2e 0%, transparent 30%),
+        linear-gradient(180deg, #070a11, #0b1220 40%, #0a0e19 100%);
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      min-height: 100vh;
+    }
+
+    .app {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 18px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .brand {
+      font-size: 1.3rem;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: linear-gradient(45deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 18px rgba(36, 192, 255, 0.6);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.2); opacity: 0.75; }
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      color: #042338;
+      border-color: transparent;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 330px 1fr;
+      gap: 16px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .left {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .section-title {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 900;
+    }
+
+    .game-list {
+      display: grid;
+      gap: 9px;
+    }
+
+    .game-item {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 12px;
+      padding: 10px;
+      color: var(--text);
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 700;
+    }
+
+    .game-item.active {
+      border-color: var(--accent);
+      background: var(--panel-2);
+    }
+
+    .badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      font-size: 0.72rem;
+      background: #0e1a2f;
+      color: var(--accent-2);
+      border: 1px solid #274f45;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-weight: 700;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .stat {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+    }
+
+    .stat .n {
+      font-size: 1.15rem;
+      font-weight: 900;
+      color: var(--accent);
+    }
+
+    .stat .l {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    .right {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 640px;
+    }
+
+    .hero {
+      background: linear-gradient(130deg, rgba(36,192,255,0.15), rgba(89,245,188,0.08));
+      border: 1px solid #27517f;
+      border-radius: 14px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .hero p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .btn.primary {
+      border-color: transparent;
+      color: #032233;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    }
+
+    .btn.danger {
+      border-color: #703346;
+      color: #ffc0cf;
+      background: rgba(255, 101, 132, 0.12);
+    }
+
+    .canvas-wrap {
+      position: relative;
+      background: #081020;
+      border: 1px solid #21365b;
+      border-radius: 14px;
+      overflow: hidden;
+      min-height: 430px;
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+      background: linear-gradient(180deg, #0a1530 0%, #0d1f3f 100%);
+    }
+
+    .overlay {
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      background: rgba(4, 12, 26, 0.8);
+      border: 1px solid #34527b;
+      border-radius: 10px;
+      padding: 8px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .maker {
+      display: none;
+      gap: 10px;
+    }
+
+    .maker.active {
+      display: grid;
+      grid-template-columns: 1fr 220px;
+    }
+
+    .palette {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+
+    .tool {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #0f1a2f;
+      color: var(--text);
+      font-weight: 700;
+      padding: 8px;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .tool.active {
+      border-color: var(--accent);
+      background: #123257;
+    }
+
+    .note {
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.35;
+      margin-top: 2px;
+    }
+
+    .export-box {
+      width: 100%;
+      min-height: 80px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #091222;
+      color: #d8e8ff;
+      padding: 8px;
+      font-size: 0.75rem;
+      resize: vertical;
+    }
+
+    .mobile-help {
+      display: none;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 0.77rem;
+    }
+
+    @media (max-width: 960px) {
+      .layout { grid-template-columns: 1fr; }
+      .maker.active { grid-template-columns: 1fr; }
+      .mobile-help { display: block; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="brand"><span class="brand-dot"></span>Henry's World Studio</div>
+      <div class="tabs">
+        <button class="tab active" id="tab-play">Play</button>
+        <button class="tab" id="tab-make">Make Games</button>
+      </div>
+    </div>
+
+    <div class="layout">
+      <aside class="left card">
+        <h3 class="section-title">Arcade</h3>
+        <div class="game-list">
+          <button class="game-item active" data-game="runner">Sky Runner <span>⚡</span></button>
+          <button class="game-item" data-game="snake">Neon Snake <span>🐍</span></button>
+          <button class="game-item" data-game="shooter">Meteor Blaster <span>☄️</span></button>
+          <button class="game-item" data-game="duel">Arena Duel 2P <span>⚔️</span></button>
+          <button class="game-item" data-game="tunnel3d">Neon Tunnel 3D <span>🌀</span></button>
+          <button class="game-item" data-game="custom">Your Custom Game <span>🛠️</span></button>
+        </div>
+
+        <h3 class="section-title">Features</h3>
+        <div class="badges">
+          <span class="badge">Modern UI</span>
+          <span class="badge">Game Maker</span>
+          <span class="badge">2P Multiplayer</span>
+          <span class="badge">3D Canvas Mode</span>
+          <span class="badge">Keyboard + Touch</span>
+        </div>
+
+        <h3 class="section-title">Progress</h3>
+        <div class="stats">
+          <div class="stat"><div class="n" id="best-score">0</div><div class="l">Best Score</div></div>
+          <div class="stat"><div class="n" id="plays">0</div><div class="l">Games Played</div></div>
+        </div>
+      </aside>
+
+      <main class="right card">
+        <section class="hero">
+          <div>
+            <h1 id="title">Sky Runner</h1>
+            <p id="desc">Dodge obstacles, grab stars, survive as long as you can.</p>
+          </div>
+          <div class="controls">
+            <button class="btn primary" id="start-btn">Start</button>
+            <button class="btn" id="pause-btn">Pause</button>
+            <button class="btn danger" id="reset-btn">Reset</button>
+          </div>
+        </section>
+
+        <section id="play-view">
+          <div class="canvas-wrap">
+            <canvas id="game" width="900" height="500"></canvas>
+            <div class="overlay" id="overlay-text">Arrow Keys / WASD to move. Space to pause.</div>
+          </div>
+          <div class="mobile-help">On mobile, drag on the canvas to move.</div>
+        </section>
+
+        <section class="maker" id="maker-view">
+          <div class="canvas-wrap">
+            <canvas id="maker-canvas" width="900" height="500"></canvas>
+            <div class="overlay">Click tiles to build. Then click "Play Custom".</div>
+          </div>
+          <div class="palette">
+            <button class="tool active" data-tile="0">Eraser</button>
+            <button class="tool" data-tile="1">Wall</button>
+            <button class="tool" data-tile="2">Coin</button>
+            <button class="tool" data-tile="3">Enemy</button>
+            <button class="tool" data-tile="4">Goal</button>
+            <button class="tool" data-tile="5">Player Spawn</button>
+            <button class="btn primary" id="play-custom">Play Custom</button>
+            <button class="btn primary" id="build-2p">Build Multiplayer Arena</button>
+            <button class="btn primary" id="build-3d">Build 3D Track</button>
+            <button class="btn" id="save-custom">Export Level</button>
+            <button class="btn" id="load-custom">Import Level</button>
+            <textarea class="export-box" id="level-data" placeholder="Level code appears here..."></textarea>
+            <div class="note">Build top-down levels, or auto-generate multiplayer and 3D game templates with one click.</div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const makerCanvas = document.getElementById("maker-canvas");
+    const makerCtx = makerCanvas.getContext("2d");
+
+    const tabPlay = document.getElementById("tab-play");
+    const tabMake = document.getElementById("tab-make");
+    const playView = document.getElementById("play-view");
+    const makerView = document.getElementById("maker-view");
+
+    const titleEl = document.getElementById("title");
+    const descEl = document.getElementById("desc");
+    const bestEl = document.getElementById("best-score");
+    const playsEl = document.getElementById("plays");
+
+    const startBtn = document.getElementById("start-btn");
+    const pauseBtn = document.getElementById("pause-btn");
+    const resetBtn = document.getElementById("reset-btn");
+    const playCustomBtn = document.getElementById("play-custom");
+    const build2pBtn = document.getElementById("build-2p");
+    const build3dBtn = document.getElementById("build-3d");
+    const saveCustomBtn = document.getElementById("save-custom");
+    const loadCustomBtn = document.getElementById("load-custom");
+    const levelData = document.getElementById("level-data");
+    const overlayText = document.getElementById("overlay-text");
+
+    let bestScore = Number(localStorage.getItem("henry_best") || 0);
+    let plays = Number(localStorage.getItem("henry_plays") || 0);
+    bestEl.textContent = bestScore;
+    playsEl.textContent = plays;
+
+    const state = {
+      mode: "play",
+      game: "runner",
+      running: false,
+      paused: false,
+      score: 0,
+      frame: 0,
+      pointerDown: false,
+      pointer: { x: 0, y: 0 }
+    };
+
+    const keys = {};
+    document.addEventListener("keydown", (e) => {
+      keys[e.key.toLowerCase()] = true;
+      if (e.key === " ") {
+        e.preventDefault();
+        togglePause();
+      }
+    });
+    document.addEventListener("keyup", (e) => keys[e.key.toLowerCase()] = false);
+
+    canvas.addEventListener("pointerdown", (e) => {
+      state.pointerDown = true;
+      setPointer(e);
+    });
+    canvas.addEventListener("pointermove", setPointer);
+    window.addEventListener("pointerup", () => state.pointerDown = false);
+    function setPointer(e) {
+      const r = canvas.getBoundingClientRect();
+      state.pointer.x = (e.clientX - r.left) * (canvas.width / r.width);
+      state.pointer.y = (e.clientY - r.top) * (canvas.height / r.height);
+    }
+
+    const gamesMeta = {
+      runner: {
+        name: "Sky Runner",
+        desc: "Dodge obstacles, grab stars, survive as long as you can.",
+        controls: "W/S or Up/Down to fly. Space to pause."
+      },
+      snake: {
+        name: "Neon Snake",
+        desc: "Eat energy cores and keep your snake from crashing.",
+        controls: "WASD or Arrow keys to turn."
+      },
+      shooter: {
+        name: "Meteor Blaster",
+        desc: "Blast meteors and survive waves in this arcade shooter.",
+        controls: "WASD/Arrows move. Enter shoots."
+      },
+      duel: {
+        name: "Arena Duel 2P",
+        desc: "Local multiplayer arena. P1 and P2 battle for control crystals.",
+        controls: "P1: WASD + F shoot. P2: Arrows + Enter shoot."
+      },
+      tunnel3d: {
+        name: "Neon Tunnel 3D",
+        desc: "3D lane dodger with perspective tunnel rendering.",
+        controls: "A/D or Left/Right to swap lanes."
+      },
+      custom: {
+        name: "Your Custom Game",
+        desc: "Use Make Games mode to build a level, then play it here.",
+        controls: "WASD/Arrows move. Collect coins, avoid enemies."
+      }
+    };
+
+    let runner, snake, shooter, duel, tunnel3d, custom;
+
+    function resetRunner() {
+      runner = {
+        p: { x: 150, y: 250, r: 18, vy: 0 },
+        obstacles: [],
+        stars: []
+      };
+      state.score = 0;
+    }
+
+    function resetSnake() {
+      const grid = 25;
+      snake = {
+        grid,
+        cell: 20,
+        dir: { x: 1, y: 0 },
+        nextDir: { x: 1, y: 0 },
+        body: [{ x: 8, y: 10 }, { x: 7, y: 10 }, { x: 6, y: 10 }],
+        food: { x: 18, y: 10 },
+        tick: 0
+      };
+      state.score = 0;
+    }
+
+    function resetShooter() {
+      shooter = {
+        p: { x: 450, y: 430, r: 16, cooldown: 0 },
+        bullets: [],
+        meteors: []
+      };
+      state.score = 0;
+    }
+
+    function resetDuel() {
+      duel = {
+        p1: { x: 140, y: 250, r: 18, hp: 5, cool: 0, score: 0 },
+        p2: { x: 760, y: 250, r: 18, hp: 5, cool: 0, score: 0 },
+        shots: [],
+        crystals: [],
+        timer: 60 * 70
+      };
+      state.score = 0;
+    }
+
+    function resetTunnel3d() {
+      tunnel3d = {
+        lane: 0,
+        obstacles: [],
+        speed: 0.035
+      };
+      state.score = 0;
+    }
+
+    const mapW = 30;
+    const mapH = 16;
+    const tile = 30;
+    let selectedTile = 0;
+    let customGrid = new Array(mapW * mapH).fill(0);
+
+    function defaultCustom() {
+      customGrid.fill(0);
+      for (let x = 0; x < mapW; x++) {
+        customGrid[x] = 1;
+        customGrid[x + (mapH - 1) * mapW] = 1;
+      }
+      for (let y = 0; y < mapH; y++) {
+        customGrid[y * mapW] = 1;
+        customGrid[(mapW - 1) + y * mapW] = 1;
+      }
+      customGrid[2 + 2 * mapW] = 5;
+      customGrid[27 + 13 * mapW] = 4;
+      customGrid[8 + 5 * mapW] = 2;
+      customGrid[14 + 8 * mapW] = 2;
+      customGrid[20 + 10 * mapW] = 3;
+    }
+
+    function buildMultiplayerTemplate() {
+      showMakeMode(false);
+      selectGame("duel");
+      startGame();
+    }
+
+    function build3dTemplate() {
+      showMakeMode(false);
+      selectGame("tunnel3d");
+      startGame();
+    }
+
+    function resetCustomPlay() {
+      let spawn = { x: 2, y: 2 };
+      const enemies = [];
+      let coins = 0;
+      let goal = { x: 27, y: 13 };
+
+      for (let y = 0; y < mapH; y++) {
+        for (let x = 0; x < mapW; x++) {
+          const t = customGrid[x + y * mapW];
+          if (t === 5) spawn = { x, y };
+          if (t === 3) enemies.push({ x, y, dir: Math.random() > 0.5 ? 1 : -1, axis: Math.random() > 0.5 ? "x" : "y" });
+          if (t === 2) coins++;
+          if (t === 4) goal = { x, y };
+        }
+      }
+
+      custom = {
+        p: { x: spawn.x, y: spawn.y },
+        enemies,
+        coinsLeft: coins,
+        goal
+      };
+      state.score = 0;
+    }
+
+    function drawRoundedRect(ctx2, x, y, w, h, r, fill) {
+      ctx2.beginPath();
+      ctx2.moveTo(x + r, y);
+      ctx2.arcTo(x + w, y, x + w, y + h, r);
+      ctx2.arcTo(x + w, y + h, x, y + h, r);
+      ctx2.arcTo(x, y + h, x, y, r);
+      ctx2.arcTo(x, y, x + w, y, r);
+      ctx2.closePath();
+      ctx2.fillStyle = fill;
+      ctx2.fill();
+    }
+
+    function gameOver() {
+      state.running = false;
+      if (state.score > bestScore) {
+        bestScore = state.score;
+        localStorage.setItem("henry_best", String(bestScore));
+      }
+      bestEl.textContent = bestScore;
+    }
+
+    function startGame() {
+      state.running = true;
+      state.paused = false;
+      plays++;
+      playsEl.textContent = plays;
+      localStorage.setItem("henry_plays", String(plays));
+
+      if (state.game === "runner") resetRunner();
+      if (state.game === "snake") resetSnake();
+      if (state.game === "shooter") resetShooter();
+      if (state.game === "duel") resetDuel();
+      if (state.game === "tunnel3d") resetTunnel3d();
+      if (state.game === "custom") resetCustomPlay();
+    }
+
+    function togglePause() {
+      if (!state.running) return;
+      state.paused = !state.paused;
+    }
+
+    function selectGame(id) {
+      state.game = id;
+      const meta = gamesMeta[id];
+      titleEl.textContent = meta.name;
+      descEl.textContent = meta.desc;
+      overlayText.textContent = meta.controls;
+      document.querySelectorAll(".game-item").forEach((b) => b.classList.toggle("active", b.dataset.game === id));
+      state.running = false;
+      state.paused = false;
+      drawIdle();
+    }
+
+    function drawIdle() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#e9f0ff";
+      ctx.font = "bold 44px Trebuchet MS";
+      ctx.fillText(gamesMeta[state.game].name, 38, 120);
+      ctx.fillStyle = "#9bb1d6";
+      ctx.font = "22px Trebuchet MS";
+      ctx.fillText("Press Start to play", 40, 160);
+      ctx.font = "16px Trebuchet MS";
+      ctx.fillText("Score: " + state.score, 40, 195);
+      ctx.fillStyle = "#6ecbff";
+      ctx.fillText(gamesMeta[state.game].controls, 40, 230);
+    }
+
+    function runnerTick() {
+      const p = runner.p;
+      if (keys["arrowup"] || keys["w"]) p.vy -= 0.6;
+      if (keys["arrowdown"] || keys["s"]) p.vy += 0.6;
+      if (state.pointerDown) p.vy += (state.pointer.y > p.y ? 0.4 : -0.4);
+      p.vy *= 0.92;
+      p.y += p.vy;
+      p.y = Math.max(25, Math.min(canvas.height - 25, p.y));
+
+      if (state.frame % 40 === 0) {
+        runner.obstacles.push({ x: canvas.width + 30, y: 40 + Math.random() * (canvas.height - 80), w: 26, h: 90 + Math.random() * 80 });
+      }
+      if (state.frame % 70 === 0) {
+        runner.stars.push({ x: canvas.width + 30, y: 30 + Math.random() * (canvas.height - 60), r: 10 });
+      }
+
+      runner.obstacles.forEach(o => o.x -= 5.5);
+      runner.stars.forEach(s => s.x -= 5.5);
+      runner.obstacles = runner.obstacles.filter(o => o.x > -60);
+      runner.stars = runner.stars.filter(s => s.x > -60);
+
+      for (const o of runner.obstacles) {
+        if (p.x + p.r > o.x && p.x - p.r < o.x + o.w && p.y + p.r > o.y && p.y - p.r < o.y + o.h) return gameOver();
+      }
+
+      runner.stars = runner.stars.filter(s => {
+        const d = Math.hypot(p.x - s.x, p.y - s.y);
+        if (d < p.r + s.r) { state.score += 5; return false; }
+        return true;
+      });
+
+      state.score += 1;
+
+      const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      g.addColorStop(0, "#0a1732");
+      g.addColorStop(1, "#11244a");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < 90; i++) {
+        const x = (i * 101 + state.frame * 2) % canvas.width;
+        const y = (i * 61) % canvas.height;
+        ctx.fillStyle = "rgba(255,255,255,0.5)";
+        ctx.fillRect(x, y, 2, 2);
+      }
+
+      ctx.fillStyle = "#ff6688";
+      runner.obstacles.forEach(o => drawRoundedRect(ctx, o.x, o.y, o.w, o.h, 8, "#ff6688"));
+      runner.stars.forEach(s => {
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = "#59f5bc";
+        ctx.fill();
+      });
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = "#24c0ff";
+      ctx.fill();
+
+      hud();
+    }
+
+    function snakeTick() {
+      const g = snake.grid;
+      const c = snake.cell;
+      const ox = Math.floor((canvas.width - g * c) / 2);
+      const oy = Math.floor((canvas.height - g * c) / 2);
+      snake.tick++;
+
+      if (keys["arrowup"] || keys["w"]) snake.nextDir = { x: 0, y: -1 };
+      if (keys["arrowdown"] || keys["s"]) snake.nextDir = { x: 0, y: 1 };
+      if (keys["arrowleft"] || keys["a"]) snake.nextDir = { x: -1, y: 0 };
+      if (keys["arrowright"] || keys["d"]) snake.nextDir = { x: 1, y: 0 };
+
+      if (snake.tick % 8 === 0) {
+        const nd = snake.nextDir;
+        if (!(nd.x === -snake.dir.x && nd.y === -snake.dir.y)) snake.dir = nd;
+
+        const head = { x: snake.body[0].x + snake.dir.x, y: snake.body[0].y + snake.dir.y };
+        if (head.x < 0 || head.y < 0 || head.x >= g || head.y >= g) return gameOver();
+        if (snake.body.some(b => b.x === head.x && b.y === head.y)) return gameOver();
+        snake.body.unshift(head);
+
+        if (head.x === snake.food.x && head.y === snake.food.y) {
+          state.score += 10;
+          let ok = false;
+          while (!ok) {
+            const nx = Math.floor(Math.random() * g);
+            const ny = Math.floor(Math.random() * g);
+            if (!snake.body.some(b => b.x === nx && b.y === ny)) {
+              snake.food = { x: nx, y: ny };
+              ok = true;
+            }
+          }
+        } else {
+          snake.body.pop();
+        }
+      }
+
+      ctx.fillStyle = "#091225";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#10213d";
+      ctx.fillRect(ox, oy, g * c, g * c);
+
+      snake.body.forEach((b, i) => {
+        drawRoundedRect(ctx, ox + b.x * c + 2, oy + b.y * c + 2, c - 4, c - 4, 5, i === 0 ? "#59f5bc" : "#24c0ff");
+      });
+      drawRoundedRect(ctx, ox + snake.food.x * c + 3, oy + snake.food.y * c + 3, c - 6, c - 6, 6, "#ff6584");
+      hud();
+    }
+
+    function shooterTick() {
+      const p = shooter.p;
+      let vx = 0, vy = 0;
+      if (keys["arrowleft"] || keys["a"]) vx = -1;
+      if (keys["arrowright"] || keys["d"]) vx = 1;
+      if (keys["arrowup"] || keys["w"]) vy = -1;
+      if (keys["arrowdown"] || keys["s"]) vy = 1;
+
+      p.x += vx * 6;
+      p.y += vy * 6;
+      if (state.pointerDown) {
+        p.x += (state.pointer.x - p.x) * 0.08;
+        p.y += (state.pointer.y - p.y) * 0.08;
+      }
+      p.x = Math.max(20, Math.min(canvas.width - 20, p.x));
+      p.y = Math.max(20, Math.min(canvas.height - 20, p.y));
+
+      if ((keys[" "] || keys["enter"]) && p.cooldown <= 0) {
+        shooter.bullets.push({ x: p.x, y: p.y - 14, vy: -9 });
+        p.cooldown = 8;
+      }
+      p.cooldown--;
+
+      if (state.frame % 24 === 0) {
+        shooter.meteors.push({ x: 20 + Math.random() * (canvas.width - 40), y: -20, r: 12 + Math.random() * 20, vy: 2 + Math.random() * 2 });
+      }
+
+      shooter.bullets.forEach(b => b.y += b.vy);
+      shooter.meteors.forEach(m => m.y += m.vy);
+      shooter.bullets = shooter.bullets.filter(b => b.y > -20);
+      shooter.meteors = shooter.meteors.filter(m => m.y < canvas.height + 40);
+
+      for (const m of shooter.meteors) {
+        if (Math.hypot(m.x - p.x, m.y - p.y) < m.r + p.r - 2) return gameOver();
+      }
+
+      for (let i = shooter.meteors.length - 1; i >= 0; i--) {
+        const m = shooter.meteors[i];
+        for (let j = shooter.bullets.length - 1; j >= 0; j--) {
+          const b = shooter.bullets[j];
+          if (Math.hypot(m.x - b.x, m.y - b.y) < m.r + 4) {
+            shooter.meteors.splice(i, 1);
+            shooter.bullets.splice(j, 1);
+            state.score += 12;
+            break;
+          }
+        }
+      }
+
+      state.score += 0.15;
+      ctx.fillStyle = "#080f1f";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      shooter.meteors.forEach(m => {
+        ctx.beginPath();
+        ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
+        ctx.fillStyle = "#ff6584";
+        ctx.fill();
+      });
+      shooter.bullets.forEach(b => drawRoundedRect(ctx, b.x - 3, b.y - 10, 6, 12, 3, "#59f5bc"));
+      drawRoundedRect(ctx, p.x - 16, p.y - 14, 32, 28, 8, "#24c0ff");
+      hud();
+    }
+
+    function duelTick() {
+      const p1 = duel.p1;
+      const p2 = duel.p2;
+
+      const mv = 4.2;
+      if (keys["w"]) p1.y -= mv;
+      if (keys["s"]) p1.y += mv;
+      if (keys["a"]) p1.x -= mv;
+      if (keys["d"]) p1.x += mv;
+      if (keys["arrowup"]) p2.y -= mv;
+      if (keys["arrowdown"]) p2.y += mv;
+      if (keys["arrowleft"]) p2.x -= mv;
+      if (keys["arrowright"]) p2.x += mv;
+
+      p1.x = Math.max(20, Math.min(canvas.width - 20, p1.x));
+      p1.y = Math.max(20, Math.min(canvas.height - 20, p1.y));
+      p2.x = Math.max(20, Math.min(canvas.width - 20, p2.x));
+      p2.y = Math.max(20, Math.min(canvas.height - 20, p2.y));
+
+      if (keys["f"] && p1.cool <= 0) {
+        duel.shots.push({ x: p1.x, y: p1.y, vx: 6.2, vy: 0, owner: 1 });
+        p1.cool = 18;
+      }
+      if ((keys["enter"] || keys["/"]) && p2.cool <= 0) {
+        duel.shots.push({ x: p2.x, y: p2.y, vx: -6.2, vy: 0, owner: 2 });
+        p2.cool = 18;
+      }
+      p1.cool--;
+      p2.cool--;
+
+      if (state.frame % 85 === 0) {
+        duel.crystals.push({
+          x: 80 + Math.random() * (canvas.width - 160),
+          y: 60 + Math.random() * (canvas.height - 120),
+          r: 11
+        });
+      }
+
+      duel.shots.forEach((s) => {
+        s.x += s.vx;
+        s.y += s.vy;
+      });
+      duel.shots = duel.shots.filter((s) => s.x > -20 && s.x < canvas.width + 20);
+
+      for (let i = duel.shots.length - 1; i >= 0; i--) {
+        const s = duel.shots[i];
+        if (s.owner === 1 && Math.hypot(s.x - p2.x, s.y - p2.y) < p2.r + 4) {
+          p2.hp--;
+          p1.score += 12;
+          duel.shots.splice(i, 1);
+          continue;
+        }
+        if (s.owner === 2 && Math.hypot(s.x - p1.x, s.y - p1.y) < p1.r + 4) {
+          p1.hp--;
+          p2.score += 12;
+          duel.shots.splice(i, 1);
+        }
+      }
+
+      duel.crystals = duel.crystals.filter((c) => {
+        if (Math.hypot(c.x - p1.x, c.y - p1.y) < p1.r + c.r) {
+          p1.score += 16;
+          return false;
+        }
+        if (Math.hypot(c.x - p2.x, c.y - p2.y) < p2.r + c.r) {
+          p2.score += 16;
+          return false;
+        }
+        return true;
+      });
+
+      duel.timer--;
+      state.score = p1.score + p2.score;
+      if (duel.timer <= 0 || p1.hp <= 0 || p2.hp <= 0) return gameOver();
+
+      const bg = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      bg.addColorStop(0, "#1a0d2f");
+      bg.addColorStop(1, "#0f1b38");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = "rgba(110,180,255,0.25)";
+      ctx.setLineDash([9, 6]);
+      ctx.beginPath();
+      ctx.moveTo(canvas.width / 2, 0);
+      ctx.lineTo(canvas.width / 2, canvas.height);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      duel.crystals.forEach((c) => {
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+        ctx.fillStyle = "#59f5bc";
+        ctx.fill();
+      });
+      duel.shots.forEach((s) => drawRoundedRect(ctx, s.x - 4, s.y - 2, 8, 4, 2, s.owner === 1 ? "#24c0ff" : "#ff6584"));
+
+      drawRoundedRect(ctx, p1.x - 17, p1.y - 17, 34, 34, 10, "#24c0ff");
+      drawRoundedRect(ctx, p2.x - 17, p2.y - 17, 34, 34, 10, "#ff6584");
+
+      ctx.fillStyle = "rgba(0,0,0,0.36)";
+      ctx.fillRect(188, 12, 280, 56);
+      ctx.fillStyle = "#9ad6ff";
+      ctx.font = "bold 16px Trebuchet MS";
+      ctx.fillText("P1 HP: " + p1.hp + "  Score: " + p1.score, 198, 34);
+      ctx.fillStyle = "#ffafbf";
+      ctx.fillText("P2 HP: " + p2.hp + "  Score: " + p2.score, 198, 56);
+
+      hud();
+    }
+
+    function tunnel3dTick() {
+      const t = tunnel3d;
+      if ((keys["a"] || keys["arrowleft"]) && state.frame % 7 === 0) t.lane = Math.max(-1, t.lane - 1);
+      if ((keys["d"] || keys["arrowright"]) && state.frame % 7 === 0) t.lane = Math.min(1, t.lane + 1);
+      if (state.pointerDown) {
+        if (state.pointer.x < canvas.width * 0.36 && state.frame % 7 === 0) t.lane = Math.max(-1, t.lane - 1);
+        if (state.pointer.x > canvas.width * 0.64 && state.frame % 7 === 0) t.lane = Math.min(1, t.lane + 1);
+      }
+
+      if (state.frame % 22 === 0) {
+        t.obstacles.push({ lane: Math.floor(Math.random() * 3) - 1, z: 1.2 + Math.random() * 0.5 });
+      }
+
+      t.obstacles.forEach((o) => o.z -= t.speed);
+      t.obstacles = t.obstacles.filter((o) => o.z > -0.1);
+
+      for (const o of t.obstacles) {
+        if (o.z < 0.11 && o.z > -0.02 && o.lane === t.lane) return gameOver();
+      }
+
+      state.score += 1.2;
+      t.speed = Math.min(0.075, 0.035 + Math.floor(state.score / 250) * 0.002);
+
+      ctx.fillStyle = "#050812";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < 70; i++) {
+        const sx = (i * 151 + state.frame * 3) % canvas.width;
+        const sy = (i * 89 + state.frame * 1.4) % canvas.height;
+        ctx.fillStyle = "rgba(255,255,255,0.35)";
+        ctx.fillRect(sx, sy, 2, 2);
+      }
+
+      for (let d = 36; d >= 2; d--) {
+        const z1 = d / 36;
+        const z2 = (d - 1) / 36;
+        const w1 = 60 + (1 - z1) * 560;
+        const w2 = 60 + (1 - z2) * 560;
+        const y1 = 70 + (1 - z1) * 410;
+        const y2 = 70 + (1 - z2) * 410;
+        ctx.beginPath();
+        ctx.moveTo(canvas.width / 2 - w1 / 2, y1);
+        ctx.lineTo(canvas.width / 2 + w1 / 2, y1);
+        ctx.lineTo(canvas.width / 2 + w2 / 2, y2);
+        ctx.lineTo(canvas.width / 2 - w2 / 2, y2);
+        ctx.closePath();
+        ctx.fillStyle = d % 2 ? "#0f1d39" : "#13284a";
+        ctx.fill();
+      }
+
+      t.obstacles.forEach((o) => {
+        const z = Math.max(0.03, o.z);
+        const scale = 1 / (z * 4.3);
+        const y = 76 + (1 - z) * 390;
+        const laneX = canvas.width / 2 + o.lane * (82 * scale);
+        const w = 42 * scale;
+        const h = 32 * scale;
+        drawRoundedRect(ctx, laneX - w / 2, y - h, w, h, 7, "#ff6584");
+      });
+
+      const playerX = canvas.width / 2 + t.lane * 110;
+      drawRoundedRect(ctx, playerX - 22, canvas.height - 54, 44, 30, 10, "#24c0ff");
+      drawRoundedRect(ctx, playerX - 16, canvas.height - 24, 32, 10, 5, "#59f5bc");
+
+      hud();
+    }
+
+    function canWalk(x, y) {
+      if (x < 0 || y < 0 || x >= mapW || y >= mapH) return false;
+      return customGrid[x + y * mapW] !== 1;
+    }
+
+    function customTick() {
+      const p = custom.p;
+      let nx = p.x, ny = p.y;
+      if (state.frame % 6 === 0) {
+        if (keys["arrowup"] || keys["w"]) ny--;
+        if (keys["arrowdown"] || keys["s"]) ny++;
+        if (keys["arrowleft"] || keys["a"]) nx--;
+        if (keys["arrowright"] || keys["d"]) nx++;
+        if (canWalk(nx, ny)) { p.x = nx; p.y = ny; }
+      }
+
+      const idx = p.x + p.y * mapW;
+      if (customGrid[idx] === 2) {
+        customGrid[idx] = 0;
+        custom.coinsLeft--;
+        state.score += 10;
+      }
+      if (p.x === custom.goal.x && p.y === custom.goal.y && custom.coinsLeft <= 0) {
+        state.score += 50;
+        return gameOver();
+      }
+
+      custom.enemies.forEach(e => {
+        if (state.frame % 18 === 0) {
+          let tx = e.x + (e.axis === "x" ? e.dir : 0);
+          let ty = e.y + (e.axis === "y" ? e.dir : 0);
+          if (!canWalk(tx, ty)) e.dir *= -1;
+          else { e.x = tx; e.y = ty; }
+        }
+      });
+
+      if (custom.enemies.some(e => e.x === p.x && e.y === p.y)) return gameOver();
+      state.score += 0.05;
+      drawCustomMap(ctx, true);
+      hud();
+    }
+
+    function drawCustomMap(cx, forPlay = false) {
+      cx.fillStyle = "#081020";
+      cx.fillRect(0, 0, canvas.width, canvas.height);
+      const ox = (canvas.width - mapW * tile) / 2;
+      const oy = (canvas.height - mapH * tile) / 2;
+
+      for (let y = 0; y < mapH; y++) {
+        for (let x = 0; x < mapW; x++) {
+          const t = customGrid[x + y * mapW];
+          const px = ox + x * tile;
+          const py = oy + y * tile;
+          cx.strokeStyle = "rgba(74,100,145,0.45)";
+          cx.strokeRect(px, py, tile, tile);
+          if (t === 1) drawRoundedRect(cx, px + 2, py + 2, tile - 4, tile - 4, 6, "#2e4d7a");
+          if (t === 2) drawRoundedRect(cx, px + 8, py + 8, tile - 16, tile - 16, 8, "#59f5bc");
+          if (t === 3) drawRoundedRect(cx, px + 6, py + 6, tile - 12, tile - 12, 6, "#ff6584");
+          if (t === 4) drawRoundedRect(cx, px + 4, py + 4, tile - 8, tile - 8, 6, "#ffd166");
+          if (t === 5 && !forPlay) drawRoundedRect(cx, px + 5, py + 5, tile - 10, tile - 10, 9, "#24c0ff");
+        }
+      }
+
+      if (forPlay && custom) {
+        const p = custom.p;
+        drawRoundedRect(cx, ox + p.x * tile + 5, oy + p.y * tile + 5, tile - 10, tile - 10, 9, "#24c0ff");
+        custom.enemies.forEach(e => drawRoundedRect(cx, ox + e.x * tile + 6, oy + e.y * tile + 6, tile - 12, tile - 12, 7, "#ff6584"));
+      }
+    }
+
+    function hud() {
+      ctx.fillStyle = "rgba(0,0,0,0.45)";
+      ctx.fillRect(12, 12, 158, 56);
+      ctx.fillStyle = "#e9f0ff";
+      ctx.font = "bold 16px Trebuchet MS";
+      ctx.fillText("Score: " + Math.floor(state.score), 20, 34);
+      ctx.fillStyle = "#9bb1d6";
+      ctx.fillText("Best: " + bestScore, 20, 55);
+      if (state.paused) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#e9f0ff";
+        ctx.font = "bold 44px Trebuchet MS";
+        ctx.fillText("PAUSED", canvas.width / 2 - 95, canvas.height / 2);
+      }
+    }
+
+    function loop() {
+      requestAnimationFrame(loop);
+      state.frame++;
+      if (!state.running) return drawIdle();
+      if (state.paused) return hud();
+
+      if (state.game === "runner") runnerTick();
+      if (state.game === "snake") snakeTick();
+      if (state.game === "shooter") shooterTick();
+      if (state.game === "duel") duelTick();
+      if (state.game === "tunnel3d") tunnel3dTick();
+      if (state.game === "custom") customTick();
+
+      if (state.score > bestScore) {
+        bestScore = Math.floor(state.score);
+        bestEl.textContent = bestScore;
+      }
+    }
+
+    function showMakeMode(on) {
+      state.mode = on ? "make" : "play";
+      tabMake.classList.toggle("active", on);
+      tabPlay.classList.toggle("active", !on);
+      playView.style.display = on ? "none" : "block";
+      makerView.classList.toggle("active", on);
+      if (on) drawCustomMap(makerCtx, false);
+    }
+
+    document.querySelectorAll(".game-item").forEach(btn => {
+      btn.addEventListener("click", () => selectGame(btn.dataset.game));
+    });
+
+    tabPlay.addEventListener("click", () => showMakeMode(false));
+    tabMake.addEventListener("click", () => showMakeMode(true));
+
+    startBtn.addEventListener("click", startGame);
+    pauseBtn.addEventListener("click", togglePause);
+    resetBtn.addEventListener("click", () => {
+      state.running = false;
+      if (state.game === "runner") resetRunner();
+      if (state.game === "snake") resetSnake();
+      if (state.game === "shooter") resetShooter();
+      if (state.game === "duel") resetDuel();
+      if (state.game === "tunnel3d") resetTunnel3d();
+      if (state.game === "custom") resetCustomPlay();
+    });
+
+    document.querySelectorAll(".tool").forEach(t => {
+      t.addEventListener("click", () => {
+        selectedTile = Number(t.dataset.tile);
+        document.querySelectorAll(".tool").forEach(e => e.classList.remove("active"));
+        t.classList.add("active");
+      });
+    });
+
+    makerCanvas.addEventListener("click", (e) => {
+      const rect = makerCanvas.getBoundingClientRect();
+      const mx = (e.clientX - rect.left) * (makerCanvas.width / rect.width);
+      const my = (e.clientY - rect.top) * (makerCanvas.height / rect.height);
+      const ox = (makerCanvas.width - mapW * tile) / 2;
+      const oy = (makerCanvas.height - mapH * tile) / 2;
+      const x = Math.floor((mx - ox) / tile);
+      const y = Math.floor((my - oy) / tile);
+      if (x < 0 || y < 0 || x >= mapW || y >= mapH) return;
+
+      if (selectedTile === 5) {
+        for (let i = 0; i < customGrid.length; i++) if (customGrid[i] === 5) customGrid[i] = 0;
+      }
+      customGrid[x + y * mapW] = selectedTile;
+      drawCustomMap(makerCtx, false);
+    });
+
+    playCustomBtn.addEventListener("click", () => {
+      showMakeMode(false);
+      selectGame("custom");
+      startGame();
+    });
+
+    build2pBtn.addEventListener("click", buildMultiplayerTemplate);
+    build3dBtn.addEventListener("click", build3dTemplate);
+
+    saveCustomBtn.addEventListener("click", () => {
+      levelData.value = btoa(JSON.stringify(customGrid));
+      levelData.select();
+    });
+
+    loadCustomBtn.addEventListener("click", () => {
+      try {
+        const parsed = JSON.parse(atob(levelData.value.trim()));
+        if (!Array.isArray(parsed) || parsed.length !== mapW * mapH) throw new Error();
+        customGrid = parsed.map(n => Math.max(0, Math.min(5, Number(n) || 0)));
+        drawCustomMap(makerCtx, false);
+      } catch {
+        alert("Invalid level code.");
+      }
+    });
+
+    defaultCustom();
+    resetRunner();
+    resetSnake();
+    resetShooter();
+    resetDuel();
+    resetTunnel3d();
+    resetCustomPlay();
+    drawCustomMap(makerCtx, false);
+    drawIdle();
+    loop();
+  </script>
+</body>
+</html>

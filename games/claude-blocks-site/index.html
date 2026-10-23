@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude Blocks — Download</title>
+<meta name="description" content="Code with blocks: sprites, games, AI, 3D, apps and Raspberry Pi. Free for Mac, Windows, Linux, Android, Chromebook and the web.">
+<link rel="icon" href="favicon.png">
+<style>
+  :root {
+    --bg: #f4f3ee; --surface: #ffffff; --ink: #1f1e1d; --muted: #6b6a66; --line: #e2dfd6;
+    --accent: #d97757; --accent-ink: #ffffff; --accent-soft: #fdf3ef; --dark: #262624; --good: #2f9e55; --no: #b9b5aa;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #1b1a19; --surface: #262523; --ink: #f0eee6; --muted: #a8a59c; --line: #3a3936; --accent-soft: #3a2a23; --no: #5d5a54; }
+  }
+  :root[data-theme="dark"] { --bg: #1b1a19; --surface: #262523; --ink: #f0eee6; --muted: #a8a59c; --line: #3a3936; --accent-soft: #3a2a23; --no: #5d5a54; }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 ui-sans-serif, -apple-system, "Segoe UI", sans-serif; }
+  a { color: inherit; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+
+  nav { position: sticky; top: 0; z-index: 10; background: var(--dark); color: #fff; }
+  nav .wrap { display: flex; align-items: center; gap: 18px; height: 56px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; text-decoration: none; margin-right: auto; }
+  .brand img { width: 30px; height: 30px; image-rendering: pixelated; }
+  nav a.link { color: #d8d5cc; text-decoration: none; font-size: 15px; }
+  .brand, nav a.link { white-space: nowrap; }
+  nav a.link:hover { color: #fff; }
+
+  .hero { background: var(--dark); color: #fff; padding: 56px 0 0; overflow: hidden; }
+  .hero h1 { font-size: clamp(36px, 6vw, 60px); line-height: 1.05; margin: 0 0 14px; letter-spacing: -.02em; max-width: 14ch; }
+  .hero h1 em { font-style: normal; color: var(--accent); }
+  .hero p.lead { font-size: 19px; color: #d8d5cc; max-width: 54ch; margin: 0 0 26px; }
+  .cta { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; border-radius: 12px; padding: 12px 20px; font-weight: 700; font-size: 16px; text-decoration: none; border: 2px solid transparent; cursor: pointer; }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); }
+  .btn.primary:hover { filter: brightness(1.07); }
+  .btn.ghost { border-color: #57554f; color: #fff; }
+  .btn.ghost:hover { border-color: #fff; }
+  .btn small { font-weight: 500; opacity: .85; }
+  .hero .meta { color: #a8a59c; font-size: 13px; margin-top: 12px; }
+  #walk { display: block; width: 100%; height: 120px; margin-top: 34px; image-rendering: pixelated; }
+
+  section { padding: 64px 0; }
+  h2 { font-size: 32px; margin: 0 0 8px; letter-spacing: -.01em; }
+  .sub { color: var(--muted); margin: 0 0 28px; max-width: 62ch; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+  .card.recommended { border: 2px solid var(--accent); box-shadow: 0 8px 28px rgba(217, 119, 87, .18); }
+  .card .tag { align-self: flex-start; font-size: 12px; font-weight: 700; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 2px 10px; }
+  .card h3 { margin: 0; font-size: 20px; }
+  .card .for { color: var(--muted); font-size: 14px; margin: 0; flex: 1; }
+  .card .file { font: 13px ui-monospace, Menlo, monospace; color: var(--muted); }
+  .card .btn { justify-content: center; margin-top: 6px; }
+  .card .btn.secondary { border-color: var(--line); color: var(--ink); background: transparent; }
+  .card .btn.secondary:hover { border-color: var(--accent); }
+  .card .btn[aria-disabled="true"] { opacity: .45; pointer-events: none; }
+  .badge { width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; font-weight: 800; font-size: 14px; color: #fff; }
+
+  table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+  th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--line); }
+  th { font-size: 14px; color: var(--muted); font-weight: 600; }
+  td.c, th.c { text-align: center; width: 140px; }
+  tr:last-child td { border-bottom: 0; }
+  .yes { color: var(--good); font-weight: 800; }
+  .noo { color: var(--no); font-weight: 800; }
+
+  .features { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+  .feature { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
+  .feature b { display: block; font-size: 17px; margin-bottom: 4px; }
+  .feature span { color: var(--muted); font-size: 14.5px; }
+  .feature .ico { font-size: 26px; display: block; margin-bottom: 6px; }
+
+  details { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 18px; margin-bottom: 10px; }
+  summary { cursor: pointer; font-weight: 700; }
+  details ol, details p { color: var(--muted); margin: 10px 0 0; }
+  code { font: 13.5px ui-monospace, Menlo, monospace; background: var(--accent-soft); padding: 1px 6px; border-radius: 5px; color: var(--ink); }
+  .video-box { border-radius: 18px; overflow: hidden; border: 1px solid var(--line); background: #000; box-shadow: 0 10px 30px rgba(0,0,0,.12); }
+  .video-box video { display: block; width: 100%; aspect-ratio: 16 / 9; }
+  .chapters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .chapters button { font: inherit; font-size: 14px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+  .chapters button:hover, .chapters button.on { border-color: var(--accent); background: var(--accent-soft); }
+  .chapters time { color: var(--muted); font-variant-numeric: tabular-nums; margin-left: 6px; }
+  footer { border-top: 1px solid var(--line); padding: 28px 0 40px; color: var(--muted); font-size: 14px; }
+  footer .wrap { display: flex; gap: 16px; flex-wrap: wrap; justify-content: space-between; }
+
+  @media (max-width: 640px) {
+    nav a.link.hide-sm { display: none; }
+    nav .wrap { gap: 12px; }
+    .brand { font-size: 16px; }
+    td.c, th.c { width: auto; }
+    th, td { padding: 10px; font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#"><img src="icon.png" alt="">Claude Blocks</a>
+    <a class="link" href="#download">Download</a>
+    <a class="link hide-sm" href="#video">Video</a>
+    <a class="link hide-sm" href="#compare">Compare</a>
+    <a class="link hide-sm" href="#help">Install help</a>
+    <a class="link" href="web/">Web version</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <h1>Code with <em>blocks.</em> Build anything.</h1>
+    <p class="lead">Sprites and games, animations, an AI helper, 3D worlds, real app screens and a Raspberry Pi 5 — with drag-and-drop blocks, 15 lessons, 44 templates, 141 sprites — and an AI that can build blocks for you. Free.</p>
+    <div class="cta">
+      <a class="btn primary" id="heroBtn" href="#download">Download</a>
+      <a class="btn ghost" href="web/">Try it in your browser</a>
+    </div>
+    <div class="meta" id="heroMeta">Mac · Windows · Linux · Android · Chromebook · Web</div>
+  </div>
+  <canvas id="walk" aria-hidden="true"></canvas>
+</header>
+
+<main>
+  <section id="video">
+    <div class="wrap">
+      <h2>Watch: how to download and use it</h2>
+      <p class="sub">A 3-minute tour — downloading, your first script, templates, lessons, the AI builder and the Raspberry Pi emulator. Turn on captions with <b>CC</b>.</p>
+      <div class="video-box">
+        <video id="tour" controls preload="metadata" playsinline poster="media/poster.jpg">
+          <source src="media/claude-blocks-tutorial.mp4" type="video/mp4">
+          <track kind="captions" src="media/claude-blocks-tutorial.en.vtt" srclang="en" label="English">
+          Your browser can’t play this video. <a href="media/claude-blocks-tutorial.mp4">Download it</a>.
+        </video>
+      </div>
+      <div class="chapters" id="chapters" aria-label="Video chapters"></div>
+    </div>
+  </section>
+
+  <section id="download" style="padding-top:0">
+    <div class="wrap">
+      <h2>Download Claude Blocks</h2>
+      <p class="sub">Pick your device. The apps are the <b>full version</b>. The web version is for coding with blocks — it doesn’t convert projects into HTML, CSS and JavaScript.</p>
+      <div class="grid" id="cards"></div>
+    </div>
+  </section>
+
+  <section id="compare" style="padding-top:0">
+    <div class="wrap">
+      <h2>Full app or web version?</h2>
+      <p class="sub">Both are free. The apps can do a little more because they run on your own computer.</p>
+      <table>
+        <thead><tr><th>Feature</th><th class="c">Full app</th><th class="c">Web version</th></tr></thead>
+        <tbody id="compareBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="features" style="padding-top:0">
+    <div class="wrap">
+      <h2>What’s inside</h2>
+      <p class="sub">Everything a young coder needs, from the very first block to real hardware.</p>
+      <div class="features">
+        <div class="feature"><span class="ico">🧩</span><b>Scratch-style blocks</b><span>Motion, looks, sound, events, control, sensing, variables and your own blocks.</span></div>
+        <div class="feature"><span class="ico">🎓</span><b>15 lessons</b><span>Step-by-step guides that stay on screen while you build.</span></div>
+        <div class="feature"><span class="ico">📋</span><b>44 templates</b><span>Games, animations, AI, 3D worlds, apps, Raspberry Pi, Python, HTML — and advanced ones with lists, recursion and physics.</span></div>
+        <div class="feature"><span class="ico">🪄</span><b>AI builds for you</b><span>Describe what you want and the AI makes the blocks — then change them yourself.</span></div>
+        <div class="feature"><span class="ico">🎨</span><b>Paint &amp; text boxes</b><span>Draw your own sprites and costumes, and put text right on the stage.</span></div>
+        <div class="feature"><span class="ico">💃</span><b>Animated Claude</b><span>Walk, jump, wave, dance and spin — with sound effects.</span></div>
+        <div class="feature"><span class="ico">🍓</span><b>Raspberry Pi 5</b><span>A built-in emulator with 22 parts, or control a real Pi.</span></div>
+        <div class="feature"><span class="ico">✳️</span><b>AI helper</b><span>Ask questions about your project using a local AI model with Ollama.</span></div>
+        <div class="feature"><span class="ico">🧊</span><b>3D and apps</b><span>3D worlds with 23 models — cars, rockets, robots, snowmen — and React app screens.</span></div>
+        <div class="feature"><span class="ico">⬆️</span><b>Updates itself</b><span>The apps check for new versions and update (Windows &amp; Linux install updates by themselves).</span></div>
+        <div class="feature"><span class="ico">⌨️</span><b>Real code</b><span>Python and HTML editors — and the full app turns blocks into a website.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="help" style="padding-top:0">
+    <div class="wrap">
+      <h2>Install help</h2>
+      <p class="sub">The apps aren’t from an app store yet, so your device may ask you to confirm the first time.</p>
+      <details id="help-mac"><summary>Mac (.dmg)</summary><ol>
+        <li>Open <code>ClaudeBlocks-mac.dmg</code> and drag <b>Claude Blocks</b> into <b>Applications</b>.</li>
+        <li>The first time, right-click (or Control-click) the app and choose <b>Open</b>, then <b>Open</b> again. If it’s still blocked: <b>System Settings → Privacy &amp; Security → Open Anyway</b>.</li>
+        <li>Works on Apple Silicon and Intel Macs.</li></ol></details>
+      <details id="help-windows"><summary>Windows (.exe)</summary><ol>
+        <li>Run <code>ClaudeBlocks-windows-setup.exe</code>.</li>
+        <li>If Windows SmartScreen appears, click <b>More info → Run anyway</b>.</li>
+        <li>Follow the installer, then start Claude Blocks from the Start menu.</li></ol></details>
+      <details id="help-linux"><summary>Linux (.AppImage)</summary><ol>
+        <li>Make it runnable: <code>chmod +x ClaudeBlocks-linux.AppImage</code></li>
+        <li>Run it: <code>./ClaudeBlocks-linux.AppImage</code> (or double-click it).</li>
+        <li>If it doesn’t start, install FUSE 2 (for example <code>sudo apt install libfuse2</code>).</li></ol></details>
+      <details id="help-android"><summary>Android phones &amp; tablets (.apk)</summary><ol>
+        <li>Download <code>ClaudeBlocks-android.apk</code> on your phone.</li>
+        <li>Open it. If asked, allow your browser or Files app to <b>install unknown apps</b>.</li>
+        <li>Tap <b>Install</b>.</li></ol></details>
+      <details id="help-chromebook"><summary>Chromebook (.apk)</summary><ol>
+        <li>Make sure <b>Google Play Store</b> is turned on in Settings → Apps.</li>
+        <li>Chromebooks only install downloaded Android apps when <b>Android app development (ADB debugging)</b> is on: Settings → Advanced → Developers → Linux development environment → Develop Android apps.</li>
+        <li>Then open the Linux terminal and run <code>adb install ClaudeBlocks-android.apk</code>. Or simply use the <a href="web/">web version</a>.</li></ol></details>
+      <details id="help-web"><summary>iPhone, iPad &amp; everything else (web)</summary><ol>
+        <li>Open the <a href="web/">web version</a> in Safari, Chrome, Edge or Firefox.</li>
+        <li>On iPhone or iPad, tap <b>Share → Add to Home Screen</b> to use it like an app.</li>
+        <li>The web version is for coding with blocks, Python and HTML. It doesn’t turn projects into HTML/CSS/JS and only uses the Raspberry Pi emulator.</li></ol></details>
+      <details><summary>Raspberry Pi bridge</summary><p>To control a real Raspberry Pi 5 from the full app, download <a href="downloads/pi-bridge.py" download>pi-bridge.py</a>, copy it to your Pi and run <code>python3 pi-bridge.py</code>. Then connect from the 🍓 Pi 5 tab.</p></details>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Claude Blocks <span id="ver"></span> · made for curious coders</span>
+    <span><a href="web/">Web version</a> · <a href="downloads/pi-bridge.py" download>Pi bridge</a></span>
+  </div>
+</footer>
+
+<script>
+  // ---------- download cards ----------
+  const PLATFORMS = [
+    { id: 'mac', name: 'Mac', badge: 'Mac', color: '#555', for: 'macOS 11 or newer · Apple Silicon and Intel', ext: '.dmg' },
+    { id: 'windows', name: 'Windows', badge: 'Win', color: '#2b6cd9', for: 'Windows 10 and 11 (64-bit)', ext: '.exe installer' },
+    { id: 'linux', name: 'Linux', badge: 'Linux', color: '#c58b00', for: 'Most 64-bit Linux desktops (Ubuntu, Debian, Fedora…)', ext: '.AppImage' },
+    { id: 'android', name: 'Android & Chromebook', badge: 'APK', color: '#2f9e55', for: 'Android 7 or newer phones and tablets, and Chromebooks', ext: '.apk' },
+    { id: 'web', name: 'iPhone, iPad & web', badge: 'Web', color: '#d97757', for: 'Any device with a modern browser. Blocks and code only.', ext: 'opens in your browser' },
+  ];
+  const COMPARE = [
+    ['Blocks, sprites, sounds and animations', 1, 1], ['15 lessons, 44 templates and 141 sprites', 1, 1], ['Editable Stage with backdrops', 1, 1], ['Lists and My Blocks (functions)', 1, 1], ['AI builds blocks for you (Ollama)', 1, 1],
+    ['Paint editor and text boxes', 1, 1], ['Python and HTML code editors', 1, 1],
+    ['Raspberry Pi 5 emulator (22 parts)', 1, 1], ['3D (Three.js, 23 models) and app screens (React)', 1, 1],
+    ['Convert blocks into HTML, CSS and JavaScript', 1, 0], ['Control a real Raspberry Pi', 1, 0],
+    ['Terminal and network device list', 'Mac, Windows, Linux', 0], ['Works offline', 1, 'after first visit'], ['Automatic updates', 1, 'always newest'],
+  ];
+
+  function detect() {
+    const ua = navigator.userAgent, platform = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';
+    if (/iPhone|iPad|iPod/.test(ua) || (/Mac/.test(platform) && navigator.maxTouchPoints > 1)) return 'web';
+    if (/CrOS/.test(ua) || /Android/.test(ua)) return 'android';
+    if (/Mac/.test(platform) || /Mac OS X/.test(ua)) return 'mac';
+    if (/Win/.test(platform) || /Windows/.test(ua)) return 'windows';
+    if (/Linux/.test(platform) || /Linux/.test(ua)) return 'linux';
+    return 'web';
+  }
+  const fmtSize = b => (b > 1e6 ? (b / 1e6).toFixed(0) + ' MB' : Math.max(1, Math.round(b / 1e3)) + ' KB');
+
+  async function render() {
+    let data = { files: {} };
+    try { data = await (await fetch('downloads.json', { cache: 'no-store' })).json(); } catch (_) { /* opened as a file: links still work */ }
+    if (data.version) document.getElementById('ver').textContent = 'v' + data.version;
+    const mine = detect(), cards = document.getElementById('cards');
+    const ordered = [...PLATFORMS].sort((a, b) => (a.id === mine ? -1 : b.id === mine ? 1 : 0));
+    for (const p of ordered) {
+      const f = data.files[p.id];
+      const card = document.createElement('div');
+      card.className = 'card' + (p.id === mine ? ' recommended' : '');
+      const href = p.id === 'web' ? 'web/' : f ? f.file : '#';
+      card.innerHTML = `
+        ${p.id === mine ? '<span class="tag">Recommended for you</span>' : ''}
+        <div class="badge" style="background:${p.color}">${p.badge}</div>
+        <h3>${p.name}</h3>
+        <p class="for">${p.for}</p>
+        <div class="file">${p.ext}${f ? ' · ' + fmtSize(f.size) : ''}</div>
+        <a class="btn ${p.id === mine ? 'primary' : 'secondary'}" href="${href}" ${p.id === 'web' ? '' : 'download'} ${p.id !== 'web' && !f ? 'aria-disabled="true"' : ''}>
+          ${p.id === 'web' ? 'Open web version' : f || location.protocol === 'file:' ? 'Download' : 'Coming soon'}</a>
+        <a href="#help-${p.id}" style="font-size:13px;color:var(--muted)">How to install</a>`;
+      cards.appendChild(card);
+    }
+    const p = PLATFORMS.find(x => x.id === mine), hero = document.getElementById('heroBtn');
+    if (mine === 'web') { hero.textContent = 'Open the web version'; hero.href = 'web/'; }
+    else {
+      const f = data.files[mine];
+      hero.innerHTML = `Download for ${p.name.split(' &')[0]}${f ? ` <small>${fmtSize(f.size)}</small>` : ''}`;
+      hero.href = f ? f.file : '#download';
+      if (f) hero.setAttribute('download', '');
+    }
+    document.getElementById('heroMeta').textContent = `${p.ext === 'opens in your browser' ? 'Web version' : p.ext} · also for ${PLATFORMS.filter(x => x.id !== mine).map(x => x.name).join(', ')}`;
+    const body = document.getElementById('compareBody');
+    for (const [name, full, web] of COMPARE) {
+      const cell = v => (v === 1 ? '<span class="yes" aria-label="yes">✓</span>' : v === 0 ? '<span class="noo" aria-label="no">—</span>' : `<span style="font-size:13px">${v}</span>`);
+      body.insertAdjacentHTML('beforeend', `<tr><td>${name}</td><td class="c">${cell(full)}</td><td class="c">${cell(web)}</td></tr>`);
+    }
+  }
+  render();
+
+  // ---------- video chapters ----------
+  (async () => {
+    const video = document.getElementById('tour'), box = document.getElementById('chapters');
+    let data;
+    try { data = await (await fetch('media/chapters.json', { cache: 'no-store' })).json(); } catch (_) { return; }
+    const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+    const buttons = data.chapters.map(c => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.innerHTML = `${c.title.replace(/^\d+ · /, '')}<time>${fmt(c.start)}</time>`;
+      b.onclick = () => { video.currentTime = c.start; video.play(); };
+      box.appendChild(b);
+      return [b, c.start];
+    });
+    video.addEventListener('timeupdate', () => {
+      let cur = 0; buttons.forEach(([, s], i) => { if (video.currentTime >= s) cur = i; });
+      buttons.forEach(([b], i) => b.classList.toggle('on', i === cur));
+    });
+  })();
+
+  // ---------- Claude walking across the hero ----------
+  const MAP = ['.........BBBBBBBBBDDD.', '.........BBBBBBBBBDDD.', '.........EEBBBBEEBDDD.', '.........EEBBBBEEBDDD.', '.......BBBBBBBBBBBDDD.',
+    'S.....BBBBBBBBBBBBDDD.', '.S....BBBBBBBBBBBBDDD.', '..S...BBBBBBBBBBBBDDD.', '...SSSSS.B..B...B...D.', '.........B..B...B...D.'];
+  const LEGS2 = ['...SSSSS..B..B...B..D.', '..........B..B...B..D.'];
+  const PAL = { B: '#c96f4e', D: '#a95a3e', E: '#141414', S: '#8f8f8f' };
+  const cv = document.getElementById('walk'), ctx = cv.getContext('2d');
+  let x = -120, frame = 0, last = 0;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function draw(t) {
+    const w = cv.clientWidth, h = cv.clientHeight, dpr = devicePixelRatio || 1;
+    if (cv.width !== w * dpr) { cv.width = w * dpr; cv.height = h * dpr; }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#3a3936'; ctx.fillRect(0, h - 10, w, 10);
+    if (!reduce && t - last > 140) { frame ^= 1; last = t; }
+    if (!reduce) x += 1.2; if (x > w + 40) x = -120;
+    const px = 5, rows = MAP.slice(); if (frame) { rows[8] = LEGS2[0]; rows[9] = LEGS2[1]; }
+    const ox = reduce ? w / 2 - 55 : x, oy = h - 10 - 10 * px;
+    rows.forEach((r, ry) => [...r].forEach((ch, cx) => { if (PAL[ch]) { ctx.fillStyle = PAL[ch]; ctx.fillRect(ox + (21 - cx) * px, oy + ry * px, px, px); } }));
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+</script>
+</body>
+</html>

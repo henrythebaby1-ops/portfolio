@@ -107,6 +107,12 @@
   .pool-hud i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #e2453a; margin-right: 6px; animation: blink 1s steps(1) infinite; }
   .pool-date { position: absolute; bottom: 10px; right: 12px; font-family: var(--mono); font-size: 13px; color: #fff; text-shadow: 0 0 3px #000a; }
 
+
+  #search { width: 100%; margin: 0 0 18px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--text); font: 14px var(--mono); }
+  #search:focus { outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent); }
+  .more { text-align: center; margin-top: 22px; }
+  #more { background: var(--panel); border: 1px solid var(--line); color: var(--text); border-radius: 10px; padding: 10px 18px; font: 14px var(--mono); cursor: pointer; transition: transform .25s; }
+
   /* holo card collection */
   .holo-grid { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; perspective: 1200px; }
   .holo { --mx: 50%; --my: 50%; --rx: 0deg; --ry: 0deg; --o: 0; --s: 1;
@@ -192,6 +198,8 @@
   .badge.off { color: #ff7b72; }
   .art-freecard { display: grid; place-items: center; gap: 2px; color: #fff; position: absolute; inset: 0; align-content: center; background: linear-gradient(135deg,#5865f2,#eb459e 60%,#f47b67); font-family: var(--sans); }
   .art-freecard b { font-size: 40px; } .art-freecard span { font-size: 22px; font-weight: 700; } .art-freecard small { opacity: .85; }
+  .art-scratch { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 4px; background: linear-gradient(135deg,#ffab19,#ff8c1a); color: #fff; font-family: var(--sans); font-size: 30px; font-weight: 800; }
+  .art-scratch small { font-size: 13px; font-weight: 500; opacity: .9; }
   .art-jump { position: absolute; inset: 0; display: grid; place-items: center; background: #000; color: #ddd; font-family: Georgia, serif; font-size: 20px; text-align: center; }
 
   /* spotlight card */
@@ -279,7 +287,7 @@
   <h1>Henry builds <em id="rotate" data-words="AI coding tools|chess engines|3D games|terminals|file managers">AI coding tools</em><br>and weird little games.</h1>
   <p class="lede">AI apps, developer tools, strategy games and chess bots. Mostly things that should exist, so Henry made them.</p>
   <div class="stats">
-    <div><b data-to="22">0</b><span>projects you can play</span></div>
+    <div><b data-to="75">0</b><span>projects you can play</span></div>
     <div><b data-to="1977">0</b><span>Backrooms levels</span></div>
     <div><b data-to="40" data-suffix="+">0</b><span>shader backgrounds</span></div>
     <div><b data-to="0">0</b><span>games Worstfish won</span></div>
@@ -294,10 +302,13 @@
       <button data-f="ai">ai</button>
       <button data-f="tools">tools</button>
       <button data-f="games">games</button>
+      <button data-f="learn">learn</button>
     </div>
   </div>
 
+  <input id="search" type="search" placeholder="Search 75 projects…" aria-label="Search projects" autocomplete="off">
   <div class="grid" id="grid"></div>
+  <div class="more"><button id="more" data-magnet>Show all projects</button></div>
 </section>
 
 <section id="cards" class="wrap">
@@ -367,7 +378,7 @@
 <script>
   // typing intro
   const cmd = 'ls ~/projects';
-  const out = PROJECTS.map(p => p.id + '/').join('  ');
+  const out = PROJECTS.slice(0, 10).map(p => p.id + '/').join('  ') + `\n... and ${PROJECTS.length - 10} more`;
   const typed = document.getElementById('typed');
   let i = 0;
   const tick = () => {
@@ -376,13 +387,29 @@
   };
   setTimeout(tick, 400);
 
-  // filters
+  // filters, search and "show all"
+  const LIMIT = 12;
+  let filter = 'all', showAll = false;
+  const applyView = () => {
+    const q = document.getElementById('search').value.trim().toLowerCase();
+    let shown = 0;
+    document.querySelectorAll('#grid .card').forEach(c => {
+      const match = (filter === 'all' || c.dataset.cat.split(' ').includes(filter)) && (!q || c.textContent.toLowerCase().includes(q));
+      const visible = match && (showAll || q || filter !== 'all' || shown < LIMIT);
+      if (visible) shown++;
+      c.style.display = visible ? '' : 'none';
+    });
+    const more = document.getElementById('more');
+    more.parentElement.hidden = showAll || q || filter !== 'all';
+    more.textContent = `Show all ${document.querySelectorAll('#grid .card').length} projects`;
+  };
   document.querySelectorAll('.filters button').forEach(b => b.addEventListener('click', () => {
     document.querySelectorAll('.filters button').forEach(x => x.classList.toggle('on', x === b));
-    document.querySelectorAll('.card').forEach(c => {
-      c.style.display = b.dataset.f === 'all' || c.dataset.cat.includes(b.dataset.f) ? '' : 'none';
-    });
+    filter = b.dataset.f; applyView();
   }));
+  document.getElementById('search').addEventListener('input', applyView);
+  document.getElementById('more').addEventListener('click', () => { showAll = true; applyView(); });
+  applyView();
 
   // theme toggle
   const root = document.documentElement, btn = document.getElementById('theme');

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Grammar Arena</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Learn through play</p>
+          <h1>Grammar Arena</h1>
+          <p class="hero-text">
+            A fast learning game with grammar at the center, plus math, history,
+            and English challenges, solo quests, and pass-and-play PvP duels.
+          </p>
+        </div>
+        <div class="hero-panel">
+          <div class="stat-card">
+            <span class="stat-label">Focus</span>
+            <strong>Grammar First</strong>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Modes</span>
+            <strong>Quest, Blitz, PvP</strong>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Extras</span>
+            <strong>Achievements + Streaks</strong>
+          </div>
+        </div>
+      </header>
+
+      <main class="app-grid">
+        <section class="setup card">
+          <h2>Start a Game</h2>
+
+          <div class="control-group">
+            <label for="mode-select">Mode</label>
+            <select id="mode-select">
+              <option value="quest">Quest</option>
+              <option value="blitz">Blitz</option>
+              <option value="pvp">PvP Duel</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label for="category-select">Subject</label>
+            <select id="category-select">
+              <option value="grammar">Grammar</option>
+              <option value="english">English</option>
+              <option value="math">Math</option>
+              <option value="history">History</option>
+              <option value="mixed">Mixed Bag</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label for="round-select">Rounds</label>
+            <select id="round-select">
+              <option value="5">5</option>
+              <option value="8" selected>8</option>
+              <option value="10">10</option>
+            </select>
+          </div>
+
+          <button id="start-button" class="primary-button">Launch Arena</button>
+
+          <div class="mode-summary" id="mode-summary"></div>
+
+          <div class="feature-list">
+            <article>
+              <h3>Quest</h3>
+              <p>Steady rounds with score bonuses for streaks and speed.</p>
+            </article>
+            <article>
+              <h3>Blitz</h3>
+              <p>Answer quickly to bank bigger points and chase a new high score.</p>
+            </article>
+            <article>
+              <h3>PvP Duel</h3>
+              <p>Two players take turns on one screen and battle for the crown.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="game card">
+          <div class="status-row">
+            <div>
+              <p class="status-label">Current Mode</p>
+              <h2 id="status-mode">Waiting</h2>
+            </div>
+            <div>
+              <p class="status-label">Round</p>
+              <h2 id="status-round">0 / 0</h2>
+            </div>
+            <div>
+              <p class="status-label">Turn</p>
+              <h2 id="status-player">-</h2>
+            </div>
+          </div>
+
+          <div id="question-panel" class="question-panel idle">
+            <p class="question-tag" id="question-tag">Grammar Arena</p>
+            <h3 id="question-text">Choose a mode and launch a game to begin.</h3>
+            <div id="answer-buttons" class="answer-buttons"></div>
+            <p id="feedback" class="feedback"></p>
+          </div>
+
+          <div class="game-actions">
+            <button id="next-button" class="secondary-button" disabled>Next Round</button>
+            <button id="restart-button" class="ghost-button">Reset</button>
+          </div>
+        </section>
+
+        <section class="scoreboard card">
+          <h2>Scoreboard</h2>
+          <div id="scoreboard-list" class="scoreboard-list"></div>
+          <div class="achievement-box">
+            <h3>Achievements</h3>
+            <ul id="achievement-list"></ul>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

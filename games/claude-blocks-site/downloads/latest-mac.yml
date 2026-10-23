@@ -1,0 +1,8 @@
+version: 1.2.0
+files:
+  - url: ClaudeBlocks-mac.dmg
+    sha512: pnCDsRnFuheM+Hb0Sz6vAobrlJDUwnM2jLClT/ene+xx3Rw1nbmwR5x/g8Ntj45J1wDzuTSbB9Y+1kjxF3Q4XA==
+    size: 228709926
+path: ClaudeBlocks-mac.dmg
+sha512: pnCDsRnFuheM+Hb0Sz6vAobrlJDUwnM2jLClT/ene+xx3Rw1nbmwR5x/g8Ntj45J1wDzuTSbB9Y+1kjxF3Q4XA==
+releaseDate: '2026-10-10T22:26:49.540Z'

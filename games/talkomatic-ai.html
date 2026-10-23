@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Talkomatic AI Assistant</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  body { font-family: 'Inter', sans-serif; }
+  .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+  .glass { backdrop-filter: blur(16px); background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); }
+  .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+</style>
+</head>
+<body class="gradient-bg min-h-screen text-white">
+<div class="container mx-auto px-4 py-8 max-w-4xl">
+  <header class="text-center mb-8">
+    <div class="flex items-center justify-center gap-3 mb-3">
+      <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+      <h1 class="text-4xl font-bold">Talkomatic AI Assistant</h1>
+    </div>
+    <p class="text-white/80">Generate AI responses for chat. You manually paste them to stay in control.</p>
+    <div class="inline-flex items-center gap-2 mt-3 px-3 py-1 bg-yellow-500/20 border border-yellow-400/30 rounded-full text-sm">
+      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+      All messages are AI-generated. Be transparent when chatting with others.
+    </div>
+  </header>
+
+  <div class="grid md:grid-cols-3 gap-6">
+    <div class="md:col-span-1 space-y-6">
+      <div class="glass rounded-2xl p-6 shadow-xl">
+        <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+          Settings
+        </h2>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-2">OpenRouter API Key</label>
+            <input id="apiKey" type="password" placeholder="sk-or-v1-..." class="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 text-sm">
+            <p class="text-xs text-white/60 mt-1">Stored only in your browser's localStorage</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Model</label>
+            <select id="model" class="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 text-sm">
+              <option value="openai/gpt-4o-mini">GPT-4o Mini - Fast & Cheap</option>
+              <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet - Smart</option>
+              <option value="meta-llama/llama-3.1-70b-instruct">Llama 3.1 70B - Open</option>
+              <option value="google/gemini-flash-1.5">Gemini 1.5 Flash - Fast</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">AI Personality</label>
+            <select id="personality" class="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 text-sm">
+              <option value="friendly">Friendly & Casual</option>
+              <option value="witty">Witty & Sarcastic</option>
+              <option value="helpful">Helpful & Supportive</option>
+              <option value="curious">Curious & Inquisitive</option>
+              <option value="chill">Chill & Laid Back</option>
+            </select>
+          </div>
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label class="block text-sm font-medium">Humanizer Mode</label>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input id="humanizer" type="checkbox" class="sr-only peer" checked>
+                <div class="w-11 h-6 bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
+              </label>
+            </div>
+            <p class="text-xs text-white/60">Adds typos, lowercase, casual tone</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Response Delay: <span id="delayValue">2s</span></label>
+            <input id="delay" type="range" min="0" max="10" value="2" class="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer">
+          </div>
+        <button id="saveSettings" class="w-full mt-4 bg-purple-600 hover:bg-purple-700 transition-all py-2 rounded-lg font-semibold">Save Settings</button>
+      </div>
+
+      <div class="glass rounded-2xl p-6 shadow-xl">
+        <h3 class="text-sm font-semibold mb-3">Setup Instructions</h3>
+        <ol class="text-xs text-white/70 space-y-2 list-decimal list-inside">
+          <li>Get API key from openrouter.ai/keys</li>
+          <li>Paste it above and select your model</li>
+          <li>Paste chat context on the right</li>
+          <li>Click Generate and copy the response</li>
+          <li>Manually paste into Talkomatic</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="md:col-span-2 space-y-6">
+      <div class="glass rounded-2xl p-6 shadow-xl">
+        <h2 class="text-lg font-semibold mb-4">Generate Response</h2>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-2">Chat Context / Latest Message</label>
+            <textarea id="context" rows="6" placeholder="Paste the recent chat messages here so the AI knows what to respond to..." class="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 text-sm resize-none"></textarea>
+          </div>
+          <div class="flex gap-3">
+            <button id="generateBtn" class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all py-3 rounded-lg font-semibold flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+              Generate Response
+            </button>
+            <button id="drawingBtn" class="px-4 bg-white/10 hover:bg-white/20 transition-all py-3 rounded-lg font-semibold flex items-center gap-2 border border-white/20">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+              Drawing
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass rounded-2xl p-6 shadow-xl min-h-[200px]">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path></svg>
+            AI Output
+          </h2>
+          <span id="status" class="text-xs px-2 py-1 bg-white/10 rounded-full">Ready</span>
+        </div>
+        <div id="output" class="bg-black/20 rounded-lg p-4 min-h-[120px] text-sm whitespace-pre-wrap break-words">
+          <p class="text-white/50">Generated response will appear here...</p>
+        </div>
+        <button id="copyBtn" class="w-full mt-4 bg-white/10 hover:bg-white/20 transition-all py-2 rounded-lg font-medium border border-white/20 hidden">Copy to Clipboard</button>
+        <p class="text-xs text-white/60 mt-3 text-center">⚠️ Remember: Disclose that your messages are AI-assisted when chatting</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const apiKeyInput = document.getElementById('apiKey');
+  const modelSelect = document.getElementById('model');
+  const personalitySelect = document.getElementById('personality');
+  const humanizerToggle = document.getElementById('humanizer');
+  const delayInput = document.getElementById('delay');
+  const delayValue = document.getElementById('delayValue');
+  const contextInput = document.getElementById('context');
+  const outputDiv = document.getElementById('output');
+  const statusSpan = document.getElementById('status');
+  const copyBtn = document.getElementById('copyBtn');
+  const generateBtn = document.getElementById('generateBtn');
+  const drawingBtn = document.getElementById('drawingBtn');
+
+  // Load settings
+  function loadSettings() {
+    apiKeyInput.value = localStorage.getItem('tomatic_apiKey') || '';
+    modelSelect.value = localStorage.getItem('tomatic_model') || 'openai/gpt-4o-mini';
+    personalitySelect.value = localStorage.getItem('tomatic_personality') || 'friendly';
+    humanizerToggle.checked = localStorage.getItem('tomatic_humanizer') !== 'false';
+    delayInput.value = localStorage.getItem('tomatic_delay') || '2';
+    delayValue.textContent = delayInput.value + 's';
+  }
+
+  // Save settings
+  document.getElementById('saveSettings').addEventListener('click', () => {
+    localStorage.setItem('tomatic_apiKey', apiKeyInput.value);
+    localStorage.setItem('tomatic_model', modelSelect.value);
+    localStorage.setItem('tomatic_personality', personalitySelect.value);
+    localStorage.setItem('tomatic_humanizer', humanizerToggle.checked);
+    localStorage.setItem('tomatic_delay', delayInput.value);
+    statusSpan.textContent = 'Saved!';
+    statusSpan.className = 'text-xs px-2 py-1 bg-green-500/30 rounded-full';
+    setTimeout(() => {
+      statusSpan.textContent = 'Ready';
+      statusSpan.className = 'text-xs px-2 py-1 bg-white/10 rounded-full';
+    }, 2000);
+  });
+
+  delayInput.addEventListener('input', (e) => delayValue.textContent = e.target.value + 's');
+
+  const personalityPrompts = {
+    friendly: "You are friendly, casual, and upbeat. Use a warm tone.",
+    witty: "You are witty and sarcastic but not mean. Use clever humor.",
+    helpful: "You are helpful and supportive. Offer useful thoughts.",
+    curious: "You are curious and ask follow-up questions. Show interest.",
+    chill: "You are chill and laid back. Use minimal caps, simple language."
+  };
+
+  async function generateResponse(isDrawing = false) {
+    const apiKey = apiKeyInput.value.trim();
+    const context = contextInput.value.trim();
+    
+    if (!apiKey) {
+      alert('Please enter your OpenRouter API key in Settings');
+      return;
+    }
+    if (!context) {
+      alert('Please paste some chat context first');
+      return;
+    }
+
+    statusSpan.textContent = 'Thinking...';
+    statusSpan.className = 'text-xs px-2 py-1 bg-blue-500/30 rounded-full animate-pulse-slow';
+    outputDiv.innerHTML = '<p class="text-white/50">Generating...</p>';
+    copyBtn.classList.add('hidden');
+
+    const delay = parseInt(delayInput.value) * 1000;
+    await new Promise(r => setTimeout(r, delay));
+
+    let systemPrompt = `You are chatting on Talkomatic. ${personalityPrompts[personalitySelect.value]} 
+Keep responses short, 1-3 sentences max, like a real chat. 
+Do not use emojis unless the chat already does. 
+You MUST end every message with [AI] so others know you're AI-assisted.`;
+
+    if (humanizerToggle.checked) {
+      systemPrompt += ` Use casual grammar, lowercase when natural, occasional typos like "ur" for "your". Sound human.`;
+    }
+
+    let userPrompt = isDrawing 
+      ? `Based on this chat context, describe a simple ASCII drawing or text-art you would "draw" in chat. Keep it under 5 lines. Context:\n${context}`
+      : `Respond to this chat context:\n${context}`;
+
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: modelSelect.value,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ]
+        })
+      });
+
+      if (!res.ok) throw new Error(`API Error: ${res.status}`);
+      
+      const data = await res.json();
+      const text = data.choices[0].message.content.trim();
+      
+      outputDiv.textContent = text;
+      copyBtn.classList.remove('hidden');
+      statusSpan.textContent = 'Done';
+      statusSpan.className = 'text-xs px-2 py-1 bg-green-500/30 rounded-full';
+    } catch (err) {
+      outputDiv.innerHTML = `<p class="text-red-400">Error: ${err.message}</p>`;
+      statusSpan.textContent = 'Error';
+      statusSpan.className = 'text-xs px-2 py-1 bg-red-500/30 rounded-full';
+    }
+  }
+
+  generateBtn.addEventListener('click', () => generateResponse(false));
+  drawingBtn.addEventListener('click', () => generateResponse(true));
+  
+  copyBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(outputDiv.textContent);
+    copyBtn.textContent = 'Copied!';
+    setTimeout(() => copyBtn.textContent = 'Copy to Clipboard', 1500);
+  });
+
+  loadSettings();
+</script>
+</body>
+</html>

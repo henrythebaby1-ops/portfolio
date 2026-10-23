@@ -1,0 +1,2933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hummy AI — Library Search</title>
+<link rel="icon" type="image/png" sizes="64x64" href="assets/favicon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="i18n.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* SCCLD's own palette: #006075 is their primary (buttons, header, links),
+       #003642 the deep header tone, #0092b2 the light accent. */
+    --ink:#1a2a2f;
+    --paper:#f4f7f8;
+    --paper-dim:#e8eef0;
+    --moss:#006075;
+    --moss-deep:#003642;
+    --brass:#006075;
+    --brass-light:#7cc4d6;
+    --card:#ffffff;
+    --line:#d5dfe3;
+    --available:#2e7d32;
+    --waitlist:#b3541e;
+    --teal:#006075;
+    --teal-dark:#004b5c;
+    --tint:#e3f1f7;
+  }
+
+  *{box-sizing:border-box;}
+  /* The page itself never scrolls. Each column is its own scroll region, so
+     the assistant and the shelf move independently and neither can push the
+     other off screen — the panel used to stretch to the catalog's full height,
+     which meant the chat thread grew instead of scrolling. */
+  html,body{height:100%;overflow:hidden;}
+  body{margin:0;font-family:'Inter',sans-serif;background:var(--paper);color:var(--ink);}
+  h1,h2,h3,.serif{font-family:'Fraunces',serif;}
+
+  .shell{display:flex;flex-direction:column;height:100vh;height:100dvh;}
+  .app{flex:1;min-height:0;display:flex;}
+  .app .main{flex:1;min-width:0;}
+
+  /* ---- TOP BAR ---- */
+  .topbar{
+    display:flex;align-items:center;gap:16px;flex-shrink:0;
+    padding:0 20px;height:58px;background:var(--moss-deep);color:#fff;
+    border-bottom:3px solid var(--moss);
+  }
+  .brand-sccld{height:30px;width:auto;background:#fff;padding:3px 6px;border-radius:4px;flex-shrink:0;}
+
+  /* ---- PillNav (React Bits) — the component's stylesheet, with the
+     container made inline instead of absolutely positioned, and a submenu
+     added under each pill for the shelves. ---- */
+  .pill-nav-container{position:relative;z-index:99;flex-shrink:0;}
+  .pill-nav{
+    --nav-h:42px;--logo:36px;--pill-pad-x:16px;--pill-gap:3px;
+    width:max-content;display:flex;align-items:center;box-sizing:border-box;gap:10px;
+  }
+  .pill-nav-items{position:relative;display:flex;align-items:center;height:var(--nav-h);background:var(--base,#000);border-radius:9999px;}
+  .pill-logo{
+    width:var(--nav-h);height:var(--nav-h);border-radius:50%;background:var(--base,#000);padding:6px;
+    display:inline-flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;
+  }
+  .pill-logo img{width:100%;height:100%;object-fit:contain;display:block;}
+  .pill-wordmark{font-family:'Fraunces',serif;font-size:20px;font-weight:500;color:#fff;white-space:nowrap;margin-right:4px;}
+  .pill-list{list-style:none;display:flex;align-items:stretch;gap:var(--pill-gap);margin:0;padding:3px;height:100%;}
+  .pill-list > li{display:flex;height:100%;position:relative;}
+  .pill{
+    display:inline-flex;align-items:center;justify-content:center;height:100%;padding:0 var(--pill-pad-x);
+    background:var(--pill-bg,#fff);color:var(--pill-text,var(--base,#000));text-decoration:none;border-radius:9999px;
+    box-sizing:border-box;font-weight:600;font-size:13px;line-height:0;text-transform:uppercase;letter-spacing:.2px;
+    white-space:nowrap;cursor:pointer;position:relative;overflow:hidden;font-family:'Inter',sans-serif;
+  }
+  .pill .hover-circle{position:absolute;left:50%;bottom:0;border-radius:50%;background:var(--base,#000);z-index:1;display:block;pointer-events:none;will-change:transform;}
+  .pill .label-stack{position:relative;display:inline-block;line-height:1;z-index:2;}
+  .pill .pill-label{position:relative;z-index:2;display:inline-block;line-height:1;will-change:transform;}
+  .pill .pill-label-hover{position:absolute;left:0;top:0;color:var(--hover-text,#fff);z-index:3;display:inline-block;will-change:transform,opacity;}
+  .pill.is-active::after{
+    content:'';position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);
+    width:12px;height:12px;background:var(--base,#000);border-radius:50px;z-index:4;
+  }
+  /* Our addition: a pill can carry a shelf menu, shown while the pointer is
+     over the pill or the menu, or while either has keyboard focus. */
+  .menu{
+    position:absolute;min-width:190px;z-index:60;display:none;
+    background:#fff;border:1px solid var(--line);box-shadow:0 10px 24px rgba(0,54,66,0.18);padding:6px 0;
+  }
+  .menu button{
+    display:block;width:100%;text-align:left;background:transparent;border:none;
+    font-family:inherit;font-size:13.5px;color:var(--ink);padding:9px 16px;cursor:pointer;
+  }
+  .menu button:hover,.menu button.is-on{background:var(--tint);color:var(--moss);}
+  .pill-list > li > .menu{top:calc(100% + 6px);left:50%;transform:translateX(-50%);border-radius:14px;border-top:3px solid var(--base);}
+  .pill-list > li:hover > .menu,.pill-list > li:focus-within > .menu,.pill-list > li.open > .menu{display:block;}
+  .pill-list > li > .menu::before{content:"";position:absolute;left:0;right:0;top:-10px;height:10px;} /* bridge the gap */
+
+  .desktop-only{display:block;}
+  .mobile-only{display:none;}
+  .mobile-menu-button{
+    width:var(--nav-h);height:var(--nav-h);border-radius:50%;background:var(--base,#000);border:none;display:none;
+    flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;padding:0;position:relative;
+  }
+  .hamburger-line{width:16px;height:2px;background:var(--pill-bg,#fff);border-radius:1px;transition:all .01s ease;transform-origin:center;}
+  .mobile-menu-popover{
+    position:absolute;top:calc(100% + 8px);left:0;right:auto;min-width:240px;background:var(--base,#f0f0f0);border-radius:27px;
+    box-shadow:0 8px 32px rgba(0,0,0,0.12);z-index:998;opacity:0;transform-origin:top center;visibility:hidden;
+  }
+  .mobile-menu-list{list-style:none;margin:0;padding:3px;display:flex;flex-direction:column;gap:3px;}
+  .mobile-menu-popover .mobile-menu-link{
+    display:block;padding:12px 16px;color:var(--pill-text,#fff);background-color:var(--pill-bg,#fff);text-decoration:none;
+    font-size:15px;font-weight:500;border-radius:50px;transition:all .2s ease;font-family:'Inter',sans-serif;
+  }
+  .mobile-menu-popover .mobile-menu-link:hover{cursor:pointer;background-color:var(--base);color:var(--hover-text,#fff);}
+  .mobile-menu-popover .mobile-menu-sub{padding:8px 16px 4px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#a9cbd4;}
+  @media (max-width:820px){
+    .desktop-only{display:none;}
+    .mobile-only{display:block;}
+    .mobile-menu-button{display:flex;}
+    .pill-nav{width:100%;justify-content:space-between;}
+  }
+
+  /* the bar's search button — compact, never squeezed */
+  .search-trigger{
+    display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px 0 12px;flex-shrink:0;
+    background:var(--moss);color:#fff;border:1px solid rgba(255,255,255,0.25);border-radius:9999px;
+    font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap;
+    transition:background .15s ease,border-color .15s ease;
+  }
+  .search-trigger:hover{background:var(--teal-dark);border-color:var(--brass-light);}
+  .search-trigger svg{width:18px;height:18px;flex-shrink:0;}
+  .search-trigger kbd{
+    font-family:inherit;font-size:11px;font-weight:600;padding:1px 6px;border-radius:5px;
+    background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.25);color:#d6e6ea;
+  }
+  /* Laptop widths: the bar carries a lot. Captions go first (the pills read
+     as a library and a language on their own), then pill padding, then the
+     wordmark — the hummingbird is the brand by itself. */
+  @media (max-width:1500px){
+    .topbar .pick-label{display:none;}
+    .pill{--pill-pad-x:12px;font-size:12.5px;}
+    .topbar{gap:12px;}
+  }
+  @media (max-width:1300px){ .pill-wordmark{display:none;} }
+  @media (max-width:1100px){ .search-trigger span,.search-trigger kbd{display:none;} .search-trigger{padding:0 11px;} }
+
+  /* the panel */
+  .search-scrim{position:fixed;inset:0;background:rgba(0,54,66,0.35);backdrop-filter:blur(2px);z-index:900;}
+  .search-scrim[hidden]{display:none;}
+  .search-panel{
+    position:fixed;top:72px;left:50%;transform:translateX(-50%);width:min(760px,94vw);z-index:901;
+    background:var(--card);border:1px solid var(--line);border-top:4px solid var(--moss);border-radius:14px;
+    box-shadow:0 24px 60px rgba(0,54,66,0.28);padding:18px 20px 20px;
+    animation:panel-in .22s cubic-bezier(.2,.7,.2,1);
+  }
+  .search-panel[hidden]{display:none;}
+  @keyframes panel-in{from{opacity:0;transform:translate(-50%,-8px);}to{opacity:1;transform:translate(-50%,0);}}
+  @media (prefers-reduced-motion:reduce){ .search-panel{animation:none;} }
+  .search-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .search-panel-head h2{font-size:20px;margin:0;font-weight:500;}
+  .search-close{
+    width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:#5b6b71;
+    font-size:20px;line-height:1;cursor:pointer;font-family:inherit;
+  }
+  .search-close:hover{border-color:var(--moss);color:var(--moss);}
+  .search-panel .sbar{height:54px;}
+  .search-panel .sbar input{font-size:16px;}
+  .search-try{margin-top:16px;}
+  .search-try-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a8672;margin-bottom:8px;}
+  .search-chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .search-chip{
+    background:var(--tint);border:1px solid #bfdde6;color:var(--moss);font-family:inherit;
+    font-size:13px;font-weight:600;padding:8px 13px;border-radius:100px;cursor:pointer;
+    transition:background .15s ease,transform .15s ease;
+  }
+  .search-chip:hover{background:#d3eaf2;transform:translateY(-1px);}
+  .search-chip .kind{font-weight:400;color:#5b6b71;margin-left:6px;font-size:11.5px;}
+  @media (max-width:820px){ .search-panel{top:8px;width:calc(100vw - 16px);} }
+
+  /* Both pickers share one row: same height, captions on one baseline, the
+     two pills the same size so they read as a pair. */
+  .pickers{display:flex;align-items:center;gap:14px;flex-shrink:0;}
+  .topbar .branch-pick{flex-shrink:0;display:flex;align-items:center;gap:8px;height:40px;cursor:pointer;}
+  .topbar .pill-select{height:34px;min-width:150px;padding-top:0;padding-bottom:0;line-height:32px;}
+  .topbar .pick-label{color:#a9cbd4;}
+  .topbar .pill-select{
+    background-color:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.35);color:#fff;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237cc4d6' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  }
+  .topbar .pill-select:hover{background-color:rgba(255,255,255,0.14);}
+  .topbar .pill-select option{background:#003642;color:#fff;}
+
+  .main{position:relative;}
+
+  /* ---- SEARCH BAR (shared by the assistant and the catalog) ----
+     A plain white field with a hairline border and a solid teal square on
+     the right carrying the magnifier — the reference exactly. */
+  .sbar{display:flex;width:100%;height:50px;flex-shrink:0;}
+  .sbar input{
+    flex:1;min-width:0;height:100%;background:#fff;border:1px solid #cfcfcf;border-right:none;
+    border-radius:3px 0 0 3px;padding:0 16px;font-size:15px;font-family:inherit;color:#222;outline:none;
+  }
+  .sbar input::placeholder{color:#9a9a9a;}
+  .sbar input:focus{border-color:var(--teal);box-shadow:inset 0 0 0 1px var(--teal);}
+  .sbar-btn{
+    width:64px;height:100%;flex-shrink:0;border:none;border-radius:0 3px 3px 0;
+    background:var(--teal);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    transition:background .15s ease;
+  }
+  .sbar-btn:hover{background:var(--teal-dark);}
+  .sbar-btn:disabled{opacity:.6;cursor:default;}
+  .sbar-btn svg{width:22px;height:22px;}
+
+  /* ---- RIGHT: SEARCH ---- */
+  /* No max-width: the shelf uses the whole window and re-flows as it resizes. */
+  .main{padding:36px 48px 60px;height:100%;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;}
+  .main-top{display:flex;flex-direction:column;align-items:stretch;margin-bottom:26px;gap:16px;}
+  .title-row{display:flex;align-items:flex-end;gap:14px;}
+  .shuffle{
+    display:inline-flex;align-items:center;gap:6px;margin-bottom:4px;
+    background:var(--card);border:1px solid var(--line);color:var(--ink);font-family:inherit;
+    font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:100px;cursor:pointer;
+    transition:border-color .15s ease,transform .15s ease;
+  }
+  .shuffle svg{width:14px;height:14px;color:var(--brass);}
+  .shuffle:hover{border-color:var(--brass);transform:rotate(-3deg);}
+  .shuffle:active{transform:rotate(-8deg) scale(.97);}
+  .shuffle[hidden]{display:none;}
+  .main-top h2{font-size:28px;margin:0 0 6px;font-weight:500;}
+  .main-top p{margin:0;color:#5b5a4c;font-size:14px;}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px;}
+  .book{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;
+    display:flex;flex-direction:column;transition:box-shadow .15s ease, transform .15s ease;
+  }
+  .book.in:hover{box-shadow:0 8px 20px rgba(0,54,66,0.12);transform:translateY(-2px);}
+  .cover{
+    height:230px;display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;font-size:15px;text-align:center;padding:14px;color:#fff;line-height:1.3;
+    position:relative;
+  }
+  .cover .spine{position:absolute;left:0;top:0;bottom:0;width:8px;background:rgba(0,0,0,0.18);}
+  .book-body{padding:14px 15px 16px;display:flex;flex-direction:column;gap:8px;flex:1;}
+  .book-body h3{font-size:15.5px;margin:0;font-weight:600;line-height:1.3;}
+  .book-body .author{font-size:12.5px;color:#736f5c;margin:0;}
+  .book-body .author.roman{color:#9aa0a6;font-size:11.5px;margin-top:-4px;}
+  .badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;}
+  .badge{font-size:10.5px;padding:3px 8px;border-radius:100px;font-weight:600;letter-spacing:.02em;}
+  .badge.available{background:#e2ecdf;color:var(--available);}
+  .badge.waitlist{background:#f3e3d3;color:var(--waitlist);}
+  .badge.ebook{background:#dce7ee;color:#2b5d78;display:flex;align-items:center;gap:4px;}
+  .band{
+    font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#8a8672;font-weight:600;
+  }
+  .cover{position:relative;overflow:hidden;}
+  /* A book cover is taller than the card is wide, so cropping it to fill
+     the box lost the title on most of them. The whole jacket is shown
+     instead, with a blurred copy of itself filling the space around it. */
+  .cover-bg{position:absolute;inset:-12px;width:calc(100% + 24px);height:calc(100% + 24px);object-fit:cover;filter:blur(14px) saturate(1.2);opacity:.55;}
+  .cover-img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:8px;box-sizing:border-box;z-index:1;filter:drop-shadow(0 4px 10px rgba(0,0,0,0.25));}
+  .cover-text{position:relative;z-index:1;}
+  .cover:has(.cover-img) .cover-text{display:none;}
+  .shelf-avail{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;margin-top:2px;}
+  .shelf-avail .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+  .shelf-avail.ok{color:var(--available);} .shelf-avail.ok .dot{background:var(--available);}
+  .shelf-avail.out{color:var(--waitlist);} .shelf-avail.out .dot{background:var(--waitlist);}
+  .shelf-avail.elsewhere{color:#8a6d3b;} .shelf-avail.elsewhere .dot{background:#8a6d3b;}
+  .shelf-avail.missing{color:#8a8672;} .shelf-avail.missing .dot{background:#8a8672;}
+  .book .shelf{color:#6b6754;border:none;padding:0;margin-top:4px;}
+  .book .shelf-pin{color:var(--brass);}
+  .book.skeleton{pointer-events:none;}
+  .book.skeleton .cover{background:linear-gradient(90deg,var(--paper-dim) 25%,#eef3f5 50%,var(--paper-dim) 75%);background-size:200% 100%;animation:shimmer 1.2s linear infinite;}
+  .book.skeleton .sk{height:12px;border-radius:6px;background:var(--paper-dim);margin:6px 0;}
+  .book.skeleton .sk.w60{width:60%;} .book.skeleton .sk.w40{width:40%;} .book.skeleton .sk.w80{width:80%;}
+  @keyframes shimmer{from{background-position:200% 0;}to{background-position:-200% 0;}}
+  .book.notfound .cover{background:var(--paper-dim);}
+  .book.notfound .cover-text{color:#6b7c82;}
+  .book.event .cover{height:auto;min-height:120px;padding:16px 15px 12px;align-items:flex-start;justify-content:flex-start;text-align:left;}
+  .book.event.has-art .cover{height:190px;padding:0;}
+  .book.event.has-art .ev-head{display:none;}   /* with a picture, the date and title move below it */
+  .book.event .ev-head{position:relative;z-index:1;}
+  .book.event .ev-when{font-size:11px;text-transform:uppercase;letter-spacing:.07em;font-weight:700;color:#fff;opacity:.9;margin-bottom:6px;font-family:'Inter',sans-serif;}
+  .book.event .ev-when.dark{color:var(--moss);opacity:1;margin-bottom:2px;}
+  .book.event .ev-title{font-size:16px;line-height:1.3;color:#fff;font-weight:500;}
+  .book.event h3{font-size:15.5px;margin:0;}
+  .ev-where{font-size:12.5px;color:#4d5f66;}
+  .ev-desc{font-size:12px;color:#6b7c82;line-height:1.45;}
+  .ev-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:auto;padding-top:6px;}
+  .ev-tag{font-size:10.5px;padding:2px 8px;border-radius:100px;background:var(--tint);color:var(--moss);border:1px solid #bfdde6;}
+  .ev-tag.full{background:#f6e3d6;color:var(--waitlist);border-color:#e6c4ae;}
+  .back-home{
+    background:transparent;border:1px solid var(--line);color:var(--ink);font-family:inherit;
+    font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:100px;cursor:pointer;margin-bottom:4px;
+  }
+  .back-home:hover{border-color:var(--moss);color:var(--moss);}
+  .back-home[hidden]{display:none;}
+
+  /* ---- scroll reveal ----
+     Cards and section headers start faded and slightly low, and settle into
+     place as they enter the viewport. Each one that arrives in the same
+     frame is delayed a touch more than the last, so a row ripples in rather
+     than popping. A card that has already been revealed keeps its place when
+     hydration redraws it (see REVEALED). */
+  .book,.grid-section{opacity:0;transform:translateY(14px);}
+  .book.in,.grid-section.in{
+    opacity:1;transform:none;
+    transition:opacity .55s cubic-bezier(.2,.7,.2,1),transform .55s cubic-bezier(.2,.7,.2,1);
+    transition-delay:var(--reveal-delay,0ms);
+  }
+  .book.skeleton{opacity:1;transform:none;}   /* placeholders are already "there" */
+  .book.in:hover{transition-delay:0ms;}        /* the lift on hover must not lag */
+  @media (prefers-reduced-motion:reduce){
+    .book,.grid-section{opacity:1;transform:none;transition:none;}
+  }
+
+  /* A soft fade where content slides under the header, so cards dissolve
+     out at the top instead of being cut off by a hard edge. */
+  .main{
+    -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 34px,#000 100%);
+    mask-image:linear-gradient(to bottom,transparent 0,#000 34px,#000 100%);
+  }
+  @media (max-width:820px){ .main{-webkit-mask-image:none;mask-image:none;} }
+
+  /* ---- partner band ---- */
+  .partners{
+    margin:40px -48px -60px;padding:22px 48px 26px;border-top:1px solid var(--line);
+    background:var(--card);display:flex;align-items:center;gap:22px;
+  }
+  .partners-label{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#8a8672;white-space:nowrap;flex-shrink:0;}
+  .partners-loop{flex:1;min-width:0;}
+
+  /* ---- LogoLoop (React Bits) — the component's stylesheet ---- */
+  .logoloop{position:relative;--logoloop-gap:32px;--logoloop-logoHeight:28px;--logoloop-fadeColorAuto:#ffffff;overflow:hidden;}
+  .logoloop--vertical{height:100%;display:inline-block;}
+  .logoloop--scale-hover{padding-top:calc(var(--logoloop-logoHeight) * .1);padding-bottom:calc(var(--logoloop-logoHeight) * .1);}
+  .logoloop__track{display:flex;width:max-content;will-change:transform;user-select:none;position:relative;z-index:0;}
+  .logoloop--vertical .logoloop__track{flex-direction:column;height:max-content;width:100%;}
+  .logoloop__list{display:flex;align-items:center;list-style:none;margin:0;padding:0;}
+  .logoloop--vertical .logoloop__list{flex-direction:column;}
+  .logoloop__item{flex:0 0 auto;margin-right:var(--logoloop-gap);font-size:var(--logoloop-logoHeight);line-height:1;}
+  .logoloop--vertical .logoloop__item{margin-right:0;margin-bottom:var(--logoloop-gap);}
+  .logoloop__node{display:inline-flex;align-items:center;}
+  .logoloop__item img{
+    height:var(--logoloop-logoHeight);width:auto;display:block;object-fit:contain;
+    -webkit-user-drag:none;pointer-events:none;transition:transform .3s cubic-bezier(.4,0,.2,1);
+  }
+  .logoloop--scale-hover .logoloop__item{overflow:visible;}
+  .logoloop--scale-hover .logoloop__item:hover img,.logoloop--scale-hover .logoloop__item:hover .logoloop__node{transform:scale(1.2);transform-origin:center center;}
+  .logoloop__link{display:inline-flex;align-items:center;text-decoration:none;border-radius:4px;transition:opacity .2s ease;}
+  .logoloop__link:hover{opacity:.8;}
+  .logoloop__link:focus-visible{outline:2px solid currentColor;outline-offset:2px;}
+  .logoloop--fade::before,.logoloop--fade::after{content:'';position:absolute;top:0;bottom:0;width:clamp(24px,8%,120px);pointer-events:none;z-index:10;}
+  .logoloop--fade::before{left:0;background:linear-gradient(to right,var(--logoloop-fadeColor,var(--logoloop-fadeColorAuto)) 0%,rgba(0,0,0,0) 100%);}
+  .logoloop--fade::after{right:0;background:linear-gradient(to left,var(--logoloop-fadeColor,var(--logoloop-fadeColorAuto)) 0%,rgba(0,0,0,0) 100%);}
+  .logoloop--vertical.logoloop--fade::before,.logoloop--vertical.logoloop--fade::after{left:0;right:0;width:100%;height:clamp(24px,8%,120px);}
+  .logoloop--vertical.logoloop--fade::before{top:0;bottom:auto;background:linear-gradient(to bottom,var(--logoloop-fadeColor,var(--logoloop-fadeColorAuto)) 0%,rgba(0,0,0,0) 100%);}
+  .logoloop--vertical.logoloop--fade::after{bottom:0;top:auto;background:linear-gradient(to top,var(--logoloop-fadeColor,var(--logoloop-fadeColorAuto)) 0%,rgba(0,0,0,0) 100%);}
+  /* The item's own name sits under each logo, so a mark reads as a partner
+     rather than a stray picture. */
+  .logoloop__item .logo-name{display:block;text-align:center;font-size:10.5px;color:#8a8672;margin-top:6px;letter-spacing:.02em;}
+  @media (prefers-reduced-motion:reduce){
+    .logoloop__track{transform:translate3d(0,0,0) !important;}
+    .logoloop__item img,.logoloop__node{transition:none !important;}
+  }
+  @media (max-width:820px){ .partners{margin:32px -16px 0;padding:18px 16px;} }
+
+  /* ---- events: list / calendar switch and the month grid ---- */
+  .ev-modes{grid-column:1/-1;display:inline-flex;gap:4px;background:var(--paper-dim);padding:4px;border-radius:100px;width:max-content;margin-bottom:6px;}
+  .ev-mode{background:transparent;border:none;font-family:inherit;font-size:13px;font-weight:600;padding:7px 16px;border-radius:100px;cursor:pointer;color:#5b6b71;}
+  .ev-mode.is-on{background:var(--card);color:var(--moss);box-shadow:0 1px 3px rgba(0,54,66,0.12);}
+  .cal-wrap{grid-column:1/-1;}
+  .cal-head{display:flex;align-items:center;gap:10px;margin:6px 0 12px;}
+  .cal-title{font-size:22px;margin:0 6px;font-weight:500;min-width:220px;}
+  .cal-nav{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--card);font-size:20px;line-height:1;cursor:pointer;color:var(--ink);}
+  .cal-nav:hover,.cal-today:hover{border-color:var(--moss);color:var(--moss);}
+  .cal-today{margin-left:auto;background:var(--card);border:1px solid var(--line);border-radius:100px;padding:6px 14px;font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--ink);}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  .cal-loading{grid-column:1/-1;padding:30px;text-align:center;color:#8a8672;}
+  .cal-dow{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a8672;text-align:center;padding:4px 0 6px;}
+  .cal-cell{
+    min-height:96px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px;
+    display:flex;flex-direction:column;gap:3px;cursor:pointer;transition:border-color .15s ease,box-shadow .15s ease;overflow:hidden;
+  }
+  .cal-cell.empty{background:transparent;border-color:transparent;cursor:default;}
+  .cal-cell.past{opacity:.6;}
+  .cal-cell.has:hover{border-color:var(--moss);box-shadow:0 4px 12px rgba(0,54,66,0.1);}
+  .cal-cell.sel{border-color:var(--moss);box-shadow:inset 0 0 0 1px var(--moss);}
+  .cal-cell.today .cal-num{background:var(--moss);color:#fff;}
+  .cal-num{font-size:12.5px;font-weight:700;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#5b6b71;}
+  .cal-ev{font-size:11px;line-height:1.3;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:var(--tint);border-radius:5px;padding:2px 6px;}
+  .cal-time{color:var(--moss);font-weight:700;font-variant-numeric:tabular-nums;}
+  .cal-more{font-size:11px;color:#8a8672;padding-left:2px;}
+  .cal-day-list{margin-top:26px;}
+  .cal-day-grid{margin-top:14px;}
+  @media (max-width:820px){ .cal-cell{min-height:56px;padding:5px;} .cal-ev{display:none;} .cal-cell.has::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--moss);} .cal-title{min-width:0;font-size:18px;} }
+
+  /* ---- I'm feeling lucky ---- */
+  .lucky-trigger{
+    display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px 0 12px;flex-shrink:0;
+    background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.35);border-radius:9999px;
+    font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap;
+    transition:background .15s ease,border-color .15s ease,transform .15s ease;
+  }
+  .lucky-trigger:hover{background:rgba(255,255,255,0.1);border-color:var(--brass-light);}
+  .lucky-trigger:active svg{transform:rotate(90deg);}
+  .lucky-trigger svg{width:18px;height:18px;flex-shrink:0;transition:transform .3s ease;}
+  @media (max-width:1300px){ .lucky-trigger span{display:none;} .lucky-trigger{padding:0 11px;} }
+
+  .lucky-panel{width:min(640px,94vw);}
+  .lucky-body{display:grid;grid-template-columns:200px 1fr;gap:22px;align-items:start;min-height:280px;}
+  .lucky-cover{
+    position:relative;height:280px;border-radius:10px;overflow:hidden;background:var(--paper-dim);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .lucky-cover img.bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:blur(18px) saturate(1.2);opacity:.55;transform:scale(1.15);}
+  .lucky-cover img.fg{position:relative;max-height:100%;max-width:100%;object-fit:contain;box-shadow:0 8px 24px rgba(0,54,66,0.25);}
+  .lucky-info h3{font-size:22px;margin:0 0 4px;font-weight:500;line-height:1.25;}
+  .lucky-info .author{margin:0 0 12px;color:#5b6b71;}
+  .lucky-info .band{display:inline-block;margin-bottom:10px;}
+  .lucky-info .shelf-avail{margin:8px 0 4px;}
+  .lucky-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px;}
+  .lucky-actions button,.lucky-actions a{
+    display:inline-flex;align-items:center;gap:6px;font-family:inherit;font-size:13px;font-weight:600;
+    padding:9px 15px;border-radius:100px;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--card);color:var(--ink);
+  }
+  .lucky-actions .primary{background:var(--moss);color:#fff;border-color:var(--moss);}
+  .lucky-actions .primary:hover{background:var(--teal-dark);}
+  .lucky-actions button:hover,.lucky-actions a:hover{border-color:var(--moss);}
+  .lucky-loading{grid-column:1/-1;display:flex;align-items:center;justify-content:center;min-height:240px;color:#8a8672;font-size:15px;}
+  .lucky-loading .die{font-size:44px;animation:roll 1s linear infinite;margin-right:14px;}
+  @keyframes roll{to{transform:rotate(360deg);}}
+  @media (prefers-reduced-motion:reduce){ .lucky-loading .die{animation:none;} }
+  @media (max-width:640px){ .lucky-body{grid-template-columns:1fr;} .lucky-cover{height:220px;} }
+
+  .shuffle.addall{margin-right:8px;}
+  .shuffle.addall span:first-child{font-size:16px;line-height:1;color:var(--moss);}
+  .shuffle.addall.busy{opacity:.6;pointer-events:none;}
+
+  /* ---- My list ---- */
+  .list-trigger{
+    display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px 0 12px;flex-shrink:0;
+    background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.35);border-radius:9999px;
+    font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap;position:relative;
+    transition:background .15s ease,border-color .15s ease;
+  }
+  .list-trigger:hover{background:rgba(255,255,255,0.1);border-color:var(--brass-light);}
+  .list-trigger svg{width:18px;height:18px;flex-shrink:0;}
+  .list-count{
+    min-width:20px;height:20px;padding:0 6px;border-radius:100px;background:var(--brass-light);color:var(--moss-deep);
+    font-size:11.5px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;
+  }
+  .list-count[hidden]{display:none;}
+  @media (max-width:1100px){ .list-trigger span#listOpenLabel{display:none;} .list-trigger{padding:0 11px;} }
+
+  .add-btn{
+    position:absolute;top:8px;right:8px;z-index:3;width:30px;height:30px;border-radius:50%;
+    border:1px solid rgba(255,255,255,0.7);background:rgba(0,54,66,0.72);color:#fff;
+    font-size:20px;line-height:1;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;
+    backdrop-filter:blur(3px);transition:background .15s ease,transform .15s ease;opacity:0;
+  }
+  .book:hover .add-btn,.add-btn.in,.add-btn:focus-visible{opacity:1;}
+  .add-btn:hover{background:var(--moss);transform:scale(1.08);}
+  .add-btn.in{background:var(--available);border-color:#fff;font-size:15px;}
+  @media (hover:none){ .add-btn{opacity:1;} }
+
+  .book .remove-btn{
+    margin-top:auto;align-self:flex-start;background:transparent;border:1px solid var(--line);color:#5b6b71;
+    font-family:inherit;font-size:12px;padding:5px 10px;border-radius:100px;cursor:pointer;
+  }
+  .book .remove-btn:hover{border-color:var(--waitlist);color:var(--waitlist);}
+  .list-route{font-size:13px;color:#5b6b71;margin:-14px 0 18px;}
+  .list-actions{display:flex;gap:10px;align-items:center;}
+  .list-actions button{
+    background:transparent;border:1px solid var(--line);color:var(--ink);font-family:inherit;
+    font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:100px;cursor:pointer;
+  }
+  .list-actions button:hover{border-color:var(--moss);color:var(--moss);}
+  .sec-no{
+    display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;
+    background:var(--moss);color:#fff;font-size:12px;font-weight:700;margin-right:10px;vertical-align:middle;font-family:'Inter',sans-serif;
+  }
+
+  .grid-section{
+    grid-column:1/-1;display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+    margin-top:18px;padding-bottom:8px;border-bottom:1px solid var(--line);
+  }
+  .grid-section:first-child{margin-top:0;}
+  .grid-section h3{font-size:19px;margin:0;font-weight:500;}
+  .grid-section .sec-sub{font-size:12px;color:#8a8672;margin-left:8px;font-weight:400;font-family:'Inter',sans-serif;}
+  .grid-section button{
+    background:transparent;border:1px solid var(--line);color:var(--ink);font-family:inherit;
+    font-size:12px;padding:5px 11px;border-radius:100px;cursor:pointer;white-space:nowrap;
+  }
+  .grid-section button:hover{border-color:var(--brass);}
+  .grid-section .sec-loading{font-size:12px;color:#8a8672;}
+
+  .shelf-empty{
+    grid-column:1/-1;padding:28px;text-align:center;color:#6b6754;font-size:14px;
+    border:1px dashed var(--line);border-radius:12px;background:var(--card);
+  }
+  .shelf-empty code{background:#e7dfc9;padding:2px 6px;border-radius:4px;}
+
+  .branches{font-size:12px;color:#5b5a4c;margin-top:auto;padding-top:6px;border-top:1px solid var(--line);}
+  .branches b{color:var(--ink);}
+  .ebook-link{
+    margin-top:2px;font-size:12.5px;color:#2b5d78;font-weight:600;text-decoration:none;
+    display:inline-flex;align-items:center;gap:4px;
+  }
+  .ebook-link:hover{text-decoration:underline;}
+
+  .branch-pick{
+    display:flex;align-items:center;gap:9px;margin-top:12px;position:relative;
+  }
+  .ask-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;width:100%;}
+  .ask-row .sbar{flex:1 1 360px;width:auto;}
+  .branch-pick{display:flex;align-items:center;gap:9px;flex-shrink:0;}
+  .pick-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a8672;flex-shrink:0;}
+  .pill-select{
+    appearance:none;-webkit-appearance:none;
+    background:var(--card) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a9803f' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>") no-repeat right 10px center/14px;
+    border:1px solid var(--brass);color:var(--ink);border-radius:100px;
+    padding:7px 32px 7px 14px;font-size:13px;font-family:inherit;outline:none;cursor:pointer;font-weight:600;
+  }
+  .pill-select:hover{background-color:#f3ecd8;}
+  .pill-select:focus{box-shadow:0 0 0 2px rgba(169,128,63,0.3);}
+
+  /* ---- availability cards in the AI panel ---- */
+  .section-label{
+    font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--brass-light);
+    margin:14px 0 7px;opacity:.9;
+  }
+  .bookcard{
+    display:flex;align-items:flex-start;gap:10px;
+    background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
+    border-radius:9px;padding:11px 12px;margin-bottom:8px;cursor:pointer;
+    transition:background .15s ease,border-color .15s ease,transform .15s ease;
+  }
+  .bookcard:hover{background:rgba(207,169,104,0.13);border-color:rgba(207,169,104,0.4);transform:translateX(2px);}
+  .bookcard.primary{
+    background:rgba(207,169,104,0.11);border-color:rgba(207,169,104,0.45);
+  }
+  .bc-main{flex:1;min-width:0;}
+  .bc-title{font-size:14px;font-weight:600;color:#fff;line-height:1.3;}
+  .bookcard.primary .bc-title{font-size:15.5px;font-family:'Fraunces',serif;font-weight:500;}
+  .bsub{font-size:11.5px;color:#a8b2a2;line-height:1.3;margin-top:1px;}
+  .bc-author{font-size:12px;color:#b9c2b2;margin-top:2px;}
+  .bwhy{font-size:11.5px;color:#9dab97;font-style:italic;margin-top:4px;line-height:1.4;}
+  .bc-go{color:var(--brass-light);font-size:14px;flex-shrink:0;opacity:.75;}
+
+  .avail{display:flex;align-items:center;gap:6px;font-size:11.5px;margin-top:7px;font-weight:500;}
+  .avail .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+  .avail.ok{color:#8fd18c;}      .avail.ok .dot{background:#8fd18c;box-shadow:0 0 6px rgba(143,209,140,.6);}
+  .avail.out{color:#e0a86b;}     .avail.out .dot{background:#e0a86b;}
+  .avail.missing{color:#9aa596;} .avail.missing .dot{background:#9aa596;}
+  .avail.elsewhere{color:#c9b998;} .avail.elsewhere .dot{background:#c9b998;}
+  .avail.unknown{color:var(--brass-light);} .avail.unknown .dot{background:var(--brass-light);}
+
+  .eventcard .bc-title{font-size:14.5px;margin-top:2px;}
+  .event-when{
+    font-size:11px;text-transform:uppercase;letter-spacing:.06em;
+    color:var(--brass-light);font-weight:600;
+  }
+  .event-where{font-size:12px;color:#b9c2b2;margin-top:3px;}
+  .event-desc{font-size:11.5px;color:#9aa596;margin-top:5px;line-height:1.45;}
+  .event-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;}
+  .etag{
+    font-size:10px;padding:2px 7px;border-radius:100px;
+    background:rgba(255,255,255,0.08);color:#cbbf9d;border:1px solid rgba(255,255,255,0.1);
+  }
+  .etag.full{background:rgba(224,168,107,0.16);color:#e0a86b;border-color:rgba(224,168,107,0.4);}
+  .event-facets{margin-top:6px;font-size:11.5px;color:#9aa596;}
+
+  .fmt-offer{
+    display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px;
+    padding-top:8px;border-top:1px solid rgba(255,255,255,0.1);
+  }
+  .fmt-lead{font-size:11px;color:#9aa596;}
+  .fmt-chip{
+    font-size:11px;padding:3px 9px;border-radius:100px;cursor:pointer;font-family:inherit;
+    background:rgba(255,255,255,0.06);color:#b9c2b2;border:1px solid rgba(255,255,255,0.14);
+  }
+  .fmt-chip:hover{border-color:var(--brass-light);color:#fff;}
+  .fmt-chip.has{color:#8fd18c;border-color:rgba(143,209,140,0.4);}
+
+  .missing-note{
+    margin-top:7px;padding-top:7px;border-top:1px solid rgba(255,255,255,0.12);
+    font-size:12px;color:#c3b394;line-height:1.5;
+  }
+
+  .shelf{
+    display:flex;align-items:baseline;gap:6px;margin-top:5px;
+    font-size:11.5px;color:#cbbf9d;line-height:1.4;
+  }
+  .shelf-pin{color:var(--brass-light);font-size:8px;flex-shrink:0;}
+  .shelf-alt{color:#9aa596;}
+
+  .branch-rows{margin-top:8px;border-top:1px solid rgba(255,255,255,0.1);padding-top:7px;display:flex;flex-direction:column;gap:4px;}
+  .branch-row{display:flex;justify-content:space-between;gap:10px;font-size:11.5px;color:#b9c2b2;}
+  .branch-row.focus{color:#fff;font-weight:600;}
+  .branch-row .bstat.ok{color:#8fd18c;}
+  .branch-row .bstat.out{color:#c6a482;}
+
+  .offline-note{
+    margin-top:10px;padding:9px 12px;border-radius:8px;font-size:12px;line-height:1.5;
+    background:rgba(224,168,107,0.14);border:1px solid rgba(224,168,107,0.4);color:#e8c9a0;position:relative;
+  }
+  .offline-note[hidden]{display:none;}
+  .offline-note code{background:rgba(255,255,255,0.1);padding:1px 5px;border-radius:4px;color:#fff;}
+
+  @media (max-width:820px){
+    html,body{height:auto;overflow:auto;}
+    .shell{height:auto;}
+    .topbar{height:auto;flex-wrap:wrap;padding:8px 12px;gap:8px;}
+    .pill-nav-container{order:3;width:100%;}
+    .topbar .branch-pick{order:4;}
+    .menu{position:fixed;left:8px;right:8px;top:auto;}
+    .app{height:auto;min-height:100vh;}
+    .main{height:auto;overflow:visible;}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- TOP BAR: the shelves, and the switches for the two panels -->
+<header class="topbar">
+  <!-- PillNav (React Bits), ported to vanilla JS + GSAP: logo + wordmark + pills -->
+  <div class="pill-nav-container" id="pillNav"></div>
+
+  <button class="lucky-trigger" id="luckyOpen" aria-haspopup="dialog">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor"/><circle cx="15.5" cy="8.5" r="1.3" fill="currentColor"/><circle cx="8.5" cy="15.5" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/></svg>
+    <span id="luckyOpenLabel">I'm feeling lucky</span>
+  </button>
+  <button class="list-trigger" id="listOpen" aria-label="My list">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/><path d="m17 17 2 2 4-4"/></svg>
+    <span id="listOpenLabel">My list</span>
+    <span class="list-count" id="listCount" hidden>0</span>
+  </button>
+  <button class="search-trigger" id="searchOpen" aria-haspopup="dialog" aria-expanded="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
+    <span id="searchOpenLabel">Search</span>
+    <kbd aria-hidden="true">/</kbd>
+  </button>
+
+  <div class="pickers">
+    <label class="branch-pick" for="homeBranch">
+      <span class="pick-label" id="lblLibrary">My library</span>
+      <select id="homeBranch" class="pill-select"></select>
+    </label>
+    <label class="branch-pick" for="langPick">
+      <span class="pick-label" id="lblLanguage">Language</span>
+      <select id="langPick" class="pill-select" aria-label="Select language"></select>
+    </label>
+  </div>
+  <img class="brand-sccld" src="assets/sccld.png" alt="Santa Clara County Library District" height="30">
+</header>
+
+<!-- SEARCH PANEL: opens from the bar's Search button. A full-width bar and
+     clickable example searches, so the box is never squeezed by the nav. -->
+<div class="search-scrim" id="searchScrim" hidden></div>
+<div class="search-panel" id="searchPanel" role="dialog" aria-modal="true" aria-labelledby="searchTitle" hidden>
+  <div class="search-panel-head">
+    <h2 id="searchTitle">What are you looking for?</h2>
+    <button class="search-close" id="searchClose" aria-label="Close">×</button>
+  </div>
+  <div class="sbar" role="search">
+    <input id="promptInput" type="text" placeholder="Search a title, a mood, an event, or “where is it?”" aria-label="Search Hummy AI" autocomplete="off" />
+    <button id="askBtn" class="sbar-btn" aria-label="Search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
+    </button>
+  </div>
+  <div class="search-try">
+    <div class="search-try-label" id="searchTryLabel">Try asking</div>
+    <div class="search-chips" id="searchChips"></div>
+  </div>
+</div>
+
+<!-- I'M FEELING LUCKY: one random book, popped out -->
+<div class="search-scrim" id="luckyScrim" hidden></div>
+<div class="search-panel lucky-panel" id="luckyPanel" role="dialog" aria-modal="true" aria-labelledby="luckyTitle" hidden>
+  <div class="search-panel-head">
+    <h2 id="luckyTitle">I'm feeling lucky</h2>
+    <button class="search-close" id="luckyClose" aria-label="Close">×</button>
+  </div>
+  <div class="lucky-body" id="luckyBody"></div>
+</div>
+
+<div class="app" id="app">
+  <main class="main" id="booksPanel">
+    <div class="main-top">
+      <div class="title-row">
+        <div>
+          <h2 id="shelfTitle">Catalog</h2>
+          <p id="resultCount">Showing the full collection</p>
+        </div>
+        <button class="shuffle addall" id="addAllBtn" hidden>
+          <span>+</span><span id="addAllLabel">Add all available here</span>
+        </button>
+        <button class="shuffle" id="shuffleBtn" hidden title="Show a different set from this shelf">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M4 20 21 3"/><path d="M21 16v5h-5"/><path d="m15 15 6 6"/><path d="M4 4l5 5"/></svg>
+          Shuffle
+        </button>
+      </div>
+    </div>
+
+    <div class="offline-note" id="liveStatus" hidden></div>
+    <div class="grid" id="grid"></div>
+
+    <!-- LogoLoop (React Bits), ported to vanilla JS: the partners behind the data -->
+    <footer class="partners" aria-label="Partners">
+      <span class="partners-label" id="partnersLabel">Powered by</span>
+      <div class="partners-loop" id="logoLoop"></div>
+    </footer>
+  </main>
+
+</div>
+</div>
+
+<script>
+/* ---------------- CONFIG ---------------- */
+// OpenRouter — unlike NVIDIA/Eden, OpenRouter's API supports direct
+// browser-side calls (CORS-friendly), so no local proxy server is needed.
+// This file works completely standalone — just open it in a browser.
+// Get your own key at https://openrouter.ai/keys
+const ENTERAPIKEYHERE = ""; // add your own OpenRouter key here (never commit it)
+const OPENROUTER_MODEL = "openai/gpt-4o-mini"; // any OpenRouter model slug works
+
+// Santa Clara County Library's catalog (sccl.bibliocommons.com) has no
+// public API, and per-branch availability loads through BiblioCommons'
+// internal endpoints, not the page HTML — so it can't be reliably scraped.
+// Instead, every recommendation links straight into SCCLD's real, live
+// search results, so availability shown is always accurate and current.
+// Branch codes below are the real BiblioCommons "Available at" facet values
+// (verified against the live SCCLD catalog): appending &f_STATUS=<CODE> to a
+// search URL filters results to copies available now at that branch.
+// _online_ is the catalog's own code for "Available Online" (e-book/audio).
+const SCCLD_BRANCHES = [
+  { code:"WO", label:"Woodland Library",     aliases:["los altos woodland","woodland"] },
+  { code:"LA", label:"Los Altos Library",    aliases:["los altos"] },
+  { code:"CA", label:"Campbell Library",     aliases:["campbell"] },
+  { code:"CU", label:"Cupertino Library",    aliases:["cupertino"] },
+  { code:"GI", label:"Gilroy Library",       aliases:["gilroy"] },
+  { code:"MI", label:"Milpitas Library",     aliases:["milpitas"] },
+  { code:"MH", label:"Morgan Hill Library",  aliases:["morgan hill"] },
+  { code:"SA", label:"Saratoga Library",     aliases:["saratoga"] },
+  { code:"BK", label:"the Bookmobile",       aliases:["bookmobile"] }
+];
+const ONLINE_FILTER = { code:"_online_", label:"online copies" };
+
+// "at Cupertino Library" vs "as online copies" — keeps the copy readable
+// whether the user named a branch or asked for a digital copy.
+function filterPhrase(branch){
+  return branch.code === "_online_" ? `as ${branch.label}` : `at ${branch.label}`;
+}
+
+// Returns {code,label} for the first branch named in the query, or the online
+// filter if they asked for a digital copy. Longer names are listed first so
+// "Los Altos Woodland" doesn't get swallowed by the "los altos" alias.
+function detectBranch(query){
+  const q = query.toLowerCase();
+  for(const branch of SCCLD_BRANCHES){
+    if(branch.aliases.some(a => q.includes(a))) return branch;
+  }
+  if(/\b(e-?book|ebook|audiobook|digital|online|kindle|libby)\b/.test(q)) return ONLINE_FILTER;
+  return null;
+}
+
+function sccldSearchUrl(title, branch){
+  let url = `https://sccl.bibliocommons.com/v2/search?query=${encodeURIComponent(title)}&searchType=smart`;
+  if(branch) url += `&f_STATUS=${encodeURIComponent(branch.code)}`;
+  return url;
+}
+
+/* ---------------- LANGUAGE ----------------
+   The interface strings and the shelf language come from i18n.js. `t()` fills
+   {placeholders}; a `_one` variant is used for a count of exactly one where
+   the language keeps a singular. */
+const LANG_KEY = 'stacks.lang';
+const I18N = window.HUMMY_I18N || { en: { name: 'English', locale: 'en-US', catalog: '', strings: {} } };
+let LANG = 'en';
+
+function t(key, vars){
+  const dict = (I18N[LANG] || I18N.en).strings;
+  let str = dict[key];
+  // The singular form is chosen by `count` when given, else by `n`: in
+  // "1 of 2 copies" the noun agrees with the total, not the number in stock.
+  const governs = vars && (typeof vars.count === 'number' ? vars.count : vars.n);
+  if(governs === 1 && dict[key + '_one']) str = dict[key + '_one'];
+  if(str == null) str = (I18N.en.strings[key] != null ? I18N.en.strings[key] : key);
+  return String(str).replace(/\{(\w+)\}/g, (m, k) => (vars && vars[k] != null) ? String(vars[k]) : '');
+}
+const locale = () => (I18N[LANG] || I18N.en).locale || 'en-US';
+const catalogLang = () => (I18N[LANG] || I18N.en).catalog || '';
+
+function initLanguagePicker(){
+  const sel = document.getElementById('langPick');
+  sel.innerHTML = Object.entries(I18N).map(([code, l]) => `<option value="${code}">${esc(l.name)}</option>`).join('');
+  try{ const saved = localStorage.getItem(LANG_KEY); if(saved && I18N[saved]) LANG = saved; }catch(e){}
+  sel.value = LANG;
+  sel.addEventListener('change', () => {
+    LANG = I18N[sel.value] ? sel.value : 'en';
+    try{ localStorage.setItem(LANG_KEY, LANG); }catch(e){}
+    applyLanguage();
+    // A language adds its own shelves (and a pill) beside the others, so the
+    // bar and the home page are rebuilt; the rest of the collection stays.
+    if(PILL_NAV) buildCategoryBar().then(() => { if(BROWSING && BROWSING.events) openEvents(BROWSING.audience || '', null, null); else loadHome(); });
+  });
+  applyLanguage();
+}
+
+/* Static bits of the page that aren't re-rendered by a view change. */
+function applyLanguage(){
+  document.documentElement.lang = LANG;
+  document.getElementById('promptInput').placeholder = t('search.placeholder');
+  document.getElementById('promptInput').setAttribute('aria-label', t('search.aria'));
+  document.getElementById('searchOpenLabel').textContent = t('search.open');
+  document.getElementById('listOpenLabel').textContent = t('nav.list');
+  document.getElementById('luckyOpenLabel').textContent = t('lucky.btn');
+  document.getElementById('luckyTitle').textContent = t('lucky.title');
+  document.getElementById('addAllLabel').textContent = t('list.addAllHere');
+  document.getElementById('listOpen').setAttribute('aria-label', t('nav.list'));
+  document.getElementById('searchTitle').textContent = t('search.title');
+  document.getElementById('searchTryLabel').textContent = t('search.try');
+  renderSearchChips();
+  document.getElementById('partnersLabel').textContent = t('footer.poweredBy');
+  document.getElementById('lblLibrary').textContent = t('top.myLibrary');
+  document.getElementById('lblLanguage').textContent = t('top.language');
+  const sel = document.getElementById('homeBranch');
+  if(sel && sel.options.length) sel.options[0].textContent = t('top.allBranches');
+  const shuffle = document.getElementById('shuffleBtn');
+  if(shuffle) shuffle.lastChild.textContent = ' ' + t('shelf.shuffle');
+  updateLiveBadge();
+}
+
+/* ---------------- PillNav (React Bits) — vanilla port ----------------
+   Same DOM, same GSAP timelines, same props as the React component:
+   logo, items, activeHref, ease, baseColor, pillColor, hoveredPillTextColor,
+   pillTextColor, onMobileMenuClick, initialLoadAnimation. Items may carry a
+   `menu` of sub-items (our shelves), shown under the pill on hover. */
+function createPillNav(container, opts){
+  if(container._resize) window.removeEventListener('resize', container._resize);
+  const {
+    logo, logoAlt = 'Logo', wordmark = '', items = [], activeHref,
+    className = '', ease = 'power3.easeOut',
+    baseColor = '#fff', pillColor = '#120F17', hoveredPillTextColor = '#120F17', pillTextColor,
+    onMobileMenuClick, initialLoadAnimation = true, onSelect
+  } = opts;
+  const g = window.gsap;
+  const vars = `--base:${baseColor};--pill-bg:${pillColor};--hover-text:${hoveredPillTextColor};--pill-text:${pillTextColor ?? baseColor}`;
+
+  container.innerHTML = `
+    <nav class="pill-nav ${esc(className)}" aria-label="Primary" style="${vars}">
+      <a class="pill-logo" href="${esc(items[0]?.href || '#')}" aria-label="Home"><img src="${esc(logo)}" alt="${esc(logoAlt)}"></a>
+      ${wordmark ? `<span class="pill-wordmark">${esc(wordmark)}</span>` : ''}
+      <div class="pill-nav-items desktop-only">
+        <ul class="pill-list" role="menubar">
+          ${items.map(it => `
+            <li role="none">
+              <a role="menuitem" href="${esc(it.href)}" class="pill${activeHref === it.href ? ' is-active' : ''}" aria-label="${esc(it.ariaLabel || it.label)}"${it.menu ? ' aria-haspopup="true"' : ''}>
+                <span class="hover-circle" aria-hidden="true"></span>
+                <span class="label-stack"><span class="pill-label">${esc(it.label)}</span><span class="pill-label-hover" aria-hidden="true">${esc(it.label)}</span></span>
+              </a>
+              ${it.menu ? `<div class="menu" role="menu">${it.menu.map(m => `<button role="menuitem" data-href="${esc(m.href)}">${esc(m.label)}</button>`).join('')}</div>` : ''}
+            </li>`).join('')}
+        </ul>
+      </div>
+      <button class="mobile-menu-button mobile-only" aria-label="Toggle menu"><span class="hamburger-line"></span><span class="hamburger-line"></span></button>
+    </nav>
+    <div class="mobile-menu-popover mobile-only" style="${vars}">
+      <ul class="mobile-menu-list">
+        ${items.map(it => it.menu
+          ? `<li><div class="mobile-menu-sub">${esc(it.label)}</div></li>` + it.menu.map(m => `<li><a href="${esc(m.href)}" class="mobile-menu-link">${esc(m.label)}</a></li>`).join('')
+          : `<li><a href="${esc(it.href)}" class="mobile-menu-link${activeHref === it.href ? ' is-active' : ''}">${esc(it.label)}</a></li>`).join('')}
+      </ul>
+    </div>`;
+
+  const nav = container.querySelector('.pill-nav');
+  const logoEl = container.querySelector('.pill-logo');
+  const logoImg = logoEl.querySelector('img');
+  const navItems = container.querySelector('.pill-nav-items');
+  const pills = [...container.querySelectorAll('.pill')];
+  const circles = pills.map(p => p.querySelector('.hover-circle'));
+  const hamburger = container.querySelector('.mobile-menu-button');
+  const menu = container.querySelector('.mobile-menu-popover');
+  const tls = []; const active = []; let logoTween = null; let mobileOpen = false;
+
+  function layout(){
+    if(!g) return;
+    circles.forEach((circle, i) => {
+      const pill = circle.parentElement;
+      const { width: w, height: h } = pill.getBoundingClientRect();
+      const R = ((w * w) / 4 + h * h) / (2 * h);
+      const D = Math.ceil(2 * R) + 2;
+      const delta = Math.ceil(R - Math.sqrt(Math.max(0, R * R - (w * w) / 4))) + 1;
+      const originY = D - delta;
+      circle.style.width = `${D}px`; circle.style.height = `${D}px`; circle.style.bottom = `-${delta}px`;
+      g.set(circle, { xPercent: -50, scale: 0, transformOrigin: `50% ${originY}px` });
+      const label = pill.querySelector('.pill-label');
+      const white = pill.querySelector('.pill-label-hover');
+      if(label) g.set(label, { y: 0 });
+      if(white) g.set(white, { y: h + 12, opacity: 0 });
+      tls[i]?.kill();
+      const tl = g.timeline({ paused: true });
+      tl.to(circle, { scale: 1.2, xPercent: -50, duration: 2, ease, overwrite: 'auto' }, 0);
+      if(label) tl.to(label, { y: -(h + 8), duration: 2, ease, overwrite: 'auto' }, 0);
+      if(white){ g.set(white, { y: Math.ceil(h + 100), opacity: 0 }); tl.to(white, { y: 0, opacity: 1, duration: 2, ease, overwrite: 'auto' }, 0); }
+      tls[i] = tl;
+    });
+  }
+  layout();
+  container._resize = layout;
+  window.addEventListener('resize', layout);
+  if(document.fonts?.ready) document.fonts.ready.then(layout).catch(() => {});
+  if(g && menu) g.set(menu, { visibility: 'hidden', opacity: 0, scaleY: 1 });
+  if(g && initialLoadAnimation){
+    g.set(logoEl, { scale: 0 }); g.to(logoEl, { scale: 1, duration: 0.6, ease });
+    if(navItems){
+      g.set(navItems, { width: 0, overflow: 'hidden' });
+      // "auto" resolves to a pixel width when the tween starts — before the web
+      // font has necessarily loaded. Left in place, that width kept the track
+      // narrower than its pills once the real font arrived, and the flex row
+      // laid the Search button over the last two. Clearing the inline width
+      // (not just the overflow) returns the track to its natural size.
+      g.to(navItems, { width: 'auto', duration: 0.6, ease, onComplete: () => g.set(navItems, { clearProps: 'width,overflow' }) });
+    }
+    // The reveal is decoration; the layout must not depend on it. Animation
+    // frames stop in a background tab, and a page opened there would sit with
+    // a zero-width nav and an invisible logo until they resumed — so after
+    // the tween's own duration, whatever state it reached is finalised.
+    setTimeout(() => {
+      g.killTweensOf([logoEl, navItems].filter(Boolean));
+      g.set(logoEl, { clearProps: 'transform,scale' });
+      if(navItems) g.set(navItems, { clearProps: 'width,overflow' });
+    }, 900);
+  }
+
+  const enter = i => { const tl = tls[i]; if(!tl) return; active[i]?.kill(); active[i] = tl.tweenTo(tl.duration(), { duration: 0.3, ease, overwrite: 'auto' }); };
+  const leave = i => { const tl = tls[i]; if(!tl) return; active[i]?.kill(); active[i] = tl.tweenTo(0, { duration: 0.2, ease, overwrite: 'auto' }); };
+  pills.forEach((p, i) => {
+    p.addEventListener('mouseenter', () => enter(i));
+    p.addEventListener('mouseleave', () => leave(i));
+    p.addEventListener('click', e => { e.preventDefault(); onSelect?.(items[i], p); });
+  });
+  logoEl.addEventListener('mouseenter', () => {
+    if(!g) return; logoTween?.kill(); g.set(logoImg, { rotate: 0 });
+    logoTween = g.to(logoImg, { rotate: 360, duration: 0.2, ease, overwrite: 'auto' });
+  });
+  logoEl.addEventListener('click', e => { e.preventDefault(); onSelect?.(items[0], pills[0]); });
+  container.querySelectorAll('.menu button').forEach(b => b.addEventListener('click', e => {
+    e.stopPropagation();
+    const sub = items.flatMap(it => it.menu || []).find(m => m.href === b.dataset.href);
+    onSelect?.(sub, b);
+  }));
+
+  function toggleMobile(){
+    mobileOpen = !mobileOpen;
+    if(g && hamburger){
+      const lines = hamburger.querySelectorAll('.hamburger-line');
+      g.to(lines[0], { rotation: mobileOpen ? 45 : 0, y: mobileOpen ? 3 : 0, duration: 0.3, ease });
+      g.to(lines[1], { rotation: mobileOpen ? -45 : 0, y: mobileOpen ? -3 : 0, duration: 0.3, ease });
+    }
+    if(g && menu){
+      if(mobileOpen){ g.set(menu, { visibility: 'visible' }); g.fromTo(menu, { opacity: 0, y: 10, scaleY: 1 }, { opacity: 1, y: 0, scaleY: 1, duration: 0.3, ease, transformOrigin: 'top center' }); }
+      else g.to(menu, { opacity: 0, y: 10, scaleY: 1, duration: 0.2, ease, transformOrigin: 'top center', onComplete: () => g.set(menu, { visibility: 'hidden' }) });
+    }
+    onMobileMenuClick?.();
+  }
+  hamburger.addEventListener('click', toggleMobile);
+  container.querySelectorAll('.mobile-menu-link').forEach(a => a.addEventListener('click', e => {
+    e.preventDefault();
+    const href = a.getAttribute('href');
+    const it = items.find(x => x.href === href) || items.flatMap(x => x.menu || []).find(m => m.href === href);
+    if(mobileOpen) toggleMobile();
+    onSelect?.(it, a);
+  }));
+
+  return {
+    setActive(href){
+      pills.forEach((p, i) => p.classList.toggle('is-active', items[i].href === href || !!(items[i].menu || []).find(m => m.href === href)));
+      container.querySelectorAll('.menu button').forEach(b => b.classList.toggle('is-on', b.dataset.href === href));
+      container.querySelectorAll('.mobile-menu-link').forEach(a => a.classList.toggle('is-active', a.getAttribute('href') === href));
+    },
+    layout
+  };
+}
+
+/* ---------------- BROWSE: the category bar ----------------
+   Age groups and genres come from the server so the bar and the shelves can
+   never disagree about what exists. Picking one swaps the grid to that shelf;
+   "Featured shelf" returns to the curated showcase. */
+let BROWSING = null; // {group, shelf} or null for the featured shelf
+let BROWSE_POOL = []; // the full demand-ranked pool for the open shelf
+const SHELF_SIZE = 18;
+
+/* Eighteen from the pool. The first draw is the top of the demand ranking —
+   the shelf's best foot forward. A shuffle draws at random from the whole
+   pool, avoiding what's on screen, so "not that one, show me others" keeps
+   producing genuinely different books rather than reordering the same set. */
+function drawShelf(pool, exclude){
+  const seen = new Set((exclude || []).map(i => i.book.id));
+  const fresh = pool.filter(b => !seen.has(b.id));
+  const source = fresh.length >= SHELF_SIZE ? fresh : pool;
+  const picks = [...source];
+  for(let i = picks.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [picks[i], picks[j]] = [picks[j], picks[i]]; }
+  return picks.slice(0, SHELF_SIZE);
+}
+
+document.getElementById('shuffleBtn').addEventListener('click', () => {
+  if(!BROWSING || !BROWSE_POOL.length) return;
+  const { group, shelf } = BROWSING;
+  const label = t(`shelf.${shelf}`);
+  const items = drawShelf(BROWSE_POOL, CURRENT_ITEMS).map(b => ({ band: label, book: b, branches: null }));
+  BROWSING = { group, shelf, gen: (BROWSING.gen || 0) + 1 }; // invalidates in-flight hydration
+  resetReveal();
+  renderGrid(items);
+  document.querySelector('.main').scrollTop = 0;
+  resultCount.textContent = t('shelf.different', { n: items.length }) + (HOME_BRANCH ? ' · ' + t('shelf.checking', { branch: HOME_BRANCH.label }) : '');
+  hydrateBranches(items, group, shelf, BROWSING.gen);
+});
+
+let PILL_NAV = null;
+
+async function buildCategoryBar(){
+  let cats = [];
+  if(CATALOG_LIVE){
+    try{ cats = (await (await fetch(`/api/browse?categories=1&lang=${encodeURIComponent(catalogLang())}`)).json()).categories || []; }catch(e){}
+  }
+  const items = [{ label: t('nav.all'), href: '#all' }].concat(cats.map(g => ({
+    label: g.id === 'new' ? t('nav.newShort') : g.id === 'lang' ? (I18N[LANG] || I18N.en).name : t(`nav.${g.id}`), href: `#${g.id}`,
+    menu: g.shelves.map(sh => ({ label: t(`shelf.${sh.id}`), href: `#${g.id}/${sh.id}`, group: g.id, shelf: sh.id, groupLabel: t(`nav.${g.id}`) }))
+  })));
+  // Events: the calendar, narrowed by who it's for.
+  items.push({
+    label: t('nav.events'), href: '#events',
+    menu: [
+      { label: t('ev.all'),    href: '#events/all',     audience: '' },
+      { label: t('ev.babies'), href: '#events/babies',  audience: 'babies' },
+      { label: t('ev.kids'),   href: '#events/kids',    audience: 'kids' },
+      { label: t('ev.teens'),  href: '#events/teens',   audience: 'teens' },
+      { label: t('ev.adults'), href: '#events/adults',  audience: 'adults' },
+      { label: t('ev.family'), href: '#events/family',  audience: 'family' }
+    ]
+  });
+
+  PILL_NAV = createPillNav(document.getElementById('pillNav'), {
+    logo: 'assets/hummy.png', logoAlt: 'Hummy AI', wordmark: 'Hummy AI', key: LANG,
+    items, activeHref: '#all', ease: 'power3.easeOut',
+    baseColor: '#006075', pillColor: '#ffffff', hoveredPillTextColor: '#ffffff', pillTextColor: '#003642',
+    onSelect: (item) => {
+      if(!item) return;
+      if(item.href === '#all') { loadHome(); return; }
+      if(item.href.startsWith('#events')){
+        const target = 'audience' in item ? item : item.menu[0];
+        openEvents(target.audience, target.href, target.label);
+        return;
+      }
+      // An age pill on its own opens its first shelf; a menu entry opens that shelf.
+      const target = item.shelf ? item : (item.menu && item.menu[0]);
+      if(target) openShelf(target.group, target.shelf, target.href);
+    }
+  });
+}
+
+function markCategory(what){
+  // `what` is an href like "#kids/mystery", the home button, or null (results).
+  const href = typeof what === 'string' ? what : (what && what.id === 'catHome' ? '#all' : null);
+  PILL_NAV?.setActive(href);
+}
+
+async function openShelf(group, shelf, href){
+  HOME_GEN++; // abandon any home-view loading still in flight
+  resetReveal();
+  BROWSING = { group, shelf };
+  markCategory(href || `#${group}/${shelf}`);
+  resultCount.textContent = t('shelf.loading');
+  grid.innerHTML = `<div class="shelf-empty">${esc(t('shelf.pulling'))}</div>`;
+
+  let data;
+  try{
+    const r = await fetch(`/api/browse?group=${encodeURIComponent(group)}&shelf=${encodeURIComponent(shelf)}&lang=${encodeURIComponent(catalogLang())}`, { signal: AbortSignal.timeout(45000) });
+    if(!r.ok) throw new Error('shelf unavailable');
+    data = await r.json();
+  }catch(e){
+    grid.innerHTML = `<div class="shelf-empty">Couldn't load that shelf (${esc(e.message)}).</div>`;
+    resultCount.textContent = 'Shelf unavailable';
+    return;
+  }
+  if(BROWSING?.group !== group || BROWSING?.shelf !== shelf) return; // they clicked on
+
+  document.getElementById('shelfTitle').textContent = `${group === 'lang' ? t('nav.lang', { lang: (I18N[LANG] || I18N.en).name }) : t(`nav.${group}`)} · ${t(`shelf.${shelf}`)}`;
+  BROWSE_POOL = data.books;
+  BROWSING = { group, shelf, gen: 0 };
+  document.getElementById('shuffleBtn').hidden = BROWSE_POOL.length <= SHELF_SIZE;
+  // Branch detail isn't known yet for these, so they render with system-wide
+  // wording first, then each card is upgraded as its per-copy data arrives.
+  const items = BROWSE_POOL.slice(0, SHELF_SIZE).map(b => ({ band: t(`shelf.${shelf}`), book: b, branches: null }));
+  renderGrid(items);
+  document.querySelector('.main').scrollTop = 0;
+  resultCount.textContent = t(group === 'new' ? 'shelf.statusNew' : 'shelf.status', { n: items.length, pool: BROWSE_POOL.length }) + (HOME_BRANCH ? ' · ' + t('shelf.checking', { branch: HOME_BRANCH.label }) : '');
+  hydrateBranches(items, group, shelf, 0);
+}
+
+/* Fetches per-copy branch data for browse results four at a time and redraws
+   each card in place, so counts become branch-scoped without making the
+   patron wait for eighteen requests before seeing anything. */
+async function hydrateBranches(items, group, shelf, gen){
+  const live = () => BROWSING && BROWSING.group === group && BROWSING.shelf === shelf && (BROWSING.gen || 0) === gen;
+  for(let i = 0; i < items.length; i += 4){
+    if(!live()) return;
+    await Promise.all(items.slice(i, i + 4).map(async item => {
+      try{
+        const r = await fetch(`/api/availability?id=${encodeURIComponent(item.book.id)}`, { signal: AbortSignal.timeout(20000) });
+        if(r.ok) item.branches = (await r.json()).branches || [];
+      }catch(e){ item.branches = []; }
+      const card = grid.querySelector(`.book[data-id="${CSS.escape(item.book.id)}"]`);
+      if(card){ card.outerHTML = shelfCard(item, HOME_BRANCH); wireShelfCard(grid.querySelector(`.book[data-id="${CSS.escape(item.book.id)}"]`)); }
+    }));
+  }
+  if(live()){
+    resultCount.textContent = t('shelf.statusDone', { n: items.length, pool: BROWSE_POOL.length }) + (HOME_BRANCH ? ' · ' + t('shelf.at', { branch: HOME_BRANCH.label }) : '');
+  }
+}
+
+/* ---------------- EVENTS TAB ----------------
+   The calendar as a shelf: every upcoming event (or those for one audience),
+   next occurrence first, at the patron's library when one is chosen. */
+async function openEvents(audience, href, label, mode){
+  HOME_GEN++;
+  const gen = HOME_GEN;
+  resetReveal();
+  mode = mode || EVENTS_MODE;
+  EVENTS_MODE = mode;
+  BROWSING = { results: true, events: true, audience, label };
+  BROWSE_POOL = [];
+  document.getElementById('shuffleBtn').hidden = true;
+  markCategory(href || '#events/all');
+  const branch = HOME_BRANCH;
+  document.getElementById('shelfTitle').textContent = label && audience ? `${t('nav.events')} · ${label}` : t('nav.events');
+  resultCount.textContent = t('ev.loading');
+  grid.innerHTML = '';
+  grid.insertAdjacentHTML('beforeend', eventsModeBar(mode));
+
+  if(mode === 'calendar'){ await renderCalendar(audience, branch, gen); return; }
+
+  const sk = startSection(t('res.events'), '');
+  for(let i = 0; i < 4; i++) addCard(sk, skeletonCard());
+
+  const params = new URLSearchParams({ limit: '40' });
+  if(audience) params.set('audience', audience);
+  if(branch && branch.code !== '_online_') params.set('branch', branch.code);
+  let data = null;
+  try{ data = await (await fetch(`/api/events?${params}`, { signal: AbortSignal.timeout(30000) })).json(); }catch(e){}
+  if(gen !== HOME_GEN) return;
+
+  const events = (data && data.events) || [];
+  grid.innerHTML = eventsModeBar(mode);
+  if(!events.length){
+    resultCount.textContent = t('ev.none', { aud: audience ? t('ev.for', { aud: label || audience }) : '', where: branch ? t('st.at', { branch: branch.label }) : '' });
+    grid.insertAdjacentHTML('beforeend', `<div class="shelf-empty">${esc(t('ev.empty'))}</div>`);
+    return;
+  }
+  resultCount.textContent = t('ev.count', { n: events.length, where: branch ? t('st.at', { branch: branch.label }) : '' });
+  const matched = (data.matched && data.matched.audience) || '';
+  grid.insertAdjacentHTML('beforeend', `<div class="grid-section"><h3>${esc(t('res.events'))}${matched ? `<span class="sec-sub">${esc(matched)}</span>` : ''}</h3><button class="back-home">${esc(t('res.back'))}</button></div>` +
+    events.map(eventGridCard).join(''));
+  grid.querySelectorAll('.book').forEach(wireShelfCard);
+  grid.querySelector('.back-home')?.addEventListener('click', () => loadHome());
+  document.querySelector('.main').scrollTop = 0;
+}
+
+/* ---- calendar mode ---- */
+let EVENTS_MODE = 'list';
+let CAL_MONTH = null;   // 'YYYY-MM' currently shown
+
+function eventsModeBar(mode){
+  return `<div class="ev-modes" role="tablist">
+    <button role="tab" class="ev-mode${mode === 'list' ? ' is-on' : ''}" data-mode="list" aria-selected="${mode === 'list'}">${esc(t('ev.list'))}</button>
+    <button role="tab" class="ev-mode${mode === 'calendar' ? ' is-on' : ''}" data-mode="calendar" aria-selected="${mode === 'calendar'}">${esc(t('ev.calendar'))}</button>
+  </div>`;
+}
+document.getElementById('grid').addEventListener('click', e => {
+  const b = e.target.closest('.ev-mode');
+  if(b && BROWSING && BROWSING.events) openEvents(BROWSING.audience || '', null, BROWSING.label || null, b.dataset.mode);
+});
+
+function ymOf(d){ return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }
+
+async function renderCalendar(audience, branch, gen){
+  const today = new Date();
+  if(!CAL_MONTH) CAL_MONTH = ymOf(today);
+  const [y, m] = CAL_MONTH.split('-').map(Number);
+  const monthName = new Date(y, m - 1, 1).toLocaleDateString(locale(), { month: 'long', year: 'numeric' });
+
+  const params = new URLSearchParams({ month: CAL_MONTH });
+  if(audience) params.set('audience', audience);
+  if(branch && branch.code !== '_online_') params.set('branch', branch.code);
+
+  grid.insertAdjacentHTML('beforeend', `<div class="cal-wrap" id="calWrap">
+    <div class="cal-head">
+      <button class="cal-nav" data-dir="-1" aria-label="${esc(t('ev.prevMonth'))}">‹</button>
+      <h3 class="cal-title">${esc(monthName)}</h3>
+      <button class="cal-nav" data-dir="1" aria-label="${esc(t('ev.nextMonth'))}">›</button>
+      <button class="cal-today">${esc(t('ev.today'))}</button>
+    </div>
+    <div class="cal-grid" id="calGrid"><div class="cal-loading">${esc(t('ev.loading'))}</div></div>
+    <div class="cal-day-list" id="calDay"></div>
+  </div>`);
+  const wrap = document.getElementById('calWrap');
+  wrap.querySelectorAll('.cal-nav').forEach(b => b.addEventListener('click', () => {
+    const d = new Date(y, m - 1 + Number(b.dataset.dir), 1); CAL_MONTH = ymOf(d);
+    openEvents(audience, null, BROWSING.label || null, 'calendar');
+  }));
+  wrap.querySelector('.cal-today').addEventListener('click', () => { CAL_MONTH = ymOf(today); openEvents(audience, null, BROWSING.label || null, 'calendar'); });
+
+  let data = null;
+  try{ data = await (await fetch(`/api/events/month?${params}`, { signal: AbortSignal.timeout(45000) })).json(); }catch(e){}
+  if(gen !== HOME_GEN) return;
+  const events = (data && data.events) || [];
+
+  // Group by day.
+  const byDay = new Map();
+  for(const ev of events){
+    const day = String(ev.start || '').slice(0, 10);
+    if(!byDay.has(day)) byDay.set(day, []);
+    byDay.get(day).push(ev);
+  }
+  resultCount.textContent = t('ev.monthCount', { n: events.length, month: monthName, where: branch ? t('st.at', { branch: branch.label }) : '' })
+    + (data && data.truncated ? ` · ${t('ev.truncated')}` : '');
+
+  // Build the month: week starts on Sunday, as the library's own calendar does.
+  const first = new Date(y, m - 1, 1), daysIn = new Date(y, m, 0).getDate();
+  const lead = first.getDay();
+  const dow = Array.from({ length: 7 }, (_, i) => new Date(2023, 0, 1 + i).toLocaleDateString(locale(), { weekday: 'short' }));
+  let html = dow.map(d => `<div class="cal-dow">${esc(d)}</div>`).join('');
+  for(let i = 0; i < lead; i++) html += `<div class="cal-cell empty"></div>`;
+  const todayKey = ymOf(today) + '-' + String(today.getDate()).padStart(2, '0');
+  for(let d = 1; d <= daysIn; d++){
+    const key = `${CAL_MONTH}-${String(d).padStart(2, '0')}`;
+    const list = byDay.get(key) || [];
+    const past = key < todayKey;
+    html += `<div class="cal-cell${list.length ? ' has' : ''}${key === todayKey ? ' today' : ''}${past ? ' past' : ''}" data-day="${key}" role="button" tabindex="0">
+      <div class="cal-num">${d}</div>
+      ${list.slice(0, 3).map(ev => `<div class="cal-ev" title="${esc(ev.title)}"><span class="cal-time">${esc(String(ev.start).slice(11, 16))}</span> ${esc(ev.title)}</div>`).join('')}
+      ${list.length > 3 ? `<div class="cal-more">+${list.length - 3}</div>` : ''}
+    </div>`;
+  }
+  const calGrid = document.getElementById('calGrid');
+  calGrid.innerHTML = html;
+
+  // Clicking a day lists that day's events as cards underneath.
+  const showDay = (key) => {
+    calGrid.querySelectorAll('.cal-cell.sel').forEach(c => c.classList.remove('sel'));
+    calGrid.querySelector(`.cal-cell[data-day="${key}"]`)?.classList.add('sel');
+    const list = byDay.get(key) || [];
+    const dayName = new Date(key + 'T00:00:00').toLocaleDateString(locale(), { weekday: 'long', month: 'long', day: 'numeric' });
+    const box = document.getElementById('calDay');
+    box.innerHTML = `<div class="grid-section"><h3>${esc(dayName)}<span class="sec-sub">${esc(t('ev.dayCount', { n: list.length }))}</span></h3></div>` +
+      (list.length ? `<div class="grid cal-day-grid">${list.map(eventGridCard).join('')}</div>` : `<div class="shelf-empty">${esc(t('ev.empty'))}</div>`);
+    box.querySelectorAll('.book').forEach(wireShelfCard);
+    box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  calGrid.querySelectorAll('.cal-cell[data-day]').forEach(c => {
+    c.addEventListener('click', () => showDay(c.dataset.day));
+    c.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); showDay(c.dataset.day); } });
+  });
+  // Open on today if it's in view, else the first day with anything on.
+  const firstWith = [...byDay.keys()].sort()[0];
+  if(byDay.has(todayKey)) showDay(todayKey); else if(firstWith) showDay(firstWith);
+  document.querySelector('.main').scrollTop = 0;
+}
+
+/* ---------------- SCROLL REVEAL ----------------
+   Every card or header added to the grid is watched; the first time it
+   scrolls into view it gets `.in` and fades up. Redraws (hydration replaces
+   a card's HTML) must not replay the animation, so revealed ids are
+   remembered and re-applied instantly. A new view clears that memory. */
+const REVEALED = new Set();
+const revealIO = new IntersectionObserver((entries) => {
+  let n = 0;
+  for(const e of entries){
+    if(!e.isIntersecting) continue;
+    const el = e.target;
+    el.style.setProperty('--reveal-delay', `${Math.min(n++ * 45, 360)}ms`);
+    el.classList.add('in');
+    if(el.dataset.id) REVEALED.add(el.dataset.id);
+    revealIO.unobserve(el);
+  }
+}, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
+
+function watchReveal(el){
+  if(!(el instanceof Element)) return;
+  if(el.classList.contains('skeleton')) return;
+  if(el.dataset.id && REVEALED.has(el.dataset.id)){ el.classList.add('in'); return; }
+  revealIO.observe(el);
+}
+function resetReveal(){ REVEALED.clear(); }
+
+new MutationObserver((muts) => {
+  for(const m of muts) for(const node of m.addedNodes){
+    if(!(node instanceof Element)) continue;
+    if(node.matches('.book, .grid-section')) watchReveal(node);
+    node.querySelectorAll?.('.book, .grid-section').forEach(watchReveal);
+  }
+}).observe(document.getElementById('grid'), { childList: true, subtree: true });
+
+/* ---------------- ALL BOOKS (the startup view) ----------------
+   Every shelf from the top bar, stacked: Toddlers, Kids & Teens, Adults —
+   each showing its most-borrowed titles with a "See all" that opens the tab —
+   and the featured picks last. Sections render as their data arrives, so the
+   page is usable in seconds rather than after eighty catalog requests. */
+const HOME_PER_SHELF = 6;
+let HOME_GEN = 0;         // bumped whenever the home view is (re)built or left
+let HOME_RENDER_GEN = -1; // the HOME_GEN of the last home render, for late fills
+let HOME_ITEMS = [];      // everything on the home grid, for branch redraws
+
+function sectionHeader(id, title, sub, seeAll){
+  return `<div class="grid-section" data-section="${esc(id)}">
+    <h3>${esc(title)}${sub ? `<span class="sec-sub">${esc(sub)}</span>` : ''}</h3>
+    ${seeAll ? `<button data-group="${esc(seeAll.group)}" data-shelf="${esc(seeAll.shelf)}">${esc(t('home.seeAll'))}</button>`
+             : `<span class="sec-loading">${esc(t('home.loading'))}</span>`}
+  </div>`;
+}
+
+async function loadHome(){
+  const gen = ++HOME_GEN;
+  HOME_RENDER_GEN = gen;
+  resetReveal();
+  BROWSING = null; BROWSE_POOL = [];
+  document.getElementById('shuffleBtn').hidden = true;
+  document.getElementById('shelfTitle').textContent = t('home.title');
+  markCategory('#all');
+  resultCount.textContent = t('home.sub');
+  HOME_ITEMS = [];
+  grid.innerHTML = '';
+
+  let cats = [];
+  try{ cats = (await (await fetch(`/api/browse?categories=1&lang=${encodeURIComponent(catalogLang())}`)).json()).categories || []; }catch(e){}
+  if(gen !== HOME_GEN) return;
+
+  // Lay every section down first so the order is fixed and each fills in.
+  const plan = [];
+  // What just arrived leads the page; the age shelves follow.
+  const rank = (g) => g.id === 'lang' ? 0 : g.id === 'new' ? 1 : 2;
+  const ordered = [...cats].sort((a, b) => rank(a) - rank(b));
+  const groupTitle = (g) => g.id === 'lang' ? t('nav.lang', { lang: (I18N[LANG] || I18N.en).name }) : t(`nav.${g.id}`);
+  for(const g of ordered) for(const sh of g.shelves) plan.push({ id:`${g.id}-${sh.id}`, group:g.id, shelf:sh.id, title:`${groupTitle(g)} · ${t(`shelf.${sh.id}`)}` });
+  for(const sec of plan) grid.insertAdjacentHTML('beforeend', sectionHeader(sec.id, sec.title, '', null));
+  // The featured picks are English titles; in another language the shelves speak for themselves.
+  grid.insertAdjacentHTML('beforeend', sectionHeader('featured', t('home.featured'), t('home.featuredSub'), null));
+
+  // Shelves two at a time — enough to feel quick, polite to the catalog.
+  const all = [];
+  for(let i = 0; i < plan.length; i += 2){
+    await Promise.all(plan.slice(i, i + 2).map(async sec => {
+      let data = null;
+      try{ data = await (await fetch(`/api/browse?group=${sec.group}&shelf=${sec.shelf}&lang=${encodeURIComponent(catalogLang())}`, { signal: AbortSignal.timeout(60000) })).json(); }catch(e){}
+      if(gen !== HOME_GEN) return;
+      const items = ((data && data.books) || []).slice(0, HOME_PER_SHELF).map(b => ({ band: sec.title, book: b, branches: null, section: sec.id }));
+      fillSection(sec.id, items, { group: sec.group, shelf: sec.shelf });
+      all.push(...items);
+    }));
+  }
+
+  if(gen !== HOME_GEN) return;
+  // Featured last. If the curated set has already arrived, place it now;
+  // otherwise loadShelf() fills the section when it does.
+  if(SHELF.length){
+    const featured = SHELF.map(i => ({ ...i, section: 'featured' }));
+    fillSection('featured', featured, null);
+    all.push(...featured);
+  }
+  HOME_ITEMS = all;
+  CURRENT_ITEMS = all;
+  hydrateHome(all, gen);
+}
+
+function fillSection(id, items, seeAll){
+  const header = grid.querySelector(`.grid-section[data-section="${CSS.escape(id)}"]`);
+  if(!header) return;
+  const right = seeAll
+    ? `<button data-group="${esc(seeAll.group)}" data-shelf="${esc(seeAll.shelf)}">${esc(t('home.seeAll'))}</button>`
+    : '';
+  header.querySelector('.sec-loading, button')?.remove();
+  if(right) header.insertAdjacentHTML('beforeend', right);
+  header.querySelector('button')?.addEventListener('click', e => openShelf(e.currentTarget.dataset.group, e.currentTarget.dataset.shelf));
+  // Cards go right after their header, before the next section header.
+  let anchor = header;
+  for(const item of items){
+    anchor.insertAdjacentHTML('afterend', shelfCard(item, HOME_BRANCH));
+    anchor = anchor.nextElementSibling;
+    wireShelfCard(anchor);
+  }
+  if(!items.length) header.insertAdjacentHTML('afterend', `<div class="shelf-empty">${esc(t('home.empty'))}</div>`);
+}
+
+async function hydrateHome(items, gen){
+  const todo = items.filter(i => i.branches === null);
+  for(let i = 0; i < todo.length; i += 4){
+    if(gen !== HOME_GEN) return;
+    await Promise.all(todo.slice(i, i + 4).map(async item => {
+      try{
+        const r = await fetch(`/api/availability?id=${encodeURIComponent(item.book.id)}`, { signal: AbortSignal.timeout(20000) });
+        if(r.ok) item.branches = (await r.json()).branches || [];
+      }catch(e){ item.branches = []; }
+      if(item.result) item.result.branches = item.branches;
+      if(gen !== HOME_GEN) return;
+      const card = grid.querySelector(`.book[data-id="${CSS.escape(item.book.id)}"]`);
+      if(card){ card.outerHTML = shelfCard(item, HOME_BRANCH); wireShelfCard(grid.querySelector(`.book[data-id="${CSS.escape(item.book.id)}"]`)); }
+    }));
+  }
+}
+
+/* Redraw the home grid in place (branch change) without refetching. */
+function rerenderHome(){
+  for(const item of HOME_ITEMS){
+    const card = grid.querySelector(`.book[data-id="${CSS.escape(item.book.id)}"]`);
+    if(card){ card.outerHTML = shelfCard(item, HOME_BRANCH); wireShelfCard(grid.querySelector(`.book[data-id="${CSS.escape(item.book.id)}"]`)); }
+  }
+}
+
+/* ---------------- CATALOG SHELF ----------------
+   A browsable handful of real SCCLD books across every age, fetched from the
+   proxy. Not the whole catalog — a shelf to look through, with the same live
+   availability the assistant reports, so the two can never disagree. */
+let SHELF = [];
+let CURRENT_ITEMS = []; // whatever the grid is showing right now
+
+const grid = document.getElementById('grid');
+const resultCount = document.getElementById('resultCount');
+
+// Covers come from the catalog when it has one; otherwise a tinted spine keeps
+// the grid even rather than leaving a hole.
+const BAND_COLORS = {
+  'Picture books':'#3d6b3f', 'Early readers':'#a05a2c', 'Middle grade':'#a9803f',
+  'Teen':'#2b5d78', 'Adult fiction':'#5c451d', 'Non-fiction':'#33472f', 'New & popular':'#7a3b3b'
+};
+
+function shelfCard(item, branch, extra){
+  const b = item.book;
+  KNOWN_BOOKS.set(b.id, b);
+  const shown = b.nativeTitle || b.title;
+  const a = b.availability;
+  const line = availabilityLine({ found:true, book:b, branches:item.branches }, branch);
+  const shelf = shelfLine({ found:true, book:b, branches:item.branches }, branch);
+  const color = BAND_COLORS[item.band] || '#33472f';
+  const cover = b.jacket
+    ? `<img class="cover-bg" src="${esc(b.jacket)}" alt="" aria-hidden="true" loading="lazy" onerror="this.remove()">` +
+      `<img class="cover-img" src="${esc(b.jacket)}" alt="" loading="lazy" onerror="this.remove()">`
+    : '';
+
+  const inList = LIST.some(x => x.id === b.id);
+  return `
+    <div class="book" data-id="${esc(b.id)}" data-url="${esc(b.recordUrl)}">
+      <div class="cover" style="background:${color};"><div class="spine"></div>${cover}<span class="cover-text">${esc(shown)}</span>
+        <button class="add-btn${inList ? ' in' : ''}" data-add="${esc(b.id)}" aria-pressed="${inList}" title="${esc(inList ? t('list.added') : t('list.add'))}" aria-label="${esc(inList ? t('list.added') : t('list.add'))}">${inList ? '✓' : '+'}</button>
+      </div>
+      <div class="book-body">
+        <span class="band">${esc(item.band)}</span>
+        <h3>${esc(shown)}</h3>
+        ${b.nativeTitle ? `<p class="author roman">${esc(b.title)}</p>` : ''}
+        <p class="author">${esc((b.authors && b.authors[0]) || '')}</p>
+        <div class="shelf-avail ${line.cls}"><span class="dot"></span>${esc(line.text)}</div>
+        ${shelf}
+        ${extra || ''}
+      </div>
+    </div>`;
+}
+
+/* A search result as a grid card. Found books are ordinary shelf cards; a
+   title the library lacks gets a plain card saying so — never a stand-in. */
+function resultCard(entry, branch, band, sink){
+  const r = entry.result;
+  if(r && r.found){
+    // `branches: null` means not fetched yet; the item shares the entry's
+    // result object so hydration updates both the card and the follow-up data.
+    const item = { band, book: r.book, branches: Array.isArray(r.branches) ? r.branches : null, result: r };
+    if(sink) sink.push(item);
+    return shelfCard(item, branch);
+  }
+  return `
+    <div class="book notfound" data-url="${esc(sccldSearchUrl(entry.title, branch))}">
+      <div class="cover"><div class="spine"></div><span class="cover-text">${esc(entry.title)}</span></div>
+      <div class="book-body">
+        <span class="band">${esc(band)}</span>
+        <h3>${esc(entry.title)}</h3>
+        <p class="author">${esc(entry.author || '')}</p>
+        <div class="shelf-avail missing"><span class="dot"></span>${esc(t('av.notIn'))}</div>
+      </div>
+    </div>`;
+}
+
+function eventGridCard(ev){
+  const where = [ev.branchName, ev.room].filter(Boolean).join(' · ');
+  const who = (ev.audiences || []).map(a => a.replace(/^Kids:\s*/, '')).slice(0, 2);
+  // The library's own image for the event sits where a book's cover would;
+  // events without one keep the teal block with the date and title.
+  const art = ev.image
+    ? `<img class="cover-bg" src="${esc(ev.image)}" alt="" aria-hidden="true" loading="lazy" onerror="this.remove()">` +
+      `<img class="cover-img" src="${esc(ev.image)}" alt="" loading="lazy" onerror="this.remove()">`
+    : '';
+  return `
+    <div class="book event${ev.image ? ' has-art' : ''}" data-url="${esc(ev.url)}">
+      <div class="cover" style="background:var(--moss);"><div class="spine"></div>${art}
+        <div class="ev-head"><div class="ev-when">${esc(eventWhen(ev))}</div><div class="ev-title">${esc(ev.title)}</div></div>
+      </div>
+      <div class="book-body">
+        ${ev.image ? `<div class="ev-when dark">${esc(eventWhen(ev))}</div><h3>${esc(ev.title)}</h3>` : ''}
+        ${where ? `<div class="ev-where">${esc(where)}</div>` : ''}
+        ${ev.description ? `<div class="ev-desc">${esc(ev.description.slice(0, 120))}${ev.description.length > 120 ? '…' : ''}</div>` : ''}
+        <div class="ev-tags">${who.map(a => `<span class="ev-tag">${esc(a)}</span>`).join('')}${ev.isFull ? `<span class="ev-tag full">${esc(t('ev.full'))}</span>` : ''}</div>
+      </div>
+    </div>`;
+}
+
+/* The catalog's own results for the raw query. A library search must show
+   the library's books — every one it found, in the order it ranks them — not
+   a handful the model chose. Cards arrive with summary counts and are
+   hydrated with branch data afterwards, the same as a browse shelf. */
+async function catalogSearch(query){
+  if(!CATALOG_LIVE) return null;
+  try{
+    const r = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=24`, { signal: AbortSignal.timeout(25000) });
+    if(!r.ok) return null;
+    return await r.json();
+  }catch(e){ return null; }
+}
+
+/* Do the catalog's results actually answer what was typed? "Cooking Thai"
+   yes — its top hits carry those words in their titles. "Something funny for
+   a 6 year old" no — the catalog returns noise for a sentence like that, and
+   the model's picks should lead instead. */
+function searchLooksRelevant(query, books){
+  const words = normTitle(query).split(' ').filter(w => w.length > 2);
+  if(!words.length || !books.length) return false;
+  const hits = books.slice(0, 5).filter(b => {
+    const t = normTitle(b.title + ' ' + (b.subtitle || '') + ' ' + (b.nativeTitle || ''));
+    return words.filter(w => t.includes(w)).length >= Math.ceil(words.length / 2);
+  });
+  return hits.length >= 1;
+}
+
+/* Lays sections into the grid: [{title, sub, cards:[html]}]. Used for every
+   search answer, so results look like any other shelf. */
+function showResults(title, sections, hydrate){
+  const gen = ++HOME_GEN;          // abandon any home/shelf work in flight
+  resetReveal();
+  BROWSING = { results: true };
+  BROWSE_POOL = [];
+  document.getElementById('shuffleBtn').hidden = true;
+  document.getElementById('shelfTitle').textContent = title;
+  grid.innerHTML = sections.map(sec =>
+    `<div class="grid-section"><h3>${esc(sec.title)}${sec.sub ? `<span class="sec-sub">${esc(sec.sub)}</span>` : ''}</h3>
+       <button class="back-home">${esc(t('res.back'))}</button></div>` + sec.cards.join('')
+  ).join('');
+  grid.querySelectorAll('.book').forEach(wireShelfCard);
+  grid.querySelectorAll('.back-home').forEach(b => b.addEventListener('click', () => loadHome()));
+  document.querySelector('.main').scrollTop = 0;
+  markCategory(null);
+  // Catalog-search cards come without branch data; fill it in behind.
+  if(hydrate && hydrate.length) hydrateHome(hydrate, gen);
+}
+
+function skeletonCard(){
+  return `<div class="book skeleton" aria-hidden="true"><div class="cover"></div><div class="book-body"><div class="sk w40"></div><div class="sk w80"></div><div class="sk w60"></div></div></div>`;
+}
+
+/* A section header appended to the results view, returned so cards can be
+   streamed into it one at a time as they resolve. */
+function startSection(title, sub){
+  grid.insertAdjacentHTML('beforeend',
+    `<div class="grid-section"><h3>${esc(title)}<span class="sec-sub">${esc(sub || '')}</span></h3></div>`);
+  return grid.lastElementChild;
+}
+function setSectionSub(header, sub){ const el = header.querySelector('.sec-sub'); if(el) el.textContent = sub || ''; }
+
+/* Inserts one card at the end of its section (before the next header). */
+function addCard(header, html){
+  let next = header.nextElementSibling;
+  while(next && !next.classList.contains('grid-section')) next = next.nextElementSibling;
+  if(next) next.insertAdjacentHTML('beforebegin', html); else grid.insertAdjacentHTML('beforeend', html);
+  const card = next ? next.previousElementSibling : grid.lastElementChild;
+  wireShelfCard(card);
+  return card;
+}
+
+/* Adds a section to the results already on screen — how the model's picks
+   join the catalog's results without a redraw. */
+function appendResultSection(sec, hydrate){
+  if(!BROWSING || !BROWSING.results) return;
+  const gen = HOME_GEN;
+  grid.insertAdjacentHTML('beforeend',
+    `<div class="grid-section"><h3>${esc(sec.title)}${sec.sub ? `<span class="sec-sub">${esc(sec.sub)}</span>` : ''}</h3></div>` + sec.cards.join(''));
+  const fresh = [...grid.querySelectorAll('.book')].slice(-sec.cards.length);
+  fresh.forEach(wireShelfCard);
+  if(hydrate && hydrate.length) hydrateHome(hydrate, gen);
+}
+
+function wireShelfCard(card){
+  if(!card) return;
+  card.addEventListener('click', e => {
+    if(e.target.closest('.add-btn')) return;       // the + has its own job
+    if(e.target.closest('.remove-btn')) return;
+    window.open(card.dataset.url, '_blank', 'noopener');
+  });
+  card.querySelector('.add-btn')?.addEventListener('click', e => {
+    e.stopPropagation();
+    toggleInList(card.dataset.id, card);
+  });
+}
+
+function renderGrid(list){
+  const branch = HOME_BRANCH;
+  CURRENT_ITEMS = list;
+  grid.innerHTML = list.map(item => shelfCard(item, branch)).join('');
+  grid.querySelectorAll('.book').forEach(wireShelfCard);
+  if(BROWSING) return; // browse mode writes its own status line
+  resultCount.textContent = t('res.titles', { n: list.length }) + (branch ? ' · ' + t('shelf.at', { branch: branch.label }) : '');
+}
+
+async function loadShelf(){
+  if(!CATALOG_LIVE) return;
+  // On a cold start this competes with every shelf for the catalog and can
+  // take a while; a failed attempt is retried after the cache has warmed
+  // rather than rendering an empty "nothing on this shelf".
+  for(let attempt = 0; attempt < 3 && !SHELF.length; attempt++){
+    try{
+      const r = await fetch('/api/showcase', { signal: AbortSignal.timeout(90000) });
+      if(!r.ok) throw new Error('showcase unavailable');
+      SHELF = (await r.json()).books || [];
+    }catch(e){ SHELF = []; await new Promise(res => setTimeout(res, 4000 * (attempt + 1))); }
+  }
+  if(!SHELF.length){
+    const h = grid.querySelector('.grid-section[data-section="featured"] .sec-loading');
+    if(h) h.textContent = t('shelf.unavailable');
+    return;
+  }
+  // Slot the featured picks into the home view only if it's still the view
+  // on screen; a patron who has moved to a tab keeps their tab.
+  if(HOME_RENDER_GEN === HOME_GEN){
+    const featured = SHELF.map(i => ({ ...i, section: 'featured' }));
+    fillSection('featured', featured, null);
+    HOME_ITEMS.push(...featured);
+    CURRENT_ITEMS = HOME_ITEMS;
+    hydrateHome(featured, HOME_GEN);
+  }
+}
+
+/* ---------------- LogoLoop (React Bits) — vanilla port ----------------
+   Same behaviour as the React component: the sequence is copied enough
+   times to cover the container plus headroom, a requestAnimationFrame loop
+   moves the track by a velocity that eases toward its target (so hovering
+   to pause decelerates rather than stops dead), and the offset wraps at one
+   sequence length so the loop is seamless. Sizes are re-measured on resize
+   and once every image has loaded. */
+function createLogoLoop(container, opts){
+  const {
+    logos = [], speed = 120, direction = 'left', width = '100%', logoHeight = 28, gap = 32,
+    hoverSpeed = 0, fadeOut = false, fadeOutColor, scaleOnHover = false, ariaLabel = 'Partner logos', className = ''
+  } = opts;
+  const SMOOTH_TAU = 0.25, MIN_COPIES = 2, COPY_HEADROOM = 2;
+  const isVertical = direction === 'up' || direction === 'down';
+  const targetVelocity = Math.abs(speed) * (isVertical ? (direction === 'up' ? 1 : -1) : (direction === 'left' ? 1 : -1)) * (speed < 0 ? -1 : 1);
+
+  container.className = ['logoloop', isVertical ? 'logoloop--vertical' : 'logoloop--horizontal', fadeOut && 'logoloop--fade', scaleOnHover && 'logoloop--scale-hover', className].filter(Boolean).join(' ');
+  container.setAttribute('role', 'region'); container.setAttribute('aria-label', ariaLabel);
+  container.style.setProperty('--logoloop-gap', `${gap}px`);
+  container.style.setProperty('--logoloop-logoHeight', `${logoHeight}px`);
+  if(fadeOutColor) container.style.setProperty('--logoloop-fadeColor', fadeOutColor);
+  if(!isVertical) container.style.width = typeof width === 'number' ? `${width}px` : width;
+
+  const item = (it) => {
+    const img = `<img src="${esc(it.src)}" alt="${esc(it.alt || '')}" ${it.title ? `title="${esc(it.title)}"` : ''} loading="lazy" decoding="async" draggable="false">`;
+    const name = it.name ? `<span class="logo-name">${esc(it.name)}</span>` : '';
+    const inner = it.href
+      ? `<a class="logoloop__link" href="${esc(it.href)}" aria-label="${esc(it.alt || it.title || 'logo link')}" target="_blank" rel="noreferrer noopener">${img}</a>`
+      : img;
+    return `<li class="logoloop__item">${inner}${name}</li>`;
+  };
+  const list = (hidden) => `<ul class="logoloop__list" role="list"${hidden ? ' aria-hidden="true"' : ''}>${logos.map(item).join('')}</ul>`;
+
+  const track = document.createElement('div');
+  track.className = 'logoloop__track';
+  container.appendChild(track);
+
+  let copies = MIN_COPIES, seqSize = 0, offset = 0, velocity = 0, hovered = false, last = null, raf = null;
+
+  function render(){ track.innerHTML = Array.from({ length: copies }, (_, i) => list(i > 0)).join(''); }
+  function measure(){
+    const seq = track.querySelector('.logoloop__list');
+    if(!seq) return;
+    const rect = seq.getBoundingClientRect();
+    if(isVertical){
+      const parentH = container.parentElement?.clientHeight || 0;
+      if(parentH > 0) container.style.height = `${Math.ceil(parentH)}px`;
+      if(rect.height > 0){
+        seqSize = Math.ceil(rect.height);
+        const need = Math.ceil((container.clientHeight || parentH || rect.height) / rect.height) + COPY_HEADROOM;
+        setCopies(Math.max(MIN_COPIES, need));
+      }
+    } else if(rect.width > 0){
+      seqSize = Math.ceil(rect.width);
+      setCopies(Math.max(MIN_COPIES, Math.ceil(container.clientWidth / rect.width) + COPY_HEADROOM));
+    }
+  }
+  function setCopies(n){ if(n !== copies){ copies = n; render(); } }
+
+  render();
+  // Re-measure once every image is in — a lazy logo can change the sequence width.
+  const imgs = [...track.querySelectorAll('img')];
+  let pending = imgs.length;
+  const done = () => { if(--pending <= 0) measure(); };
+  if(!pending) measure();
+  imgs.forEach(im => im.complete ? done() : (im.addEventListener('load', done, { once: true }), im.addEventListener('error', done, { once: true })));
+  if(window.ResizeObserver){ const ro = new ResizeObserver(measure); ro.observe(container); }
+  else window.addEventListener('resize', measure);
+  measure();
+
+  track.addEventListener('mouseenter', () => { hovered = true; });
+  track.addEventListener('mouseleave', () => { hovered = false; });
+
+  function animate(ts){
+    if(last === null) last = ts;
+    const dt = Math.max(0, ts - last) / 1000; last = ts;
+    const target = hovered && hoverSpeed !== undefined ? hoverSpeed : targetVelocity;
+    velocity += (target - velocity) * (1 - Math.exp(-dt / SMOOTH_TAU));
+    if(seqSize > 0){
+      offset = (((offset + velocity * dt) % seqSize) + seqSize) % seqSize;
+      track.style.transform = isVertical ? `translate3d(0, ${-offset}px, 0)` : `translate3d(${-offset}px, 0, 0)`;
+    }
+    raf = requestAnimationFrame(animate);
+  }
+  raf = requestAnimationFrame(animate);
+
+  return { destroy(){ if(raf) cancelAnimationFrame(raf); } };
+}
+
+function buildPartners(){
+  const box = document.getElementById('logoLoop');
+  if(!box || box.dataset.built) return;
+  box.dataset.built = '1';
+  createLogoLoop(box, {
+    logos: [
+      { src: 'assets/hummy.png',         alt: 'Hummy AI',                            name: 'Hummy AI' },
+      { src: 'assets/sccld.png',         alt: 'Santa Clara County Library District', name: 'Santa Clara County Library', href: 'https://sccld.org' },
+      { src: 'assets/bibliocommons.svg', alt: 'BiblioCommons',                       name: 'BiblioCommons', href: 'https://www.bibliocommons.com' }
+    ],
+    speed: 60, direction: 'left', logoHeight: 36, gap: 72,
+    hoverSpeed: 0, fadeOut: true, fadeOutColor: '#ffffff', scaleOnHover: true,
+    ariaLabel: 'Partners'
+  });
+}
+
+/* ---------------- I'M FEELING LUCKY ----------------
+   One random book, popped out. Drawn from a random shelf's pool, but not
+   blindly: a handful of candidates with copies in stock are checked against
+   the chosen library, and one that is on that library's shelf right now is
+   preferred — a lucky pick you can't take home isn't lucky. */
+const luckyPanel = document.getElementById('luckyPanel');
+const luckyScrim = document.getElementById('luckyScrim');
+
+function openLucky(){ luckyPanel.hidden = false; luckyScrim.hidden = false; rollLucky(); }
+function closeLucky(){ luckyPanel.hidden = true; luckyScrim.hidden = true; }
+document.getElementById('luckyOpen').addEventListener('click', openLucky);
+document.getElementById('luckyClose').addEventListener('click', closeLucky);
+luckyScrim.addEventListener('click', closeLucky);
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && !luckyPanel.hidden) closeLucky(); });
+
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+async function rollLucky(){
+  const body = document.getElementById('luckyBody');
+  body.innerHTML = `<div class="lucky-loading"><span class="die">🎲</span>${esc(t('lucky.loading'))}</div>`;
+  const branch = HOME_BRANCH;
+
+  let cats = [];
+  try{ cats = (await (await fetch(`/api/browse?categories=1&lang=${encodeURIComponent(catalogLang())}`)).json()).categories || []; }catch(e){}
+  cats = cats.filter(g => g.id !== 'lang' || catalogLang());
+  if(!cats.length){ body.innerHTML = `<div class="lucky-loading">${esc(t('lucky.none'))}</div>`; return; }
+  const g = pick(cats), sh = pick(g.shelves);
+  let pool = [];
+  try{ pool = (await (await fetch(`/api/browse?group=${g.id}&shelf=${sh.id}&lang=${encodeURIComponent(catalogLang())}`, { signal: AbortSignal.timeout(45000) })).json()).books || []; }catch(e){}
+  const stocked = pool.filter(b => b.availability.availableCopies > 0);
+  if(!stocked.length){ body.innerHTML = `<div class="lucky-loading">${esc(t('lucky.none'))}</div>`; return; }
+
+  // Up to five candidates, checked in parallel; the first on the chosen
+  // library's shelf wins, else the first with a copy anywhere.
+  const cands = [...stocked].sort(() => Math.random() - 0.5).slice(0, 5);
+  const checked = await Promise.all(cands.map(async b => {
+    try{ const r = await fetch(`/api/availability?id=${encodeURIComponent(b.id)}`, { signal: AbortSignal.timeout(20000) }); return { book: b, branches: r.ok ? (await r.json()).branches || [] : [] }; }
+    catch(e){ return { book: b, branches: [] }; }
+  }));
+  const here = (it) => branch && branch.code !== '_online_' ? (it.branches.find(r => r.code === branch.code)?.available || 0) > 0 : true;
+  const chosen = checked.find(here) || checked[0];
+  KNOWN_BOOKS.set(chosen.book.id, chosen.book);
+  const band = `${g.id === 'lang' ? t('nav.lang', { lang: (I18N[LANG] || I18N.en).name }) : t(`nav.${g.id}`)} · ${t(`shelf.${sh.id}`)}`;
+  renderLucky(chosen, band, branch);
+}
+
+function renderLucky(it, band, branch){
+  const b = it.book, shown = b.nativeTitle || b.title;
+  const line = availabilityLine({ found: true, book: b, branches: it.branches }, branch);
+  const shelf = shelfLine({ found: true, book: b, branches: it.branches }, branch);
+  const inList = LIST.some(x => x.id === b.id);
+  document.getElementById('luckyBody').innerHTML = `
+    <div class="lucky-cover">${b.jacket ? `<img class="bg" src="${esc(b.jacket)}" alt="" aria-hidden="true"><img class="fg" src="${esc(b.jacket)}" alt="">` : `<span class="cover-text">${esc(shown)}</span>`}</div>
+    <div class="lucky-info">
+      <span class="band">${esc(band)}</span>
+      <h3>${esc(shown)}</h3>
+      ${b.nativeTitle ? `<p class="author roman">${esc(b.title)}</p>` : ''}
+      <p class="author">${esc((b.authors && b.authors[0]) || '')}</p>
+      <div class="shelf-avail ${line.cls}"><span class="dot"></span>${esc(line.text)}</div>
+      ${shelf}
+      <div class="lucky-actions">
+        <button class="primary" id="luckyAdd">${inList ? '✓ ' + esc(t('list.added')) : '+ ' + esc(t('list.add'))}</button>
+        <a href="${esc(b.recordUrl)}" target="_blank" rel="noopener">${esc(t('lucky.open'))} ↗</a>
+        <button id="luckyAgain">🎲 ${esc(t('lucky.again'))}</button>
+      </div>
+    </div>`;
+  document.getElementById('luckyAdd').addEventListener('click', () => { toggleInList(b.id); renderLucky(it, band, branch); });
+  document.getElementById('luckyAgain').addEventListener('click', rollLucky);
+}
+
+/* ---------------- ADD ALL AVAILABLE HERE ----------------
+   Every book on the current view that is on the chosen library's shelf right
+   now goes onto the list in one click. Books whose branch data hasn't
+   arrived yet are checked first, so nothing is added on a guess. */
+async function addAllAvailableHere(){
+  const btn = document.getElementById('addAllBtn');
+  const branch = HOME_BRANCH;
+  const items = [...new Map((CURRENT_ITEMS.length ? CURRENT_ITEMS : HOME_ITEMS).filter(i => i && i.book).map(i => [i.book.id, i])).values()];
+  if(!items.length) return;
+  btn.classList.add('busy');
+  const label = document.getElementById('addAllLabel'); const was = label.textContent;
+  label.textContent = t('list.checking');
+  const missing = items.filter(i => !Array.isArray(i.branches));
+  for(let i = 0; i < missing.length; i += 4){
+    await Promise.all(missing.slice(i, i + 4).map(async it => {
+      try{ const r = await fetch(`/api/availability?id=${encodeURIComponent(it.book.id)}`, { signal: AbortSignal.timeout(20000) }); it.branches = r.ok ? (await r.json()).branches || [] : []; }
+      catch(e){ it.branches = []; }
+    }));
+  }
+  let added = 0;
+  for(const it of items){
+    const ok = branch && branch.code !== '_online_'
+      ? (it.branches.find(r => r.code === branch.code)?.available || 0) > 0
+      : it.branches.reduce((n, r) => n + r.available, 0) > 0 || it.book.availability.availableCopies > 0;
+    if(ok && !LIST.some(x => x.id === it.book.id)){
+      KNOWN_BOOKS.set(it.book.id, it.book);
+      toggleInList(it.book.id); added++;
+    }
+  }
+  btn.classList.remove('busy');
+  label.textContent = t('list.addedN', { n: added });
+  setTimeout(() => { label.textContent = was; }, 2200);
+}
+document.getElementById('addAllBtn').addEventListener('click', addAllAvailableHere);
+
+/* The button is meaningful wherever there are books on screen. */
+function refreshAddAll(){
+  const has = grid.querySelector('.book:not(.skeleton):not(.event)');
+  document.getElementById('addAllBtn').hidden = !has || !!(BROWSING && (BROWSING.list || BROWSING.events));
+}
+new MutationObserver(refreshAddAll).observe(document.getElementById('grid'), { childList: true, subtree: false });
+
+/* ---------------- MY LIST ----------------
+   A + on every card. The list itself is arranged by where the books are in
+   the chosen library — every book in the Children's New Book Section
+   together, every one in the Fiction Section together — so it reads as the
+   route to walk, not the order they were added. Grouping is computed when
+   the list opens, from live per-copy data, so it follows the library picker. */
+const LIST_KEY = 'stacks.list';
+let LIST = [];
+try{ LIST = JSON.parse(localStorage.getItem(LIST_KEY) || '[]'); if(!Array.isArray(LIST)) LIST = []; }catch(e){ LIST = []; }
+
+function saveList(){
+  try{ localStorage.setItem(LIST_KEY, JSON.stringify(LIST)); }catch(e){}
+  const n = LIST.length;
+  const badge = document.getElementById('listCount');
+  badge.textContent = String(n); badge.hidden = n === 0;
+}
+
+/* Every card on screen for a book carries the same +; a change flips all. */
+function paintAddButtons(id){
+  const inList = LIST.some(x => x.id === id);
+  document.querySelectorAll(`.add-btn[data-add="${CSS.escape(id)}"]`).forEach(b => {
+    b.classList.toggle('in', inList);
+    b.textContent = inList ? '✓' : '+';
+    b.setAttribute('aria-pressed', String(inList));
+    b.title = inList ? t('list.added') : t('list.add');
+    b.setAttribute('aria-label', b.title);
+  });
+}
+
+/* Every book that has ever been drawn as a card, by id — so the + works on a
+   search result or a pick just as it does on a shelf. */
+const KNOWN_BOOKS = new Map();
+function bookFromCard(id){ return KNOWN_BOOKS.get(id) || null; }
+
+function toggleInList(id, card){
+  const idx = LIST.findIndex(x => x.id === id);
+  if(idx >= 0) LIST.splice(idx, 1);
+  else {
+    const b = bookFromCard(id);
+    if(!b) return;
+    LIST.push({ id: b.id, title: b.nativeTitle || b.title, author: (b.authors && b.authors[0]) || '', jacket: b.jacket || null,
+                recordUrl: b.recordUrl, formatFamily: b.formatFamily, addedAt: Date.now() });
+  }
+  saveList();
+  paintAddButtons(id);
+  if(BROWSING && BROWSING.list) openList();   // the list view redraws itself
+}
+
+/* Which section of `branch` a book sits in, from its per-copy records:
+   the shelf with copies in wins; otherwise the shelf with most copies. */
+function sectionAt(branches, branch){
+  const rows = Array.isArray(branches) ? branches : [];
+  if(branch && branch.code !== '_online_'){
+    const row = rows.find(r => r.code === branch.code);
+    if(!row) return null;
+    const sh = (row.shelves || [])[0];
+    return sh ? { name: sh.collection || t('list.unknown'), call: sh.callNumber || '' } : { name: t('list.unknown'), call: '' };
+  }
+  // No branch chosen: the most common shelving system-wide.
+  const tally = new Map();
+  for(const r of rows) for(const sh of r.shelves || []){
+    const k = sh.collection || t('list.unknown');
+    tally.set(k, (tally.get(k) || 0) + sh.total);
+  }
+  const top = [...tally.entries()].sort((a, b) => b[1] - a[1])[0];
+  return top ? { name: top[0], call: '' } : null;
+}
+
+async function openList(){
+  HOME_GEN++;
+  const gen = HOME_GEN;
+  resetReveal();
+  BROWSING = { results: true, list: true };
+  BROWSE_POOL = [];
+  document.getElementById('shuffleBtn').hidden = true;
+  markCategory(null);
+  const branch = HOME_BRANCH;
+  document.getElementById('shelfTitle').textContent = t('list.title');
+  grid.innerHTML = '';
+
+  if(!LIST.length){
+    resultCount.textContent = t('list.emptySub');
+    grid.innerHTML = `<div class="shelf-empty">${esc(t('list.empty'))}</div>`;
+    return;
+  }
+  resultCount.textContent = t('list.loading');
+
+  // Live per-copy data for every book, four at a time (the proxy caches).
+  const items = LIST.map(x => ({ book: { id: x.id, title: x.title, authors: [x.author], jacket: x.jacket, recordUrl: x.recordUrl, formatFamily: x.formatFamily,
+                                          availability: { availableCopies: 0, totalCopies: 0, heldCopies: 0, isDigital: x.formatFamily === 'ebook' || x.formatFamily === 'audiobook' } },
+                                 branches: null, band: '' }));
+  for(let i = 0; i < items.length; i += 4){
+    await Promise.all(items.slice(i, i + 4).map(async it => {
+      try{
+        const r = await fetch(`/api/availability?id=${encodeURIComponent(it.book.id)}`, { signal: AbortSignal.timeout(20000) });
+        if(r.ok){
+          const d = await r.json();
+          it.branches = d.branches || [];
+          // The system-wide counts, so the availability line has something to say.
+          let avail = 0, total = 0;
+          for(const b of it.branches){ avail += b.available; total += b.available + b.out; }
+          it.book.availability = { ...it.book.availability, availableCopies: avail, totalCopies: total };
+        } else it.branches = [];
+      }catch(e){ it.branches = []; }
+    }));
+    if(gen !== HOME_GEN) return;
+  }
+
+  // Group by section at the chosen library.
+  const groups = new Map();
+  const key = (it) => {
+    if(it.book.availability.isDigital) return { k: '\u0001online', name: t('list.online'), call: '' };
+    const sec = sectionAt(it.branches, branch);
+    if(!sec) return { k: '\u0002elsewhere', name: branch ? t('list.notAt', { branch: branch.label }) : t('list.unknown'), call: '' };
+    return { k: sec.name, name: sec.name, call: sec.call };
+  };
+  for(const it of items){
+    const g = key(it);
+    if(!groups.has(g.k)) groups.set(g.k, { name: g.name, items: [] });
+    groups.get(g.k).items.push(it);
+  }
+  // Real sections first, alphabetically (the order you'd walk them); online
+  // and not-here last.
+  const ordered = [...groups.entries()].sort((a, b) => {
+    const sa = a[0].charCodeAt(0) < 32, sb = b[0].charCodeAt(0) < 32;
+    if(sa !== sb) return sa - sb;
+    return a[1].name.localeCompare(b[1].name, locale());
+  });
+
+  resultCount.textContent = t('list.count', { n: LIST.length, sections: ordered.filter(([k]) => k.charCodeAt(0) >= 32).length }) + (branch ? ' · ' + t('list.at', { branch: branch.label }) : '');
+
+  // What "unavailable" means for each book, from the same per-copy data.
+  const availHere = (it) => it.book.availability.isDigital ? true : (branch && branch.code !== '_online_' ? (it.branches.find(r => r.code === branch.code)?.available || 0) > 0 : it.branches.reduce((n, r) => n + r.available, 0) > 0);
+  const availAny  = (it) => it.book.availability.isDigital ? true : it.branches.reduce((n, r) => n + r.available, 0) > 0;
+  const outHere = items.filter(it => !availHere(it)).length, outAny = items.filter(it => !availAny(it)).length;
+
+  grid.innerHTML = `<div class="grid-section"><h3>${esc(t('list.route'))}</h3>
+    <div class="list-actions">
+      ${branch && outHere ? `<button id="listDropHere">${esc(t('list.removeUnavailHere', { n: outHere, branch: branch.label }))}</button>` : ''}
+      ${outAny ? `<button id="listDropAll">${esc(t('list.removeUnavailAll', { n: outAny }))}</button>` : ''}
+      <button id="listClear">${esc(t('list.clear'))}</button><button class="back-home">${esc(t('res.back'))}</button></div></div>`;
+  const drop = (pred) => { for(const it of items) if(pred(it)) { const i = LIST.findIndex(x => x.id === it.book.id); if(i >= 0) LIST.splice(i, 1); paintAddButtons(it.book.id); } saveList(); openList(); };
+  grid.querySelector('#listDropHere')?.addEventListener('click', () => drop(it => !availHere(it)));
+  grid.querySelector('#listDropAll')?.addEventListener('click', () => drop(it => !availAny(it)));
+  let n = 0;
+  for(const [k, g] of ordered){
+    const real = k.charCodeAt(0) >= 32;
+    grid.insertAdjacentHTML('beforeend',
+      `<div class="grid-section"><h3>${real ? `<span class="sec-no">${++n}</span>` : ''}${esc(g.name)}<span class="sec-sub">${esc(t('list.inSection', { n: g.items.length }))}</span></h3></div>` +
+      g.items.map(it => shelfCard({ ...it, band: g.name }, branch, `<button class="remove-btn" data-remove="${esc(it.book.id)}">${esc(t('list.remove'))}</button>`)).join(''));
+  }
+  grid.querySelectorAll('.book').forEach(card => {
+    wireShelfCard(card);
+    card.querySelector('.remove-btn')?.addEventListener('click', e => { e.stopPropagation(); toggleInList(card.dataset.id, card); });
+  });
+  grid.querySelector('.back-home')?.addEventListener('click', () => loadHome());
+  grid.querySelector('#listClear')?.addEventListener('click', () => { LIST = []; saveList(); document.querySelectorAll('.add-btn.in').forEach(b => paintAddButtons(b.dataset.add)); openList(); });
+  document.querySelector('.main').scrollTop = 0;
+}
+
+document.getElementById('listOpen').addEventListener('click', openList);
+saveList();
+
+/* ---------------- SEARCH PANEL ----------------
+   The bar shows only a Search button; the box and the example searches live
+   in a panel that opens on click or on "/". Anything submitted closes it. */
+const searchPanel = document.getElementById('searchPanel');
+const searchScrim = document.getElementById('searchScrim');
+const searchOpenBtn = document.getElementById('searchOpen');
+
+// Example searches, one per kind of thing Hummy can answer. Each is a real
+// query — clicking runs it exactly as if typed.
+const SEARCH_EXAMPLES = [
+  { key: 'ex.title',   kind: 'kind.book' },
+  { key: 'ex.like',    kind: 'kind.book' },
+  { key: 'ex.mood',    kind: 'kind.book' },
+  { key: 'ex.list',    kind: 'kind.book' },
+  { key: 'ex.event',   kind: 'kind.event' },
+  { key: 'ex.story',   kind: 'kind.event' },
+  { key: 'ex.where',   kind: 'kind.followup' },
+  { key: 'ex.ebook',   kind: 'kind.followup' }
+];
+
+function renderSearchChips(){
+  const box = document.getElementById('searchChips');
+  box.innerHTML = SEARCH_EXAMPLES.map(ex =>
+    `<button class="search-chip" data-q="${esc(t(ex.key))}">${esc(t(ex.key))}<span class="kind">${esc(t(ex.kind))}</span></button>`).join('');
+  box.querySelectorAll('.search-chip').forEach(b => b.addEventListener('click', () => {
+    promptInput.value = b.dataset.q;
+    handleAsk();
+  }));
+}
+
+function openSearch(){
+  searchPanel.hidden = false; searchScrim.hidden = false;
+  searchOpenBtn.setAttribute('aria-expanded', 'true');
+  setTimeout(() => { promptInput.focus(); promptInput.select(); }, 30);
+}
+function closeSearch(){
+  searchPanel.hidden = true; searchScrim.hidden = true;
+  searchOpenBtn.setAttribute('aria-expanded', 'false');
+}
+searchOpenBtn.addEventListener('click', openSearch);
+document.getElementById('searchClose').addEventListener('click', closeSearch);
+searchScrim.addEventListener('click', closeSearch);
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && !searchPanel.hidden){ closeSearch(); return; }
+  // "/" opens the panel from anywhere except another text field.
+  if(e.key === '/' && searchPanel.hidden && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || '')){
+    e.preventDefault(); openSearch();
+  }
+});
+
+/* ---------------- SEARCH LOGIC ---------------- */
+const promptInput = document.getElementById('promptInput');
+const askBtn = document.getElementById('askBtn');
+function esc(str){
+  return String(str == null ? '' : str).replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ---------------- LIVE CATALOG (via local proxy) ----------------
+   BiblioCommons blocks cross-origin reads, so real availability is only
+   reachable when this page is served by server.js. We probe once on load;
+   if the proxy isn't there the page still works, it just deep-links into
+   the catalog instead of answering availability inline. */
+let CATALOG_LIVE = false;
+
+/* The books from the most recent answer. "Where is it?" is a follow-up about
+   something already on screen, so it is answered from the records we already
+   fetched rather than by asking the model to guess. */
+let LAST_ANSWER = { asked: [], recs: [], branch: null };
+let LAST_QUERY = '';   // what was last typed, so a library change can re-run it
+
+/* The library the patron cares about. Most questions don't name one ("is this
+   available?"), but an unscoped answer is what made the counts look wrong, so
+   a chosen home branch fills that gap. A branch named in the query still wins. */
+const REC_COUNT = 4;      // suggestions offered when the patron didn't name books
+const MAX_LIST = 25;      // ceiling on a pasted reading list, to stay polite to the catalog
+const LOOKUP_BATCH = 7;   // catalog lookups in flight at once (light lookups are one request each)
+
+const HOME_KEY = 'stacks.homeBranch';
+let HOME_BRANCH = null;
+
+function initBranchPicker(){
+  const sel = document.getElementById('homeBranch');
+  if(!sel) return;
+  sel.innerHTML = `<option value="">${t('top.allBranches')}</option>` +
+    SCCLD_BRANCHES.map(b => `<option value="${b.code}">${b.label}</option>`).join('');
+
+  const saved = localStorage.getItem(HOME_KEY) || '';
+  sel.value = saved;
+  HOME_BRANCH = SCCLD_BRANCHES.find(b => b.code === saved) || null;
+
+  sel.addEventListener('change', () => {
+    localStorage.setItem(HOME_KEY, sel.value);
+    HOME_BRANCH = SCCLD_BRANCHES.find(b => b.code === sel.value) || null;
+    if(BROWSING && BROWSING.events){ openEvents(BROWSING.audience || '', null, null); }
+    else if(BROWSING && BROWSING.list){ openList(); }
+    else if(BROWSING && BROWSING.results && LAST_QUERY){
+      // A search is about a library as much as a title: switching libraries
+      // re-runs it, so every count on screen is for the library now chosen.
+      promptInput.value = LAST_QUERY;
+      handleAsk();
+    }
+    else if(BROWSING){ if(CURRENT_ITEMS.length) renderGrid(CURRENT_ITEMS); } else rerenderHome(); // counts are branch-scoped, so redraw
+  });
+}
+
+/* A branch named in the question beats the saved home branch — asking about
+   Gilroy while your home library is Cupertino should answer about Gilroy. */
+function effectiveBranch(query){
+  return detectBranch(query) || HOME_BRANCH;
+}
+
+async function probeProxy(){
+  try{
+    const r = await fetch('/api/health', { signal: AbortSignal.timeout(2500) });
+    CATALOG_LIVE = r.ok;
+  }catch(e){ CATALOG_LIVE = false; }
+  updateLiveBadge();
+  initLanguagePicker();
+  buildCategoryBar().then(() => { loadHome(); loadShelf(); });
+}
+
+function updateLiveBadge(){
+  const el = document.getElementById('liveStatus');
+  if(!el) return;
+  // Silent when connected; the availability on every card already says so.
+  el.hidden = CATALOG_LIVE;
+  el.innerHTML = CATALOG_LIVE ? '' : t('offline');
+}
+
+async function lookupBook(title, author, opts){
+  if(!CATALOG_LIVE) return null;
+  const o = opts || {};
+  let url = `/api/lookup?title=${encodeURIComponent(title)}&light=1`;
+  if(author) url += `&author=${encodeURIComponent(author)}`;
+  if(o.format) url += `&format=${encodeURIComponent(o.format)}`;
+  try{
+    const r = await fetch(url, { signal: AbortSignal.timeout(20000) });
+    if(!r.ok) return null;
+    return await r.json();
+  }catch(e){ return null; }
+}
+
+/* Turns the catalog's copy counts into the sentence a patron actually wants:
+   can I get this today, and if not, when?
+
+   Scope is the whole point here. The search endpoint's summary counts every
+   copy in the entire 9-branch system, so a book that is "8 of 15 in"
+   system-wide can be 3 of 3 at Milpitas and 0 of 12 at Cupertino. Reporting
+   the system number against a branch question is what made availability look
+   wrong. When a branch is in play we count only that branch's copies, taken
+   from the per-copy records rather than the summary. */
+function availabilityLine(result, branch){
+  if(!CATALOG_LIVE) return { cls:'unknown', text:t('av.check') };
+  if(!result || !result.found) return { cls:'missing', text:t('av.notIn') };
+
+  const a = result.book.availability;
+
+  // A download sits on no shelf, so branch scoping is meaningless for it —
+  // saying "not held at Cupertino" about an e-book is just wrong.
+  const fam = result.book.formatFamily;
+  if(a.isDigital || fam === 'ebook' || fam === 'audiobook'){
+    const kind = fam === 'audiobook' ? t('av.audiobook') : t('av.ebook');
+    // Hoopla-style titles report no copies at all: they're borrowed online
+    // without a copy count, so "0 of 0" would read as broken.
+    if(a.totalCopies === 0) return { cls:'ok', text:t('av.onlineFree', { kind }) };
+    if(a.availableCopies > 0) return { cls:'ok', text:t('av.online', { n: a.availableCopies, total: a.totalCopies, count: a.totalCopies }) };
+    return { cls:'out', text:t('av.onlineOut', { total: a.totalCopies, kind }) };
+  }
+
+  const rows = Array.isArray(result.branches) ? result.branches : null;
+  const sysAvail = a.availableCopies, sysTotal = a.totalCopies;
+
+  // Per-copy data not fetched yet (browse results arrive with the summary
+  // only). Saying "not held at Cupertino" here would be a lie about missing
+  // data, so fall through to the honest system-wide wording instead.
+  if(branch && branch.code !== '_online_' && rows){
+    const row = rows.find(r => r.code === branch.code);
+    if(!row){
+      const dueElse = rows.map(r => r.nextDue).filter(Boolean).sort()[0];
+      return {
+        cls: sysAvail > 0 ? 'elsewhere' : 'out',
+        text: sysAvail > 0
+          ? t('av.notHeldOther', { branch: branch.label, n: sysAvail })
+          : sysTotal > 0
+            ? t('av.notHeldOut', { branch: branch.label, total: sysTotal }) + (dueElse ? t('av.nextDue', { date: fmtDate(dueElse) }) : '')
+            : t('av.notHeld', { branch: branch.label })
+      };
+    }
+    const total = row.available + row.out;
+    if(row.available > 0) return { cls:'ok', text:t('av.inAt', { n: row.available, total, count: total, branch: branch.label }) };
+    return {
+      cls:'out',
+      text: t('av.outAt', { n: total, total, branch: branch.label })
+        + (row.nextDue ? t('av.nextDue', { date: fmtDate(row.nextDue) }) : '')
+        + (sysAvail > 0 ? t('av.elsewhere', { n: sysAvail }) : '')
+    };
+  }
+
+  // No branch in play: say plainly that this spans the whole system, so the
+  // number is never mistaken for one library's shelf.
+  const k = rows ? rows.length : 0;
+  if(sysAvail > 0){
+    const best = (rows || []).filter(r => r.available > 0)[0];
+    const lead = best ? t('av.mostAt', { branch: best.branch.replace(/ Library$/,'') }) : '';
+    return { cls:'ok', text:(k ? t('av.across', { n: sysAvail, total: sysTotal, count: sysTotal, k }) : t('av.acrossAll', { n: sysAvail, total: sysTotal, count: sysTotal })) + lead };
+  }
+  const due = (rows || []).map(r => r.nextDue).filter(Boolean).sort()[0];
+  if(sysTotal > 0){
+    const held = a.heldCopies ? t('av.onHold', { n: a.heldCopies }) : '';
+    return {
+      cls:'out',
+      text: (k ? t('av.allOut', { total: sysTotal, k }) : t('av.allOutAll', { total: sysTotal })) + held + (due ? t('av.nextDue', { date: fmtDate(due) }) : '')
+    };
+  }
+  return { cls:'missing', text:t('av.notIn') };
+}
+
+function plural(n, one, many){ return `${n} ${n === 1 ? one : many}`; }
+
+function fmtDate(iso){
+  const d = new Date(iso + 'T00:00:00');
+  if(isNaN(d)) return iso;
+  return d.toLocaleDateString(locale(), { month:'short', day:'numeric' });
+}
+
+/* "Where do I actually find it?" — the collection is the area a patron walks
+   to ("Mystery Section") and the call number is the label on the spine. Scoped
+   to the branch in play; otherwise the shelving used by most of the system,
+   since branches overwhelmingly shelve a given title the same way. */
+function shelfLine(result, branch){
+  if(!CATALOG_LIVE || !result || !result.found) return '';
+  const fam = result.book.formatFamily;
+  if(result.book.availability.isDigital || fam === 'ebook' || fam === 'audiobook') return '';
+
+  const rows = Array.isArray(result.branches) ? result.branches : [];
+  let shelves = null;
+
+  // Nothing per-branch yet, but the record itself carries a call number.
+  if(!rows.length && result.book.callNumber){
+    return `<div class="shelf"><span class="shelf-pin">&#9670;</span><span>${esc(result.book.callNumber)}</span></div>`;
+  }
+
+  if(branch && branch.code !== '_online_'){
+    const row = rows.find(r => r.code === branch.code);
+    if(!row || !(row.shelves || []).length) return '';
+    shelves = row.shelves;
+  } else {
+    // Pool every branch's shelving and take the most common arrangement.
+    const tally = new Map();
+    for(const r of rows) for(const sh of r.shelves || []){
+      const key = sh.collection + ' ' + sh.callNumber;
+      const cur = tally.get(key) || { ...sh, total: 0, available: 0 };
+      cur.total += sh.total; cur.available += sh.available;
+      tally.set(key, cur);
+    }
+    shelves = [...tally.values()].sort((x,y) => y.total - x.total);
+  }
+  if(!shelves || !shelves.length) return '';
+
+  const top = shelves[0];
+  const where = [top.collection, top.callNumber].filter(Boolean).join(' · ');
+  if(!where) return '';
+
+  // A second shelving only matters when it is the one holding the copies.
+  const alt = shelves[1] && shelves[1].available > 0 && top.available === 0 ? shelves[1] : null;
+  const altText = alt
+    ? ` <span class="shelf-alt">also ${esc([alt.collection, alt.callNumber].filter(Boolean).join(' · '))}</span>`
+    : '';
+
+  return `<div class="shelf"><span class="shelf-pin">&#9670;</span><span>${esc(where)}</span>${altText}</div>`;
+}
+
+askBtn.addEventListener('click', handleAsk);
+promptInput.addEventListener('keydown', e => { if(e.key === 'Enter') handleAsk(); });
+
+/* Recognises "where is it?", "what section is it in?", "where do I find X" —
+   the question a patron asks once they know the library has the book.
+
+   The hard part is NOT catching book titles. "Where the Wild Things Are" and
+   "Where the Crawdads Sing" are searches, not questions, so "where" must be
+   followed by a question verb ("where is/can/do") or be the contraction
+   ("where's"). "Where the ..." never qualifies. */
+function isWhereQuestion(q){
+  const t = String(q || '');
+
+  // "What books are like Wonder?" is a recommendation, never a location question.
+  if(/\b(books?\s+(like|similar|such as)|recommend|suggest)\b/i.test(t)) return false;
+
+  const locationWord = /\b(section|shelf|shelves|shelved|aisle|call ?number|located|locate)\b/i.test(t);
+  if(/\b(what|which)\b/i.test(t) && locationWord) return true;
+  if(/\bwhere'?s\b/i.test(t)) return true;
+  if(/\bwhere\s+(is|are|can|do|does|did|would|should|might|exactly|in)\b/i.test(t)) return true;
+  return false;
+}
+
+/* Picks which remembered books the follow-up is about. "Where is it?" means
+   the book they asked about — not the suggestions that happened to come with
+   it — so the asked-for titles win unless the question names something else. */
+function booksForFollowUp(query){
+  const q = normTitle(query);
+  const all = [...LAST_ANSWER.asked, ...LAST_ANSWER.recs];
+  const named = all.filter(e => {
+    const t = normTitle(e.result && e.result.found ? e.result.book.title : e.title);
+    return t && t.length > 2 && q.includes(t);
+  });
+  if(named.length) return named;
+  return LAST_ANSWER.asked.length ? LAST_ANSWER.asked : LAST_ANSWER.recs;
+}
+
+async function answerWhere(query){
+  const branch = effectiveBranch(query) || LAST_ANSWER.branch;
+  const entries = booksForFollowUp(query);
+  // Light lookups leave branches for later; a "where" question needs them now.
+  await Promise.all(entries.map(async e => {
+    if(!e.result || !e.result.found || Array.isArray(e.result.branches)) return;
+    try{ const r = await fetch(`/api/availability?id=${encodeURIComponent(e.result.book.id)}`); if(r.ok) e.result.branches = (await r.json()).branches || []; }
+    catch(err){ e.result.branches = []; }
+  }));
+  const shelvable = entries.filter(e => e.result && e.result.found && shelfLine(e.result, branch));
+  const where = branch ? t('st.at', { branch: branch.label }) : '';
+  resultCount.textContent = shelvable.length ? t('st.whereShown', { where }) : t('st.whereNone', { where });
+  showResults(t('res.where'), [{ title: t('res.where'), sub: where.trim(), cards: (shelvable.length ? shelvable : entries).map(e => resultCard(e, branch, t('band.where'))) }]);
+}
+
+/* ---------------- FORMAT ----------------
+   SCCLD holds the same title as a book, an e-book, an audiobook and sometimes
+   a DVD. Say nothing and you get the book; name a format and you get that. */
+const FORMAT_WORDS = [
+  ['ebook',     /\b(e-?\s?books?|ebooks?|kindle|libby|overdrive|digital cop(y|ies)|digital version)\b/i],
+  ['audiobook', /\b(audio-?\s?books?|audiobooks?|playaway|listening cop(y|ies))\b/i],
+  ['dvd',       /\b(dvds?|blu-?ray|movies?|films?)\b/i],
+  // Only unambiguous print words here. A bare "book" cannot appear: "The Book
+  // Thief" and "The Book with No Pictures" are titles, and treating them as a
+  // format request would hijack the search.
+  ['print',     /\b(printed|physical|paper-?back|hard-?(cover|back)|large print|paper cop(y|ies))\b/i]
+];
+
+function detectFormat(query){
+  for(const [name, re] of FORMAT_WORDS){ if(re.test(query)) return name; }
+  return '';
+}
+
+/* A reply to "there's also an e-book" may just say "the book". That reading is
+   only safe as a follow-up, and only when the whole message is that reply —
+   anchored end to end, so "I want the book" is a format choice while "I want
+   The Book Thief" keeps its leftover words and stays a search. */
+const PRINT_REPLY = /^\s*(no[,.\s]*)?(i\s*)?(just\s+|only\s+)?((would\s+)?like|want|prefer|will take|'?ll take|d like)?\s*(the\s+|a\s+|an\s+)?(regular\s+|normal\s+|ordinary\s+|physical\s+|printed\s+|paper\s+)?(books?|print|copy)\s*(please|instead|version|itself|like this|thanks)?\s*[.!?]*\s*$/i;
+
+function detectFormatReply(query){
+  const explicit = detectFormat(query);
+  if(explicit) return explicit;
+  return PRINT_REPLY.test(query) ? 'print' : '';
+}
+
+const FORMAT_LABELS = { print:'print book', ebook:'e-book', audiobook:'audiobook', dvd:'DVD', largeprint:'large print' };
+
+/* "yes, the ebook" / "I want the audiobook" / "no, the book" — a short reply
+   naming a format, right after an answer, means swap the format rather than
+   start a new search. A long sentence or a new title is a fresh question. */
+function isFormatSwitch(query){
+  if(!LAST_ANSWER.asked.length) return false;
+  if(!detectFormatReply(query)) return false;
+  const words = query.trim().split(/\s+/).length;
+  if(words > 9) return false;
+  // "do you have the ebook of Holes" names a book — treat as a new search.
+  if(/\b(do you have|looking for|find me|search for)\b/i.test(query)) return false;
+  return true;
+}
+
+async function switchFormat(format, spoken){
+  const branch = LAST_ANSWER.branch;
+  const asked = LAST_ANSWER.asked.map(e => ({ title: e.title, author: e.author }));
+  const label = t(`fmt.${format}`);
+  resultCount.textContent = t('st.looking', { format: label });
+  const entries = await resolveAll(asked, format);
+  const found = entries.filter(e => e.result && e.result.found);
+  resultCount.textContent = found.length
+    ? (branch ? t('st.countsAt', { branch: branch.label }) : t('st.countsAll'))
+    : t('st.noFormat', { titles: asked.map(a => a.title).join(', '), format: label });
+  LAST_ANSWER = { asked: entries, recs: [], branch, format };
+  showResults(t('st.asFormat', { format: label }), [{ title: t('st.asFormat', { format: label }), sub: '', cards: entries.map(e => resultCard(e, branch, label)) }]);
+}
+
+/* ---------------- EVENTS ----------------
+   The library's calendar lives on the same BiblioCommons tenant as the
+   catalog, so events are fetched through the proxy exactly like availability. */
+async function fetchEvents(eq, branch){
+  if(!CATALOG_LIVE) return null;
+  const params = new URLSearchParams();
+  if(eq.keywords) params.set('q', eq.keywords);
+  if(eq.audience) params.set('audience', eq.audience);
+  if(eq.type) params.set('type', eq.type);
+  if(branch && branch.code !== '_online_') params.set('branch', branch.code);
+  params.set('limit', '6');
+  try{
+    const r = await fetch(`/api/events?${params}`, { signal: AbortSignal.timeout(20000) });
+    if(!r.ok) return null;
+    return await r.json();
+  }catch(e){ return null; }
+}
+
+/* "Tue, Sep 15 - 10:30 AM". Event times arrive as local wall-clock strings
+   ("2026-09-15T10:30") with no zone, which is what the library means: the
+   programme starts at half past ten in the room, whatever the viewer's zone. */
+function eventWhen(ev){
+  if(!ev.start) return '';
+  const [date, time] = String(ev.start).split('T');
+  const [y, m, d] = date.split('-').map(Number);
+  const local = new Date(y, m - 1, d, ...(time ? time.split(':').map(Number) : [0, 0]));
+  if(isNaN(local)) return String(ev.start);
+  const day = local.toLocaleDateString(locale(), { weekday:'short', month:'short', day:'numeric' });
+  if(!time) return day;
+  return `${day} · ${local.toLocaleTimeString(locale(), { hour:'numeric', minute:'2-digit' })}`;
+}
+
+function renderEvents(plan, data, branch){
+  const events = (data && data.events) || [];
+  const matched = (data && data.matched) || {};
+  const facets = [matched.audience, matched.type].filter(Boolean).join(' · ');
+  const where = branch ? t('st.at', { branch: branch.label }) : '';
+  if(!CATALOG_LIVE){
+    resultCount.textContent = t('ev.needServer');
+    showResults(t('nav.events'), [{ title: t('res.events'), sub: '', cards: [] }]);
+    return;
+  }
+  if(!events.length){
+    const bits = [plan.eventQuery.keywords, plan.eventQuery.audience, plan.eventQuery.type].filter(Boolean).join(', ');
+    resultCount.textContent = t('ev.noneMatching', { what: bits || t('ev.that'), where });
+    showResults(t('nav.events'), [{ title: t('res.events'), sub: t('ev.noneFound'), cards: [] }]);
+    return;
+  }
+  resultCount.textContent = data.broadened
+    ? t('ev.dropped', { what: data.broadened, facets: facets ? t('ev.showing', { facets }) : '' })
+    : (facets ? t('ev.filtered', { facets, where }) : t('ev.count', { n: events.length, where }));
+  showResults(t('nav.events'), [{ title: t('res.events'), sub: branch ? branch.label : '', cards: events.map(eventGridCard) }]);
+}
+
+async function handleAsk(){
+  const query = promptInput.value.trim();
+  if(!query) return;
+  closeSearch();
+  askBtn.disabled = true;
+
+  if(isWhereQuestion(query) && (LAST_ANSWER.asked.length || LAST_ANSWER.recs.length)){
+    await answerWhere(query);
+    askBtn.disabled = false;
+    return;
+  }
+  if(isFormatSwitch(query)){
+    await switchFormat(detectFormatReply(query));
+    askBtn.disabled = false;
+    return;
+  }
+
+  const branch = effectiveBranch(query);
+  LAST_QUERY = query;
+  const scope = branch ? t('st.countsAt', { branch: branch.label }) : t('st.countsAll');
+
+  /* The page responds the instant the search is submitted: placeholder cards
+     go up at once. Then two things run side by side — the catalog's own
+     search and the model — and each puts its part on screen the moment it's
+     ready, the catalog's results at the top, the model's picks beneath, one
+     card at a time. Nothing waits for anything slower than itself. */
+  showResults(`“${query}”`, [], []);
+  const gen = HOME_GEN;
+  const live = () => gen === HOME_GEN;
+  let skeleton = startSection(t('res.finding'), '');
+  for(let i = 0; i < 4; i++) addCard(skeleton, skeletonCard());
+  const clearSkeleton = () => {
+    if(!skeleton) return;
+    let n = skeleton.nextElementSibling;
+    while(n && n.classList.contains('skeleton')){ const x = n; n = n.nextElementSibling; x.remove(); }
+    skeleton.remove(); skeleton = null;
+  };
+  resultCount.textContent = t('st.searching');
+
+  let catalogShown = false;
+  const foundPromise = catalogSearch(query).then(found => {
+    if(!live() || !found || !found.books || !found.books.length || !searchLooksRelevant(query, found.books)) return found;
+    // The catalog's answer belongs first, whether it lands before or after
+    // the model's picks.
+    clearSkeleton();
+    const items = found.books.map(b => ({ band: t('band.result'), book: b, branches: null }));
+    const more = found.count > found.books.length ? ` · ${t('res.showing', { n: found.books.length })}` : '';
+    grid.insertAdjacentHTML('afterbegin',
+      `<div class="grid-section"><h3>${esc(t('res.catalog', { q: query }))}<span class="sec-sub">${esc(t('res.found', { n: found.count }))}${esc(more)}</span></h3><button class="back-home">${esc(t('res.back'))}</button></div>` +
+      items.map(i => shelfCard(i, branch)).join(''));
+    [...grid.querySelectorAll('.book')].slice(0, items.length).forEach(wireShelfCard);
+    grid.querySelector('.back-home')?.addEventListener('click', () => loadHome());
+    hydrateHome(items, gen);
+    catalogShown = true;
+    if(resultCount.textContent === t('st.searching')) resultCount.textContent = `${scope} · ${t('st.findingMore')}`;
+    return found;
+  });
+
+  const planPromise = (async () => {
+    try{ return ENTERAPIKEYHERE ? await askOpenRouter(query) : localPlan(query); }
+    catch(err){ return localPlan(query); }
+  })();
+
+  const plan = await planPromise;
+  if(!live()) { askBtn.disabled = false; return; }
+
+  if(plan.intent === 'events'){
+    clearSkeleton();
+    resultCount.textContent = t('st.calendar');
+    const data = await fetchEvents(plan.eventQuery, branch);
+    askBtn.disabled = false;
+    if(live()) renderEvents(plan, data, branch);
+    return;
+  }
+
+  const asked = (plan.requested || []).filter(r => r && r.title).slice(0, MAX_LIST)
+    .map(r => ({ title: r.title, author: r.author || '' }));
+  const isList = asked.length > 1;
+  const wantFormat = detectFormat(query) || (branch && branch.code === '_online_' ? 'ebook' : '');
+
+  // A list is a tally over every title, so it renders once, whole.
+  if(isList){
+    clearSkeleton();
+    resultCount.textContent = t('st.checkingList', { n: asked.length });
+    const askedEntries = await resolveAll(asked, wantFormat);
+    askBtn.disabled = false;
+    if(!live()) return;
+    LAST_ANSWER = { asked: askedEntries, recs: [], branch };
+    renderAnswer(plan, askedEntries, [], branch, true, query, null, false);
+    return;
+  }
+
+  const hydrateOne = (sink) => { if(sink.length && live()) hydrateHome(sink, gen); };
+
+  // The one book they named, if any, goes up as soon as it resolves.
+  let askedEntries = [];
+  let missingNote = '';
+  if(asked.length === 1){
+    if(!catalogShown) resultCount.textContent = t('st.checkingAvail');
+    askedEntries = await resolveAll(asked, wantFormat);
+    if(!live()) { askBtn.disabled = false; return; }
+    const entry = askedEntries[0];
+    const ok = entry.result && entry.result.found;
+    if(!catalogShown){
+      clearSkeleton();
+      const sec = startSection(t('res.asked'), '');
+      const sink = []; addCard(sec, resultCard(entry, branch, t('band.asked'), sink)); hydrateOne(sink);
+    }
+    if(!ok) missingNote = t('st.notIn', { title: entry.title });
+  }
+
+  // Picks stream in one at a time.
+  const picksTitle = askedEntries.length ? t('res.similar') : (catalogShown ? t('res.picksAlso') : t('res.picks'));
+  const picksSec = startSection(picksTitle, t('res.findingShort'));
+  const seen = new Set(askedEntries.map(e => keyOf(e)));
+  const candidates = dedupeBooks(plan.recommendations || [], seen);
+  let shown = 0;
+  const recEntries = await resolveRecommendations(candidates, askedEntries, wantFormat, entry => {
+    if(!live()) return;
+    clearSkeleton();
+    const sink = []; addCard(picksSec, resultCard(entry, branch, askedEntries.length ? t('band.similar') : t('band.pick'), sink)); hydrateOne(sink);
+    shown++; setSectionSub(picksSec, t('res.soFar', { n: shown }));
+  });
+  await foundPromise; // the catalog may still be finishing; let it place its section
+  if(live()){
+    clearSkeleton();
+    if(recEntries.length) setSectionSub(picksSec, ''); else picksSec.remove();
+    resultCount.textContent = missingNote || scope;
+  }
+  askBtn.disabled = false;
+  LAST_ANSWER = { asked: askedEntries, recs: recEntries, branch };
+}
+
+/* Resolve titles against the catalog a few at a time. Unbounded Promise.all
+   over a 20-title list would fire 40 catalog requests at once; the proxy
+   caches, but the catalog still deserves better manners. */
+async function resolveAll(books, wantFormat){
+  const out = [];
+  for(let i = 0; i < books.length; i += LOOKUP_BATCH){
+    const batch = books.slice(i, i + LOOKUP_BATCH);
+    out.push(...await Promise.all(batch.map(async b => ({
+      title: b.title, author: b.author || '', why: b.why || '',
+      result: await lookupBook(b.title, b.author, { format: wantFormat })
+    }))));
+  }
+  return out;
+}
+
+/* Suggestions are only useful if the patron can actually borrow them, so each
+   is checked against the catalog and the misses are replaced rather than
+   displayed. Models reach for series names ("Books of Ember series", "Nancy
+   Drew Mystery Stories") which no catalogue holds as a title, and those came
+   out as dead "Not in this catalog" cards.
+
+   This applies ONLY to suggestions. A title the patron asked for is still
+   reported as not found — never quietly dropped. */
+async function resolveRecommendations(candidates, askedEntries, wantFormat, onFound){
+  /* All candidate lookups start at once, but are consumed in the model's
+     order: the first pick goes on screen the moment it resolves, the second
+     as soon as it and the first are done, and so on. Waiting for a whole
+     batch made four cards appear together after eight seconds; this shows
+     the first within two. A few extra candidates are started so dropped
+     ones (duplicates, 0-copy downloads) don't leave the shelf short. */
+  const pool = candidates.slice(0, REC_COUNT + 4);
+  const inflight = pool.map(b => lookupBook(b.title, b.author, { format: wantFormat })
+    .then(result => ({ title: b.title, author: b.author || '', why: b.why || '', result }))
+    .catch(() => ({ title: b.title, author: b.author || '', why: b.why || '', result: null })));
+
+  const kept = [];
+  for(const p of inflight){
+    if(kept.length >= REC_COUNT) break;
+    const entry = await p;
+    if(!dropResolvedDupes([entry], [...askedEntries, ...kept]).length) continue;
+    // A record with no copies at all (a 0/0 download) is not a suggestion
+    // anyone can act on. With no catalog connection nothing can be checked.
+    const ok = entry.result && entry.result.found && entry.result.book.availability.totalCopies > 0;
+    if(!CATALOG_LIVE || ok){
+      kept.push(entry);
+      onFound?.(entry);
+    }
+  }
+  return kept;
+}
+
+const normTitle = t => String(t||'').toLowerCase().replace(/[^\p{L}\p{N} ]/gu,'').replace(/\s+/g,' ').trim();
+const keyOf = e => normTitle((e.result && e.result.found ? (e.result.book.nativeTitle || e.result.book.title) : e.title));
+const normAuthor = a => String(a||'').toLowerCase().replace(/[^a-z ]/g,'').split(/\s+/).filter(w=>w.length>1).sort().join(' ');
+
+/* "Dog Man" and "Dog Man: Twenty Thousand Fleas Under the Sea" are the same
+   series, and offering the second as a readalike for the first is the
+   behaviour that made recommendations look like padding. Titles that share a
+   whole-word prefix are treated as one series. Compared on word boundaries so
+   "Wonder" doesn't swallow "Wonderstruck". */
+function sameSeries(a, b){
+  const x = normTitle(a), y = normTitle(b);
+  if(!x || !y) return false;
+  if(x === y) return true;
+  const [short, long] = x.length <= y.length ? [x, y] : [y, x];
+  return long.startsWith(short + ' ');
+}
+
+/* The model is told not to repeat a series or lean on one author, and
+   sometimes does anyway, so the rule is enforced here rather than hoped for.
+   `seen` holds the normalised titles already spoken for. */
+function dedupeBooks(books, seen){
+  const out = [];
+  const authorCount = new Map();
+  for(const b of books){
+    if(!b || !b.title) continue;
+    const k = normTitle(b.title);
+    if(!k || seen.has(k)) continue;
+    if([...seen].some(s => sameSeries(s, k))) continue;
+    if(out.some(o => sameSeries(o.title, b.title))) continue;
+
+    // At most one book per author, so four picks mean four voices.
+    const a = normAuthor(b.author);
+    if(a){
+      if((authorCount.get(a) || 0) >= 1) continue;
+      authorCount.set(a, (authorCount.get(a) || 0) + 1);
+    }
+    seen.add(k);
+    out.push(b);
+  }
+  return out;
+}
+
+function dropResolvedDupes(entries, askedEntries){
+  const seenIds = new Set(askedEntries.map(e => e.result && e.result.found && e.result.book.id).filter(Boolean));
+  const seenTitles = new Set(askedEntries.map(keyOf));
+  const out = [];
+  for(const e of entries){
+    const id = e.result && e.result.found ? e.result.book.id : null;
+    const k = keyOf(e);
+    if((id && seenIds.has(id)) || seenTitles.has(k)) continue;
+    if(id) seenIds.add(id);
+    seenTitles.add(k);
+    out.push(e);
+  }
+  return out;
+}
+
+function renderAnswer(plan, askedEntries, recEntries, branch, isList, query, found, catalogShown){
+  const tally = (entries) => tallyList(entries, branch).replace(/<div[^>]*>/g, ' — ').replace(/<[^>]+>/g, '');
+  const scope = branch ? t('st.countsAt', { branch: branch.label }) : t('st.countsAll');
+  const hydrate = [];
+  const sections = [];
+
+  let catalogSection = null;
+  if(!catalogShown && found && found.books && found.books.length){
+    const items = found.books.map(b => ({ band: t('band.result'), book: b, branches: null }));
+    hydrate.push(...items);
+    const more = found.count > found.books.length ? ` · ${t('res.showing', { n: found.books.length })}` : '';
+    catalogSection = { title: t('res.catalog', { q: query }), sub: t('res.found', { n: found.count }) + more, cards: items.map(i => shelfCard(i, branch)) };
+  }
+  const catalogLeads = catalogShown || (catalogSection && searchLooksRelevant(query, found.books));
+
+  if(isList){
+    resultCount.textContent = tally(askedEntries);
+    sections.push({ title: t('res.list'), sub: t('res.titles', { n: askedEntries.length }), cards: askedEntries.map(e => resultCard(e, branch, t('band.list'), hydrate)) });
+  } else if(askedEntries.length === 1){
+    const entry = askedEntries[0];
+    const ok = entry.result && entry.result.found;
+    resultCount.textContent = ok ? scope : t('st.notIn', { title: entry.title });
+    if(catalogSection && catalogLeads) sections.push(catalogSection);
+    if(!catalogLeads) sections.push({ title: t('res.asked'), sub: '', cards: [resultCard(entry, branch, t('band.asked'), hydrate)] });
+    if(recEntries.length) sections.push({ title: t('res.similar'), sub: '', cards: recEntries.map(e => resultCard(e, branch, t('band.similar'), hydrate)) });
+    if(catalogSection && !catalogLeads) sections.push(catalogSection);
+  } else {
+    resultCount.textContent = scope;
+    if(catalogSection && catalogLeads) sections.push(catalogSection);
+    if(recEntries.length) sections.push({ title: catalogLeads ? t('res.picksAlso') : t('res.picks'), sub: '', cards: recEntries.map(e => resultCard(e, branch, t('band.pick'), hydrate)) });
+    if(catalogSection && !catalogLeads) sections.push(catalogSection);
+  }
+
+  if(catalogShown){
+    // The catalog's results are already on screen; add the rest beneath them.
+    for(const sec of sections) appendResultSection(sec, []);
+    if(hydrate.length) hydrateHome(hydrate, HOME_GEN);
+  } else {
+    showResults(`“${query}”`, sections, hydrate);
+  }
+}
+
+/* "5 available now · 2 checked out · 1 not in the catalog" — scoped to the
+   branch in play, so it agrees with the per-book lines underneath it. */
+function tallyList(entries, branch){
+  if(!CATALOG_LIVE) return t('res.titles', { n: entries.length });
+  let ready = 0, out = 0;
+  const missing = [];
+  for(const e of entries){
+    const cls = availabilityLine(e.result, branch).cls;
+    if(cls === 'ok') ready++;
+    else if(cls === 'missing') missing.push(e.title);
+    else out++;
+  }
+  const parts = [];
+  if(ready) parts.push(`<b>${esc(t('tally.avail', { n: ready }))}</b>${branch ? esc(t('st.at', { branch: branch.label })) : ''}`);
+  if(out) parts.push(esc(t('tally.out', { n: out })));
+  if(missing.length) parts.push(esc(t('tally.missing', { n: missing.length })));
+  let line = esc(t('tally.checked', { n: entries.length })) + (parts.join(' · ') || esc(t('tally.none')));
+  if(missing.length) line += `<div class="missing-note">${esc(t('tally.missingList', { titles: missing.join(', ') }))}</div>`;
+  return line;
+}
+
+/* Local fallback when no OpenRouter key is set. Returns the same
+   {intent, requested[], recommendations[]} shape so rendering is identical. */
+function localPlan(query){
+  const q = query.toLowerCase();
+
+  // Recognise event questions without a model, so the fallback answers the
+  // question that was asked rather than defaulting to book picks.
+  if(/\b(event|events|program|programme|programs|class|classes|club|clubs|storytime|story time|workshop|activity|activities|happening|going on)\b/.test(q)){
+    const audience = ['babies','toddlers','preschoolers','tweens','teens','adults','older adults','kids','family']
+      .find(a => q.includes(a.replace(/s$/, ''))) || '';
+    const type = ['crafts','stem','arts','health','jobs','money','history','home','parenting','entertainment']
+      .find(t => q.includes(t.replace(/s$/, ''))) || '';
+    const stop = new Set(['any','are','there','the','for','with','what','which','have','does','you','got','this','week','near','me','at','in','of','a','an','is','it','do','i','want','like','and','some','event','events']);
+    const keywords = q.replace(/[^a-z0-9 ]/g, ' ').split(/\s+/)
+      .filter(w => w.length > 3 && !stop.has(w)).slice(0, 3).join(' ');
+    return { intent:'events', requested:[], recommendations:[], summary:'Here\'s what I found on the calendar.',
+             eventQuery:{ keywords, audience, type } };
+  }
+  const seed = [
+    { title:"Pete the Cat: I Love My White Shoes", author:"Eric Litwin", tags:["funny","animals","picture book"] },
+    { title:"Llama Llama Red Pajama", author:"Anna Dewdney", tags:["funny","animals","bedtime","picture book"] },
+    { title:"Mercy Watson to the Rescue", author:"Kate DiCamillo", tags:["funny","animals","early reader"] },
+    { title:"Dog Man", author:"Dav Pilkey", tags:["funny","animals","graphic novel","middle school"] },
+    { title:"The One and Only Ivan", author:"Katherine Applegate", tags:["animals","gentle","middle school"] },
+    { title:"Good Night, Gorilla", author:"Peggy Rathmann", tags:["animals","bedtime","picture book"] },
+    { title:"The Thursday Murder Club", author:"Richard Osman", tags:["mystery","cozy","adult"] },
+    { title:"New Kid", author:"Jerry Craft", tags:["graphic novel","middle school"] }
+  ];
+
+  // Every known title mentioned counts as a named book, so a pasted list is
+  // still answered as a list without a model.
+  const named = seed.filter(b => q.includes(b.title.toLowerCase()));
+  if(named.length){
+    const rest = seed.filter(b => !named.includes(b));
+    return {
+      intent: named.length > 1 ? 'list' : 'lookup',
+      requested: named.map(b => ({ title:b.title, author:b.author })),
+      summary: named.length > 1 ? `Checked all ${named.length} titles.` : `Here's ${named[0].title}.`,
+      recommendations: named.length > 1 ? []
+        : rest.slice(0, REC_COUNT).map(b => ({ title:b.title, author:b.author, why:'' }))
+    };
+  }
+
+  const scored = seed
+    .map(b => ({ b, n: b.tags.filter(t => q.includes(t)).length }))
+    .filter(x => x.n > 0).sort((x,y) => y.n - x.n).map(x => x.b);
+  const picks = (scored.length ? scored : seed).slice(0, REC_COUNT);
+
+  return {
+    intent: 'recommend',
+    requested: [],
+    summary: `Some picks based on "${query}" — add an OpenRouter key for smarter matches.`,
+    recommendations: picks.map(b => ({ title:b.title, author:b.author, why:'' }))
+  };
+}
+
+/* Live call to OpenRouter. The model's only job is to understand the request
+   and name books — it is explicitly told NOT to speak about availability,
+   because it has no way to know. Availability is attached afterwards from the
+   real catalog, which is why the assistant no longer says "I can't check that". */
+async function askOpenRouter(query){
+  const systemPrompt = [
+    'You help patrons of a public library find books. Classify the request, then answer in JSON.',
+    '',
+    'intent "list" — the patron named SEVERAL specific books (a reading list, a series, books copied from somewhere). Put EVERY book they named in "requested", in their order. Leave "recommendations" EMPTY. Do not add books they did not name.',
+    'intent "lookup" — the patron named exactly ONE specific book. Put it in "requested" and put 8 genuinely similar books in "recommendations" (extras are filtered out later).',
+    'intent "recommend" — the patron described a mood, genre, age or vibe and named no book. Leave "requested" EMPTY and give 8 books in "recommendations" (extras are filtered out later).',
+    'intent "events" — the patron is asking about library events, programmes, activities, story times, classes or clubs rather than books. Leave "requested" and "recommendations" EMPTY and fill "eventQuery" instead.',
+    '',
+    'For "events", fill eventQuery with:',
+    '  keywords: the distinctive words to search event titles for ("storytime", "lego", "snacks", "crochet"). Keep it to 1-3 words, no filler. Empty string if they only named an audience or a topic.',
+    '  audience: one of babies, toddlers, preschoolers, kids, tweens, teens, adults, older adults, family - or "" if unstated. "bedtime stories for my 2 year old" is toddlers; "a lot of babies" is babies.',
+    '  type: one of crafts, arts, stem, health, jobs, money, history, home, parenting, entertainment - or "" if unstated. "crafts" and "making things" are crafts; "experiments" is stem.',
+    '',
+    'Rules:',
+    '- "requested" is always an array. Copy the titles the patron actually named; do not substitute, expand or invent entries.',
+    '- Recommendations must be DIFFERENT BOOKS, never other volumes, editions or entries in the same series as each other or as a requested book. "Books like Dog Man" must not return more Dog Man.',
+    '- Vary the authors: do not return several books by the author of the requested book.',
+    '- Only real, existing, published books, with the exact title as published and no subtitle padding.',
+    '- Recommend an INDIVIDUAL BOOK, never a series name. A library catalogue holds "The City of Ember", not "Books of Ember series"; "The Absolute Value of Mike", not "A to Z Mysteries". If you mean a series, name its first book.',
+    '- NEVER say you cannot check availability, and never mention holds, copies, branches, or whether a book is in stock. A separate system attaches live availability to your answer.',
+    '- "why" is at most 12 words saying why this patron would like it. "summary" is one friendly sentence.',
+    '- Reply with ONLY raw JSON, no markdown fences and no commentary.',
+    '',
+    'Format: {"intent":"list"|"lookup"|"recommend"|"events","requested":[{"title":"...","author":"..."}],"summary":"...","recommendations":[{"title":"...","author":"...","why":"..."}],"eventQuery":{"keywords":"...","audience":"...","type":"..."}}'
+  ].join('\n');
+
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${ENTERAPIKEYHERE}`,
+      "HTTP-Referer": window.location.href,
+      "X-Title": "Hummy AI Library Search Prototype"
+    },
+    body: JSON.stringify({
+      model: OPENROUTER_MODEL,
+      messages: [
+        { role: "system", content: systemPrompt + (LANG !== 'en' ? `\nThe patron's interface language is ${I18N[LANG].name}. Prefer real books published in that language when they exist; keep "why" in that language.` : '') },
+        { role: "user", content: query }
+      ],
+      max_tokens: 1024,
+      temperature: 0.4
+    })
+  });
+  if(!res.ok){
+    const errBody = await res.text().catch(() => "");
+    throw new Error(`OpenRouter ${res.status} ${errBody.slice(0,100)}`);
+  }
+  const data = await res.json();
+  const parsed = extractJson(data.choices?.[0]?.message?.content || "{}");
+  // Models still sometimes send a bare object (or null) for "requested",
+  // so accept either shape rather than losing the patron's titles.
+  const req = parsed.requested;
+  const requested = Array.isArray(req) ? req : (req && req.title ? [req] : []);
+  const eq = parsed.eventQuery || {};
+  return {
+    intent: parsed.intent || 'recommend',
+    requested,
+    summary: parsed.summary || '',
+    recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : [],
+    eventQuery: {
+      keywords: eq.keywords || '',
+      audience: eq.audience || '',
+      type: eq.type || ''
+    }
+  };
+}
+
+/* Pulls the first {...} JSON object out of a response, even if the model
+   wrapped it in commentary, an intro sentence, or markdown fences — and
+   repairs the malformations this model actually produces. Observed in the
+   wild: {"type:"} where {"type":""} was meant, which threw and silently
+   dropped the answer back to the keyless fallback. */
+function repairJson(text){
+  return text
+    // A key that swallowed its own value: "type:"  ->  "type":""
+    .replace(/"([A-Za-z_][\w]*):"\s*([,}])/g, '"$1":""$2')
+    // A key with a colon but nothing after it: "type": ,  ->  "type":"",
+    .replace(/"([A-Za-z_][\w]*)"\s*:\s*([,}])/g, '"$1":""$2')
+    // Trailing commas before a close.
+    .replace(/,\s*([}\]])/g, '$1');
+}
+
+function extractJson(text){
+  const clean = text.replace(/```json|```/g, "").trim();
+  const candidates = [clean, (clean.match(/\{[\s\S]*\}/) || [])[0]].filter(Boolean);
+
+  for(const c of candidates){
+    try{ return JSON.parse(c); } catch(e){ /* try the repaired form */ }
+    try{ return JSON.parse(repairJson(c)); } catch(e){ /* fall through */ }
+  }
+  throw new Error(`Model didn't return parseable JSON — raw reply: "${clean.slice(0,120)}"`);
+}
+
+initBranchPicker();
+probeProxy();
+buildPartners();
+</script>
+</body>
+</html>

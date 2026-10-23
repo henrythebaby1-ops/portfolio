@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PixelSprout Kids Games | Ages 1-10</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chewy&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="kids-games.css" />
+</head>
+<body data-app="kids-games">
+  <div class="bg" aria-hidden="true">
+    <span class="poly p1"></span>
+    <span class="poly p2"></span>
+    <span class="poly p3"></span>
+  </div>
+
+  <main class="shell">
+    <header class="hero">
+      <p class="eyebrow">Actual Playable Mini-Games</p>
+      <h1>PixelSprout Ages 1-10</h1>
+      <p>Each game uses different mechanics: tapping, matching, memory, strategy, rhythm, racing, sports, and learning quests.</p>
+      <div class="hero-actions">
+        <a class="btn btn-soft" href="index.html">Back to Arcade Home</a>
+        <button class="btn btn-primary" type="button" data-music-toggle>Play Game Music</button>
+      </div>
+      <p class="note" data-music-status>Game music is paused.</p>
+    </header>
+
+    <section class="card" id="balloon-pop">
+      <h2>Ages 1-3: Balloon Pop</h2>
+      <p>Tap balloons before they float away.</p>
+      <div class="row">
+        <button class="btn btn-primary" type="button" data-balloon-start>Start Balloon Pop</button>
+        <span class="badge" data-balloon-score>Score: 0</span>
+        <span class="badge" data-balloon-time>Time: 30</span>
+      </div>
+      <div class="play-area" data-balloon-area></div>
+    </section>
+
+    <section class="card" id="shape-match">
+      <h2>Ages 2-4: Shape Match</h2>
+      <p>Find the requested shape.</p>
+      <div class="row">
+        <button class="btn btn-primary" type="button" data-shape-start>Start Shape Match</button>
+        <span class="badge" data-shape-score>Correct: 0</span>
+      </div>
+      <p class="prompt" data-shape-prompt>Press start to begin.</p>
+      <div class="shape-grid" data-shape-options></div>
+    </section>
+
+    <section class="card" id="animal-sounds">
+      <h2>Ages 2-5: Animal Sounds</h2>
+      <p>Listen to the sound words and tap the correct animal.</p>
+      <div class="row">
+        <button class="btn btn-primary" type="button" data-animal-play>Play Sound</button>
+        <span class="badge" data-animal-score>Streak: 0</span>
+      </div>
+      <p class="prompt" data-animal-prompt>Tap Play Sound.</p>
+      <div class="animal-grid" data-animal-grid></div>
+    </section>
+
+    <section class="card" id="story-builder">
+      <h2>Ages 3-6: Tiny Story Builder</h2>
+      <p>Pick a hero, place, and item to create a mini story.</p>
+      <div class="row">
+        <label>
+          Hero
+          <select data-story-hero>
+            <option value="a brave rabbit">Brave Rabbit</option>
+            <option value="a little astronaut">Little Astronaut</option>
+            <option value="a smiling robot">Smiling Robot</option>
+          </select>
+        </label>
+        <label>
+          Place
+          <select data-story-place>
+            <option value="in a rainbow forest">Rainbow Forest</option>
+            <option value="on a floating island">Floating Island</option>
+            <option value="near a glowing volcano">Glowing Volcano</option>
+          </select>
+        </label>
+        <label>
+          Item
+          <select data-story-item>
+            <option value="a magic map">Magic Map</option>
+            <option value="a friendly fish">Friendly Fish</option>
+            <option value="a shiny star key">Shiny Star Key</option>
+          </select>
+        </label>
+        <button class="btn btn-primary" type="button" data-story-build>Build Story</button>
+      </div>
+      <p class="story-output" data-story-output>Your story will appear here.</p>
+    </section>
+
+    <section class="card" id="memory-match">
+      <h2>Ages 4-7: Memory Match</h2>
+      <p>Flip tiles and match all pairs.</p>
+      <div class="row">
+        <button class="btn btn-primary" type="button" data-memory-start>New Memory Board</button>
+        <span class="badge" data-memory-moves>Moves: 0</span>
+        <span class="badge" data-memory-found>Pairs: 0 / 6</span>
+      </div>
+      <div class="memory-grid" data-memory-grid></div>
+    </section>
+
+    <section class="card" id="fishing-catch">
+      <h2>Ages 5-8: Fishing Catch</h2>
+      <p>Catch fish with your net cursor (mouse or touch).</p>
+      <div class="row">
+        <button class="btn btn-primary" type="button" data-fishing-start>Start Fishing</button>
+        <span class="badge" data-fishing-score>Catches: 0</span>
+        <span class="badge" data-fishing-time>Time: 30</span>
+      </div>
+      <div class="fishing-area" data-fishing-area>
+        <button type="button" class="fish fish-a" data-fish aria-label="Fish"></button>
+        <span class="fishing-net" data-fishing-net></span>
+      </div>
+    </section>
+
+    <section class="card" id="beat-dance">
+      <h2>Ages 6-9: Beat Buddy Dance</h2>
+      <p>Tap on-beat while the marker crosses the green zone.</p>
+      <div class="row">
+        <button class="btn btn-primary" type="button" data-dance-start>Start Dance Round</button>
+        <button class="btn btn-soft" type="button" data-dance-hit>Tap Beat</button>
+        <span class="badge" data-dance-score>Score: 0</span>
+        <span class="badge" data-dance-time>Time: 30</span>
+      </div>
+      <div class="dance-track" data-dance-track>
+        <span class="dance-zone"></span>
+        <span class="dance-marker" data-dance-marker></span>
+      </div>
+      <p class="note" data-dance-status>Press start to begin.</p>
+    </section>
+
+    <section class="card" id="lava-math">
+      <h2>Ages 7-10: Lava Math Jump</h2>
+      <p>Solve questions to jump over lava stones.</p>
+      <div class="row">
+        <button class="btn btn-primary" type="button" data-math-start>Start Lava Math</button>
+        <span class="badge" data-math-score>Score: 0</span>
+        <span class="badge" data-math-lives>Lives: 3</span>
+      </div>
+      <p class="prompt" data-math-question>Press start to begin.</p>
+      <div class="math-grid" data-math-options></div>
+    </section>
+
+    <section class="card" id="survival-planner">
+      <h2>Ages 7-10: Island Survival Planner</h2>
+      <p>Pick smart actions to survive 7 days.</p>
+      <div class="row">
+        <button class="btn btn-primary" type="button" data-survival-start>Start Survival</button>
+        <span class="badge" data-survival-day>Day: 1</span>
+        <span class="badge" data-survival-food>Food: 3</span>
+        <span class="badge" data-survival-wood>Wood: 3</span>
+        <span class="badge" data-survival-energy>Energy: 5</span>
+        <button class="btn btn-soft" type="button" data-survival-view>View Resources</button>
+      </div>
+      <div class="row">
+        <button class="btn btn-soft" type="button" data-survival-action="food">Gather Food</button>
+        <button class="btn btn-soft" type="button" data-survival-action="wood">Gather Wood</button>
+        <button class="btn btn-soft" type="button" data-survival-action="build">Build Shelter</button>
+        <button class="btn btn-soft" type="button" data-survival-action="rest">Rest</button>
+      </div>
+      <div class="resource-screen is-open" data-survival-screen-panel>
+        <h3>Resource HUD</h3>
+        <div class="resource-grid">
+          <article>
+            <span class="res-icon food"></span>
+            <div class="meter"><span data-survival-meter-food style="width: 30%"></span></div>
+            <strong data-survival-screen-food>3</strong>
+          </article>
+          <article>
+            <span class="res-icon wood"></span>
+            <div class="meter"><span data-survival-meter-wood style="width: 30%"></span></div>
+            <strong data-survival-screen-wood>3</strong>
+          </article>
+          <article>
+            <span class="res-icon energy"></span>
+            <div class="meter"><span data-survival-meter-energy style="width: 50%"></span></div>
+            <strong data-survival-screen-energy>5</strong>
+          </article>
+          <article>
+            <span class="res-icon shelter"></span>
+            <div class="meter"><span data-survival-meter-shelter style="width: 0%"></span></div>
+            <strong data-survival-screen-shelter>0</strong>
+          </article>
+        </div>
+      </div>
+      <p class="note" data-survival-log>Press start to begin survival mode.</p>
+    </section>
+
+    <section class="card" id="race-dodge">
+      <h2>Ages 8-10: Racing Track Dodge</h2>
+      <p>Move lanes and avoid incoming obstacles.</p>
+      <div class="row">
+        <button class="btn btn-primary" type="button" data-race-start>Start Race</button>
+        <button class="btn btn-soft" type="button" data-race-left>Move Left</button>
+        <button class="btn btn-soft" type="button" data-race-right>Move Right</button>
+        <span class="badge" data-race-score>Distance: 0</span>
+        <span class="badge" data-race-lives>Lives: 3</span>
+      </div>
+      <div class="race-area" data-race-area>
+        <span class="lane lane-1"></span>
+        <span class="lane lane-2"></span>
+        <span class="lane lane-3"></span>
+        <button type="button" class="car" data-race-car aria-label="Car"></button>
+      </div>
+      <p class="note" data-race-status>Press start to race.</p>
+    </section>
+
+    <section class="card" id="soccer-kick">
+      <h2>Ages 8-10: Mini Soccer Kick</h2>
+      <p>Pick kick power and score against the moving goalie.</p>
+      <div class="row">
+        <button class="btn btn-primary" type="button" data-soccer-start>Start Soccer</button>
+        <label>
+          Power
+          <input type="range" min="20" max="100" value="60" data-soccer-power />
+        </label>
+        <button class="btn btn-soft" type="button" data-soccer-kick>Kick Ball</button>
+        <span class="badge" data-soccer-score>Goals: 0</span>
+        <span class="badge" data-soccer-shots>Shots: 0</span>
+      </div>
+      <div class="goal-area" data-soccer-goal>
+        <span class="goalie" data-soccer-goalie></span>
+        <span class="soccer-ball" data-soccer-ball></span>
+      </div>
+      <p class="note" data-soccer-status>Press start to begin.</p>
+    </section>
+
+    <section class="card" id="spelling-quest">
+      <h2>Ages 8-10: Spelling Door Quest</h2>
+      <p>Choose the correct spelling to unlock the door.</p>
+      <div class="row">
+        <button class="btn btn-primary" type="button" data-spell-start>Start Spelling</button>
+        <span class="badge" data-spell-score>Doors Opened: 0</span>
+      </div>
+      <p class="prompt" data-spell-prompt>Press start to begin.</p>
+      <div class="math-grid" data-spell-options></div>
+    </section>
+  </main>
+
+  <script src="kids-games.js"></script>
+</body>
+</html>

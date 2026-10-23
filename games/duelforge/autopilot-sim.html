@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>S Sim | Autopilot + Robot Lab</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-app="autopilot-sim">
+  <div class="site-shell">
+    <header class="top-bar">
+      <div>
+        <h1 class="brand">S Sim</h1>
+        <p class="tagline">Autopilot displays, flight AI, and playful robots in one website.</p>
+      </div>
+      <span class="path-tag" data-path-tag></span>
+    </header>
+
+    <nav class="nav-grid">
+      <a class="nav-link" href="index.html">Back to DuelForge</a>
+      <a class="nav-link" href="ai-sites.html">Explore AI Sites</a>
+      <a class="nav-link" href="#sim">Car Autopilot</a>
+      <a class="nav-link" href="#flight">Plane Autopilot</a>
+      <a class="nav-link" href="#robots">Robot Zone</a>
+    </nav>
+
+    <section class="section-card" id="sim">
+      <h2>Tablet-Style Driving View</h2>
+      <p class="note">Educational simulation inspired by modern driver-assist interfaces. This is not real vehicle software.</p>
+
+      <div class="sim-layout">
+        <div class="sim-tablet">
+          <canvas id="autopilot-canvas" width="420" height="640" aria-label="Autopilot road simulation"></canvas>
+        </div>
+
+        <div class="sim-panel">
+          <h3>Vehicle Controls</h3>
+          <div class="button-row">
+            <button class="btn btn-primary" id="sim-start" type="button">Start</button>
+            <button class="btn btn-outline" id="sim-pause" type="button">Pause</button>
+            <button class="btn btn-outline" id="sim-reset" type="button">Reset</button>
+          </div>
+
+          <h4>Road Mode</h4>
+          <div class="button-row">
+            <button class="btn btn-primary" id="sim-city" type="button">City Streets</button>
+            <button class="btn btn-outline" id="sim-highway" type="button">Highway / Freeway</button>
+            <button class="btn btn-outline" id="sim-road-change" type="button">Change Road</button>
+          </div>
+
+          <label class="checkbox-line">
+            <input id="sim-autopilot" type="checkbox" checked />
+            Enable autopilot
+          </label>
+
+          <div class="button-row">
+            <button class="btn btn-outline" id="sim-traffic" type="button">Add Traffic</button>
+            <button class="btn btn-outline" id="sim-clear" type="button">Clear Traffic</button>
+          </div>
+
+          <div class="sim-stats">
+            <p><strong>Status:</strong> <span data-sim-status>Ready</span></p>
+            <p><strong>Speed:</strong> <span data-sim-speed>0</span> mph</p>
+            <p><strong>Lane:</strong> <span data-sim-lane>Center</span></p>
+            <p><strong>Road Type:</strong> <span data-sim-roadtype>City Streets</span></p>
+            <p><strong>Traffic Light:</strong> <span data-sim-light>N/A</span></p>
+            <p><strong>Objects Detected:</strong> <span data-sim-objects>0</span></p>
+          </div>
+
+          <h4>Manual Mode Keys</h4>
+          <ul class="model-list">
+            <li><strong>Arrow Up:</strong> speed up</li>
+            <li><strong>Arrow Down:</strong> slow down</li>
+            <li><strong>Arrow Left / Right:</strong> steer lanes</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-card" id="flight">
+      <h2>3D Plane Autopilot Simulator</h2>
+      <p class="note">The AI holds altitude, keeps heading stable, and tracks nearby air traffic. New planes appear every 3 minutes.</p>
+
+      <div class="sim-layout">
+        <div class="sim-tablet flight-tablet">
+          <canvas id="flight-canvas" width="640" height="360" aria-label="3D plane autopilot simulation"></canvas>
+        </div>
+
+        <div class="sim-panel">
+          <h3>Flight Controls</h3>
+          <div class="button-row">
+            <button class="btn btn-primary" id="flight-start" type="button">Start Flight</button>
+            <button class="btn btn-outline" id="flight-pause" type="button">Pause Flight</button>
+            <button class="btn btn-outline" id="flight-reset" type="button">Reset Flight</button>
+          </div>
+
+          <div class="sim-stats">
+            <p><strong>Flight Status:</strong> <span data-flight-status>Ready</span></p>
+            <p><strong>Autopilot:</strong> <span data-flight-autopilot>ON</span></p>
+            <p><strong>Cruise Speed:</strong> <span data-flight-speed>0</span> mph</p>
+            <p><strong>Altitude:</strong> <span data-flight-altitude>0</span> ft</p>
+            <p><strong>Visible Planes:</strong> <span data-flight-traffic>0</span></p>
+            <p><strong>Next Spawn:</strong> <span data-flight-next>180</span> s</p>
+          </div>
+
+          <p class="note no-margin">Autopilot gently corrects pitch and roll while cruising in 3D space.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-card" id="robots">
+      <h2>Robot Zone</h2>
+
+      <div class="topic-grid robot-grid">
+        <article class="topic-card robot-card">
+          <h3>Rock Paper Robot</h3>
+          <p class="note">Starts camera, "reads" your move, and picks the winning counter-move every round.</p>
+
+          <video id="rps-camera" class="camera-feed" autoplay playsinline muted></video>
+
+          <div class="button-row">
+            <button class="btn btn-primary" id="rps-camera-start" type="button">Enable Camera</button>
+            <button class="btn btn-outline" id="rps-reset" type="button">Reset Match</button>
+          </div>
+
+          <div class="button-row">
+            <button class="btn btn-outline" data-rps-move="rock" type="button">Rock</button>
+            <button class="btn btn-outline" data-rps-move="paper" type="button">Paper</button>
+            <button class="btn btn-outline" data-rps-move="scissors" type="button">Scissors</button>
+          </div>
+
+          <div class="sim-stats">
+            <p><strong>Vision:</strong> <span data-rps-vision>Offline</span></p>
+            <p><strong>You Played:</strong> <span data-rps-user>None</span></p>
+            <p><strong>Robot Played:</strong> <span data-rps-bot>None</span></p>
+            <p><strong>Result:</strong> <span data-rps-result>Ready</span></p>
+            <p><strong>Score:</strong> <span data-rps-score>You 0 - 0 Robot</span></p>
+          </div>
+        </article>
+
+        <article class="topic-card robot-card">
+          <h3>One-Word Chat Robot</h3>
+          <p class="note">Sends only one-word responses on purpose.</p>
+
+          <div class="chat-box one-word-chat">
+            <div class="chat-log" id="oneword-log" aria-live="polite"></div>
+            <form class="chat-form" id="oneword-form">
+              <input id="oneword-input" type="text" placeholder="Ask anything..." required />
+              <button class="btn btn-primary" type="submit">Send</button>
+            </form>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <footer>DuelForge.io - Sim experience with autopilot and robots.</footer>
+  </div>
+
+  <script src="script.js"></script>
+  <script src="autopilot-sim.js"></script>
+</body>
+</html>

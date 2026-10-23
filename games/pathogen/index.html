@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pathogen — World Spread Simulator</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="boot" class="overlay">
+    <div class="panel boot-panel">
+      <p class="eyebrow">Fictional outbreak sim</p>
+      <h1>PATHOGEN</h1>
+      <p class="lede">Design a made-up disease, drop it in a country, and watch it race the world’s cure.</p>
+      <label>
+        Pathogen name
+        <input id="virus-name" type="text" maxlength="24" placeholder="NEO-X" autocomplete="off" />
+      </label>
+      <fieldset class="type-pick">
+        <legend>Strain</legend>
+        <label><input type="radio" name="strain" value="virus" checked /> Virus — faster spread</label>
+        <label><input type="radio" name="strain" value="bacteria" /> Bacteria — tougher to cure</label>
+        <label><input type="radio" name="strain" value="fungus" /> Fungus — loves humidity</label>
+      </fieldset>
+      <p class="hint">Continue, then click a country on the map to start the outbreak.</p>
+      <button type="button" id="place">Place on map</button>
+    </div>
+  </div>
+
+  <div id="end" class="overlay hidden">
+    <div class="panel">
+      <h2 id="end-title"></h2>
+      <p id="end-body"></p>
+      <button type="button" id="replay">Play again</button>
+    </div>
+  </div>
+
+  <header class="top">
+    <div>
+      <strong id="name-display">PATHOGEN</strong>
+      <span id="day-display" class="muted">Day 0</span>
+    </div>
+    <div id="news" class="news">Awaiting patient zero…</div>
+    <div class="controls">
+      <button type="button" id="pause" disabled>Pause</button>
+      <button type="button" data-speed="1" class="speed on" disabled>1×</button>
+      <button type="button" data-speed="2" class="speed" disabled>2×</button>
+      <button type="button" data-speed="5" class="speed" disabled>5×</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="map-wrap">
+      <svg id="world" viewBox="0 0 1200 620" role="img" aria-label="World map">
+        <defs>
+          <linearGradient id="ocean" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#071525" />
+            <stop offset="100%" stop-color="#040b14" />
+          </linearGradient>
+        </defs>
+        <rect width="1200" height="620" fill="url(#ocean)" />
+        <g id="countries"></g>
+      </svg>
+      <div id="tooltip" class="tooltip hidden"></div>
+    </section>
+
+    <aside class="side">
+      <div class="card stats">
+        <h2>World</h2>
+        <dl>
+          <div><dt>Infected</dt><dd id="stat-infected">0</dd></div>
+          <div><dt>Dead</dt><dd id="stat-dead">0</dd></div>
+          <div><dt>Healthy</dt><dd id="stat-healthy">0</dd></div>
+          <div><dt>Cure</dt><dd id="stat-cure">0%</dd></div>
+        </dl>
+        <div class="bars">
+          <div class="bar"><i id="bar-inf"></i></div>
+          <div class="bar cure"><i id="bar-cure"></i></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>DNA <span id="dna">0</span></h2>
+        <p class="muted small">Spend points to evolve. Severity helps you earn DNA but speeds the cure.</p>
+        <div id="upgrades"></div>
+      </div>
+
+      <div class="card" id="focus-card">
+        <h2 id="focus-name">Select a country</h2>
+        <p id="focus-meta" class="muted small">Hover or click the map.</p>
+        <div class="mini-bars">
+          <label>Infected <span id="focus-inf">—</span></label>
+          <div class="bar"><i id="focus-bar-inf"></i></div>
+          <label>Dead <span id="focus-dead">—</span></label>
+          <div class="bar dead"><i id="focus-bar-dead"></i></div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

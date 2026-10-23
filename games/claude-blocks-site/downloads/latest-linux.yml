@@ -1,0 +1,9 @@
+version: 1.2.0
+files:
+  - url: ClaudeBlocks-linux.AppImage
+    sha512: 5Sy7Zt2nv54erzIGqIeP8/07bU+n22u3dEAcKGlOMODAINf4IQeR5wxUF/4YNlpVK3wTWPQK6BVfM6l2qXijsw==
+    size: 126244609
+    blockMapSize: 132885
+path: ClaudeBlocks-linux.AppImage
+sha512: 5Sy7Zt2nv54erzIGqIeP8/07bU+n22u3dEAcKGlOMODAINf4IQeR5wxUF/4YNlpVK3wTWPQK6BVfM6l2qXijsw==
+releaseDate: '2026-10-10T22:26:49.540Z'

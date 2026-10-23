@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RVR Dynamics — Robots for everyone</title>
+
+<!--
+  ============================================================
+  HOW TO EDIT THIS PAGE
+  ============================================================
+  Everything lives in this one file. Ctrl+F for "EDIT:" to jump
+  straight to the part you want to change.
+
+  1.  Company name / logo         -> EDIT: LOGO
+  2.  Nav links                   -> EDIT: NAV LINKS
+  3.  "Start Coding" button       -> EDIT: CTA BUTTON
+  4.  Hero headline                -> EDIT: HERO TEXT
+  5.  Hero video/image             -> EDIT: HERO MEDIA
+  6.  "Code today" section         -> EDIT: CODE TODAY
+  7.  Feature cards                -> EDIT: FEATURE CARDS
+  8.  Category tiles               -> EDIT: CATEGORY TILES
+  9.  "Make it yours" closer       -> EDIT: MAKE IT YOURS
+  10. Footer                       -> EDIT: FOOTER
+  11. Colors / fonts               -> the ":root" CSS variables
+      right below this comment.
+  12. Fade-in animations           -> search "REVEAL ANIMATIONS"
+      near the bottom of the CSS, and the matching JS at the
+      bottom of the page.
+  ============================================================
+-->
+
+<style>
+  :root {
+    --color-bg: #F6EFE2;
+    --color-bg-alt: #EFE6D4;
+    --color-text: #221C15;
+    --color-text-muted: #6B6153;
+    --color-accent: #E8724A;
+    --color-accent-text: #FFFFFF;
+    --color-pill: #E7DFCE;
+    --color-card: #EFE6D6;
+
+    --color-teal: #4C9C87;
+    --color-gold: #D2AA49;
+    --color-maroon: #A15D56;
+    --color-blue: #6FA2B6;
+    --color-lavender: #D6A6CE;
+    --color-olive: #8C8B5D;
+
+    --font-display: "Quicksand", "Baloo 2", "Segoe UI", sans-serif;
+    --font-body: "Inter", "Segoe UI", sans-serif;
+
+    --radius-lg: 32px;
+    --radius-pill: 999px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-body);
+    scroll-behavior: smooth;
+  }
+
+  img, video { max-width: 100%; display: block; }
+
+  .wrap {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 40px;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    margin: 0;
+  }
+
+  /* ================= Header ================= */
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: transparent;
+    box-shadow: none;
+    -webkit-backdrop-filter: blur(0px);
+    backdrop-filter: blur(0px);
+    transition: background-color .4s ease, box-shadow .4s ease, backdrop-filter .4s ease;
+  }
+  .site-header.is-scrolled {
+    background: rgba(246, 239, 226, 0.86);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+  }
+
+  .navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 40px;
+    gap: 24px;
+  }
+
+  /* EDIT: LOGO */
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 22px;
+    color: var(--color-text);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .logo-mark {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--color-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .logo-mark svg { width: 18px; height: 18px; }
+
+  /* EDIT: NAV LINKS */
+  nav.links {
+    display: flex;
+    gap: 36px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  nav.links a {
+    color: var(--color-text);
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+    transition: color .15s ease;
+  }
+  nav.links a:hover,
+  nav.links a:focus-visible { color: var(--color-accent); }
+  nav.links a.active { color: var(--color-accent); }
+
+  /* EDIT: CTA BUTTON */
+  .btn-primary {
+    background: var(--color-accent);
+    color: var(--color-accent-text);
+    border: none;
+    padding: 14px 28px;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-body);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    display: inline-block;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(232,114,74,0.35);
+  }
+
+  .nav-toggle {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+  }
+  .nav-toggle svg { width: 26px; height: 26px; }
+
+  /* ================= Hero ================= */
+  .hero {
+    text-align: center;
+    padding: 40px 24px 64px;
+  }
+
+  /* EDIT: HERO TEXT */
+  .hero h1 {
+    font-size: clamp(38px, 6vw, 76px);
+    line-height: 1.08;
+    margin: 0 auto;
+    max-width: 900px;
+    letter-spacing: -0.01em;
+  }
+
+  .hero p.subtext {
+    margin: 20px auto 0;
+    max-width: 560px;
+    font-size: 18px;
+    color: var(--color-text-muted);
+  }
+
+  /* EDIT: HERO MEDIA (re-used by the "Code today" media block) */
+  .media-block { max-width: 1280px; margin: 0 auto; padding: 0 40px; }
+  .media-inner {
+    position: relative;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    aspect-ratio: 16 / 8.2;
+    background: linear-gradient(135deg, #3a352d, #1c1913);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .media-inner video,
+  .media-inner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    inset: 0;
+  }
+  .placeholder-note {
+    position: relative;
+    z-index: 1;
+    color: rgba(255,255,255,0.75);
+    font-family: var(--font-body);
+    font-size: 14px;
+    text-align: center;
+    padding: 20px 28px;
+    border: 1px dashed rgba(255,255,255,0.35);
+    border-radius: 16px;
+    max-width: 320px;
+  }
+
+  .play-btn {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.4);
+    color: #fff;
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    padding: 14px 26px;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-body);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .play-btn:hover { background: rgba(255,255,255,0.22); }
+  .play-btn svg { width: 14px; height: 14px; }
+
+  /* ================= Code today ================= */
+  /* EDIT: CODE TODAY */
+  .shipping { padding: 40px 0 40px; }
+  .shipping .wrap { text-align: center; margin-bottom: 32px; }
+  .shipping h2 { font-size: clamp(34px, 5vw, 64px); line-height: 1.1; }
+
+  /* ================= Feature cards ================= */
+  /* EDIT: FEATURE CARDS */
+  .platform { padding: 120px 40px 80px; text-align: center; }
+  .platform h2 { font-size: clamp(32px, 4.5vw, 56px); line-height: 1.15; margin-bottom: 64px; }
+
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    text-align: left;
+  }
+  .feature-card {
+    background: var(--color-card);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    min-height: 360px;
+  }
+  .feature-eyebrow {
+    color: var(--color-text-muted);
+    font-size: 15px;
+    margin: 0 0 auto;
+  }
+  .feature-body { margin-top: 40px; }
+  .n-mark {
+    display: block;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 28px;
+    margin-bottom: 12px;
+    letter-spacing: -0.02em;
+  }
+  .feature-card h3 { font-size: 24px; line-height: 1.25; }
+  .feature-media {
+    margin-top: 24px;
+    flex: 1;
+    border-radius: 16px;
+    background: linear-gradient(160deg, #d9d2c1, #c7bfa9);
+    min-height: 100px;
+  }
+
+  /* ================= Category tiles ================= */
+  /* EDIT: CATEGORY TILES */
+  .categories { padding: 40px 0 0; }
+  .category-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    overflow: hidden;
+  }
+  .category-tile {
+    position: relative;
+    min-height: 260px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 28px 16px;
+    overflow: hidden;
+  }
+  .category-tile .cat-label {
+    position: relative;
+    z-index: 2;
+    color: #fff;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 20px;
+    text-align: center;
+    line-height: 1.25;
+  }
+  .category-tile .cat-shape {
+    position: absolute;
+    bottom: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 170px;
+    height: 170px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.16);
+  }
+
+  .categories .wrap {
+    text-align: center;
+    padding-top: 72px;
+    padding-bottom: 96px;
+  }
+  .categories h2 {
+    font-size: clamp(32px, 5vw, 60px);
+    line-height: 1.15;
+  }
+
+  /* ================= Make it yours ================= */
+  /* EDIT: MAKE IT YOURS */
+  .make-it-yours {
+    position: relative;
+    padding: 96px 40px 0;
+    overflow: hidden;
+    text-align: center;
+  }
+  .miy-content { position: relative; z-index: 2; }
+  .make-it-yours h2 { font-size: clamp(36px, 6vw, 72px); }
+
+  .miy-cta {
+    margin-top: 28px;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--color-pill);
+    border-radius: var(--radius-pill);
+    padding: 8px;
+  }
+  .pill-note {
+    padding: 12px 22px;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--color-text);
+    white-space: nowrap;
+  }
+
+  .shape-grid {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 0;
+    margin-top: 72px;
+    opacity: 0.9;
+  }
+  .shape {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .shape.circle { border-radius: 50%; }
+  .shape.arch { border-radius: 50% 50% 0 0; }
+  .shape.square { border-radius: 0; }
+  .shape.dot { border-radius: 50%; transform: scale(0.5); }
+  .shape.diamond { transform: rotate(45deg) scale(0.6); }
+  .shape.blank { background: transparent !important; }
+
+  /* ================= Footer ================= */
+  /* EDIT: FOOTER */
+  footer {
+    padding: 48px 40px 40px;
+    border-top: 1px solid var(--color-bg-alt);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  footer .foot-links { display: flex; gap: 28px; list-style: none; padding: 0; margin: 0; }
+  footer .foot-links a { color: var(--color-text-muted); text-decoration: none; font-size: 14px; }
+  footer .foot-links a:hover { color: var(--color-accent); }
+  footer .copyright { color: var(--color-text-muted); font-size: 14px; }
+
+  /* ================= REVEAL ANIMATIONS ================= */
+  /* Any element with class="reveal" starts hidden/offset and
+     fades + slides up into place once it scrolls into view.
+     The JS at the bottom of the page toggles ".in-view" using an
+     IntersectionObserver. Add/remove "reveal" on any element to
+     opt it in or out. Stagger timing with the inline
+     "transition-delay" style (see feature cards / category tiles
+     below for examples). */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity .7s ease, transform .7s ease;
+  }
+  .reveal.in-view {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ================= Responsive ================= */
+  @media (max-width: 960px) {
+    .feature-grid { grid-template-columns: 1fr; }
+    .category-row { grid-template-columns: repeat(2, 1fr); }
+    .shape-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+
+  @media (max-width: 860px) {
+    nav.links { display: none; }
+    .nav-toggle { display: inline-flex; }
+    .navbar { padding: 18px 20px; }
+    .media-block { padding: 0 20px; }
+    .platform { padding: 80px 20px 60px; }
+    footer { padding: 40px 20px; flex-direction: column; align-items: flex-start; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+    .reveal { opacity: 1 !important; transform: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= Header ================= -->
+<header class="site-header" id="siteHeader">
+  <div class="navbar wrap">
+    <!-- EDIT: LOGO -->
+    <a href="#" class="logo">
+      <span class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 8L5 12L9 16" stroke="#F6EFE2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M15 8L19 12L15 16" stroke="#F6EFE2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      RVR Dynamics
+    </a>
+
+    <!-- EDIT: NAV LINKS -->
+    <nav class="links">
+      <a href="#" class="active">Home</a>
+      <a href="#">Product</a>
+      <a href="#">Company</a>
+      <a href="#">Careers</a>
+      <a href="#">News</a>
+    </nav>
+
+    <!-- EDIT: CTA BUTTON -->
+    <a href="start-coding.html" class="btn-primary">Start Coding</a>
+
+    <button class="nav-toggle" aria-label="Open menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#221C15" stroke-width="2">
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ================= Hero ================= -->
+  <!-- EDIT: HERO TEXT -->
+  <section class="hero">
+    <h1 class="reveal">Capable, safe, fun.<br />Robots for everyone.</h1>
+    <p class="subtext reveal" style="transition-delay:.1s">Replace this line with a short sentence about what your product does.</p>
+  </section>
+
+  <!-- EDIT: HERO MEDIA -->
+  <div class="media-block reveal" style="transition-delay:.15s">
+    <div class="media-inner">
+      <div class="placeholder-note">Video placeholder — replace with your own &lt;video&gt; or &lt;img&gt; tag</div>
+    </div>
+  </div>
+
+  <!-- ================= Code today ================= -->
+  <!-- EDIT: CODE TODAY -->
+  <section class="shipping">
+    <div class="wrap">
+      <h2 class="reveal">Code today</h2>
+    </div>
+    <div class="media-block reveal">
+      <div class="media-inner">
+        <button class="play-btn" type="button">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          Watch demo
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Feature cards ================= -->
+  <!-- EDIT: FEATURE CARDS -->
+  <section class="platform wrap">
+    <h2 class="reveal">Program your robot,<br />right in the browser.</h2>
+    <div class="feature-grid">
+
+      <div class="feature-card reveal">
+        <p class="feature-eyebrow">Style the interface with plain HTML &amp; CSS.</p>
+        <div class="feature-body">
+          <span class="n-mark">&lt;/&gt;</span>
+          <h3>Design the dashboard</h3>
+        </div>
+        <div class="feature-media"></div>
+      </div>
+
+      <div class="feature-card reveal" style="transition-delay:.1s">
+        <p class="feature-eyebrow">Write components with hooks, JSX, and more.</p>
+        <div class="feature-body">
+          <span class="n-mark">&lt;/&gt;</span>
+          <h3>Build with React</h3>
+        </div>
+        <div class="feature-media"></div>
+      </div>
+
+      <div class="feature-card reveal" style="transition-delay:.2s">
+        <p class="feature-eyebrow">No installs. No login. Just code.</p>
+        <div class="feature-body">
+          <span class="n-mark">&lt;/&gt;</span>
+          <h3>Ship it instantly</h3>
+        </div>
+        <div class="feature-media"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= Category tiles ================= -->
+  <!-- EDIT: CATEGORY TILES -->
+  <section class="categories">
+    <div class="category-row">
+      <div class="category-tile reveal" style="background: var(--color-blue);">
+        <span class="cat-label">Consumer &amp; home</span>
+        <span class="cat-shape"></span>
+      </div>
+      <div class="category-tile reveal" style="background: var(--color-gold); transition-delay:.08s">
+        <span class="cat-label">Industrial &amp; logistics</span>
+        <span class="cat-shape"></span>
+      </div>
+      <div class="category-tile reveal" style="background: var(--color-maroon); transition-delay:.16s">
+        <span class="cat-label">Healthcare &amp; care</span>
+        <span class="cat-shape"></span>
+      </div>
+      <div class="category-tile reveal" style="background: var(--color-teal); transition-delay:.24s">
+        <span class="cat-label">Entertainment &amp; experiences</span>
+        <span class="cat-shape"></span>
+      </div>
+    </div>
+    <div class="wrap">
+      <h2 class="reveal">Building a world where<br />robots operate everywhere</h2>
+    </div>
+  </section>
+
+  <!-- ================= Make it yours ================= -->
+  <!-- EDIT: MAKE IT YOURS -->
+  <section class="make-it-yours">
+    <div class="miy-content wrap">
+      <h2 class="reveal">Make it yours</h2>
+      <div class="miy-cta reveal" style="transition-delay:.1s">
+        <span class="pill-note">Free. No login required.</span>
+        <a href="start-coding.html" class="btn-primary">Start Coding</a>
+      </div>
+    </div>
+
+    <!-- Decorative shape grid — purely visual, safe to delete -->
+    <div class="shape-grid reveal" style="transition-delay:.15s">
+      <div class="shape circle" style="background: var(--color-blue);"></div>
+      <div class="shape blank"></div>
+      <div class="shape blank"></div>
+      <div class="shape arch" style="background: var(--color-maroon);"></div>
+      <div class="shape blank"></div>
+      <div class="shape blank"></div>
+      <div class="shape diamond" style="background: var(--color-maroon);"></div>
+      <div class="shape blank"></div>
+
+      <div class="shape square" style="background: var(--color-maroon);"></div>
+      <div class="shape blank"></div>
+      <div class="shape square" style="background: var(--color-gold);"></div>
+      <div class="shape arch" style="background: var(--color-accent);"></div>
+      <div class="shape dot" style="background: var(--color-maroon);"></div>
+      <div class="shape square" style="background: var(--color-olive);"></div>
+      <div class="shape blank"></div>
+      <div class="shape square" style="background: var(--color-teal);"></div>
+
+      <div class="shape square" style="background: var(--color-lavender);"></div>
+      <div class="shape circle" style="background: var(--color-teal);"></div>
+      <div class="shape square" style="background: var(--color-gold);"></div>
+      <div class="shape arch" style="background: var(--color-olive);"></div>
+      <div class="shape arch" style="background: var(--color-maroon);"></div>
+      <div class="shape square" style="background: var(--color-gold);"></div>
+      <div class="shape arch" style="background: var(--color-accent);"></div>
+      <div class="shape arch" style="background: var(--color-accent);"></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ================= Footer ================= -->
+<!-- EDIT: FOOTER -->
+<footer class="wrap">
+  <a href="#" class="logo">
+    <span class="logo-mark">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M9 8L5 12L9 16" stroke="#F6EFE2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M15 8L19 12L15 16" stroke="#F6EFE2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </span>
+    RVR Dynamics
+  </a>
+  <ul class="foot-links">
+    <li><a href="#">Product</a></li>
+    <li><a href="#">Company</a></li>
+    <li><a href="#">Careers</a></li>
+    <li><a href="#">News</a></li>
+  </ul>
+  <span class="copyright">© 2026 RVR Dynamics. All rights reserved.</span>
+</footer>
+
+<script>
+  // ---- Sticky header fade on scroll ----
+  const header = document.getElementById('siteHeader');
+  const SCROLL_THRESHOLD = 40;
+  function updateHeaderState() {
+    header.classList.toggle('is-scrolled', window.scrollY > SCROLL_THRESHOLD);
+  }
+  updateHeaderState();
+  window.addEventListener('scroll', updateHeaderState, { passive: true });
+
+  // ---- Simple mobile nav toggle ----
+  const toggleBtn = document.querySelector('.nav-toggle');
+  const navLinks = document.querySelector('nav.links');
+  toggleBtn.addEventListener('click', () => {
+    const isOpen = navLinks.style.display === 'flex';
+    navLinks.style.display = isOpen ? 'none' : 'flex';
+    navLinks.style.flexDirection = 'column';
+    navLinks.style.position = 'absolute';
+    navLinks.style.top = '68px';
+    navLinks.style.left = '20px';
+    navLinks.style.right = '20px';
+    navLinks.style.background = 'var(--color-bg)';
+    navLinks.style.padding = '16px';
+    navLinks.style.borderRadius = '16px';
+    navLinks.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)';
+    navLinks.style.gap = '16px';
+    navLinks.style.zIndex = '10';
+  });
+
+  // ---- Fade-in-on-scroll for anything with class="reveal" ----
+  const revealItems = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window) {
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in-view');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+    revealItems.forEach((el) => revealObserver.observe(el));
+  } else {
+    // Fallback: just show everything if IntersectionObserver isn't supported.
+    revealItems.forEach((el) => el.classList.add('in-view'));
+  }
+</script>
+
+</body>
+</html>

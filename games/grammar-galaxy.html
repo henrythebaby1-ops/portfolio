@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grammar Galaxy - 5 Unique Games</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Fredoka', sans-serif; background: linear-gradient(180deg, #0a0e27 0%, #1a1b3a 50%, #2d1b69 100%); min-height: 100vh; overflow: hidden; color: white; }
+   .screen { display: none; width: 100%; height: 100vh; position: relative; }
+   .screen.active { display: block; }
+   .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+   .star { position: absolute; background: white; border-radius: 50%; animation: twinkle 3s infinite; }
+        @keyframes twinkle { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+   .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border-bottom: 2px solid rgba(255, 255, 255, 0.2); position: relative; z-index: 100; }
+   .player-info { display: flex; align-items: center; gap: 12px; }
+   .avatar { width: 44px; height: 44px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 3px solid #fff; }
+   .stats { display: flex; gap: 12px; }
+   .stat-badge { background: rgba(255, 215, 0, 0.2); border: 2px solid #FFD700; border-radius: 20px; padding: 6px 14px; display: flex; align-items: center; gap: 6px; font-weight: 600; }
+   .btn { background: #FFD700; color: #1a1b3a; border: none; padding: 12px 32px; border-radius: 20px; font-size: 18px; font-weight: 700; cursor: pointer; font-family: 'Fredoka'; margin: 8px; }
+   .btn:hover { transform: scale(1.05); }
+   .btn-small { padding: 8px 16px; font-size: 14px; }
+   .title-section { text-align: center; padding: 20px 16px 12px; position: relative; z-index: 1; }
+   .title-section h1 { font-size: clamp(28px, 7vw, 48px); font-weight: 700; background: linear-gradient(90deg, #FFD700, #FF69B4, #00CED1, #FFD700); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: gradient 3s linear infinite; }
+        @keyframes gradient { to { background-position: 200% center; } }
+   .characters { display: flex; justify-content: center; gap: 20px; padding: 12px; position: relative; z-index: 1; }
+   .galaxy-map { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 20px; padding: 20px; max-width: 900px; margin: 0 auto; position: relative; z-index: 1; }
+   .planet { aspect-ratio: 1; cursor: pointer; position: relative; transition: all 0.3s ease; }
+   .planet:hover { transform: scale(1.1) translateY(-8px); }
+   .planet svg { width: 100%; height: 100%; filter: drop-shadow(0 8px 32px rgba(0, 0, 0, 0.4)); }
+   .planet:hover svg { filter: drop-shadow(0 16px 48px rgba(255, 255, 255, 0.4)); }
+   .planet-label { position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%); font-size: 12px; font-weight: 600; text-align: center; white-space: nowrap; }
+   .instructions { padding: 40px 20px; text-align: center; max-width: 600px; margin: 0 auto; }
+   .instructions h2 { font-size: 36px; margin-bottom: 20px; }
+   .instructions p { font-size: 18px; line-height: 1.6; margin-bottom: 16px; opacity: 0.9; }
+   .example { background: rgba(255,255,255,0.1); padding: 16px; border-radius: 12px; margin: 16px 0; border: 2px solid rgba(255,255,255,0.3); text-align: left; }
+   .game-hud { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: rgba(0, 0, 0, 0.4); position: relative; z-index: 100; flex-wrap: wrap; gap: 8px; }
+   .lives { display: flex; gap: 8px; font-size: 24px; }
+   .game-area { position: relative; width: 100%; height: calc(100vh - 140px); overflow: hidden; }
+   .meteor { position: absolute; background: linear-gradient(135deg, #7f1d1d, #dc2626); border: 3px solid #fca5a5; border-radius: 50%; padding: 16px 20px; font-weight: 600; box-shadow: 0 4px 16px rgba(220, 38, 0.6); }
+   .ship { position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%); font-size: 48px; }
+   .coop-story { background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; margin: 20px; font-size: 20px; line-height: 1.8; }
+   .blank { display: inline-block; min-width: 80px; border-bottom: 3px solid #FFD700; margin: 0 4px; }
+   .player-zones { display: flex; justify-content: space-around; margin-top: 20px; flex-wrap: wrap; gap: 12px; }
+   .player-zone { background: rgba(255,255,255,0.1); border: 3px solid white; border-radius: 16px; padding: 16px; min-width: 120px; }
+   .player-zone.active { background: rgba(255,215,0,0.3); border-color: #FFD700; box-shadow: 0 0 20px #FFD700; }
+   .comic-panel { background: white; color: #1a1b3a; border-radius: 12px; padding: 16px; margin: 12px; min-height: 120px; }
+   .word-tile { background: #667eea; padding: 12px 20px; border-radius: 12px; border: 2px solid white; cursor: pointer; display: inline-block; margin: 6px; }
+   .goblin { font-size: 80px; text-align: center; margin: 20px; }
+   .sentence-fix { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; margin: 16px; font-size: 20px; }
+   .feedback { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px; font-weight: 700; pointer-events: none; opacity: 0; z-index: 200; }
+   .feedback.show { animation: popFade 0.6s ease-out; }
+        @keyframes popFade { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1); } }
+   .end-screen { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8); display: none; align-items: center; justify-content: center; z-index: 300; }
+   .end-screen.show { display: flex; }
+   .end-card { background: linear-gradient(135deg, #667eea, #764ba2); padding: 40px; border-radius: 24px; text-align: center; border: 4px solid white; }
+   .shake { animation: shake 0.5s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+
+    <div id="homeScreen" class="screen active">
+        <div class="top-bar">
+            <div class="player-info">
+                <div class="avatar">🚀</div>
+                <div id="guardianDisplay">Guardian</div>
+            </div>
+            <div class="stats">
+                <div class="stat-badge"><span>⭐</span><span id="totalStars">0</span></div>
+                <div class="stat-badge"><span>🏆</span><span>Lv. <span id="level">1</span></span></div>
+            </div>
+        </div>
+        <div class="title-section">
+            <h1>Grammar Galaxy</h1>
+            <div style="font-size: 16px; opacity: 0.9; margin-top: 8px;">5 planets. 5 completely different games.</div>
+        </div>
+        <div class="characters">
+            <svg width="70" height="70" viewBox="0 0 100 100"><circle cx="50" cy="35" r="20" fill="#f0f0f0" stroke="#ccc" stroke-width="2"/><rect x="30" y="55" width="40" height="35" rx="8" fill="#60a5fa"/><circle cx="50" cy="35" r="15" fill="#1e293b" opacity="0.8"/></svg>
+            <svg width="70" height="70" viewBox="0 0 100 100"><rect x="25" y="40" width="50" height="35" rx="8" fill="#94a3b8"/><circle cx="40" cy="55" r="8" fill="#0ea5e9"/><rect x="45" y="30" width="10" height="15" fill="#64748b"/><circle cx="50" cy="25" r="4" fill="#fbbf24"/><rect x="20" y="75" width="15" height="10" rx="5" fill="#1e293b"/><rect x="65" y="75" width="15" height="10" rx="5" fill="#1e293b"/></svg>
+        </div>
+        <div class="galaxy-map" id="galaxyMap"></div>
+    </div>
+
+    <div id="instructionsScreen" class="screen">
+        <div class="instructions">
+            <h2 id="instructTitle"></h2>
+            <p id="instructText"></p>
+            <div class="example" id="instructExample"></div>
+            <button class="btn" id="startBtn">Start Mission</button>
+            <button class="btn" style="background: #64748b; color: white;" id="backBtn">Back</button>
+        </div>
+    </div>
+
+    <div id="gameScreen" class="screen">
+        <div class="game-hud">
+            <div class="lives" id="livesDisplay">❤️❤️❤️</div>
+            <div id="gameExtra"></div>
+            <div class="stat-badge"><span>⭐</span><span id="gameStars">0</span></div>
+            <button class="btn-small btn" id="abortBtn">Abort</button>
+        </div>
+        <div class="game-area" id="gameArea"></div>
+    </div>
+
+    <div class="feedback" id="feedback"></div>
+
+    <div class="end-screen" id="endScreen">
+        <div class="end-card">
+            <h2 id="endTitle">Mission Complete!</h2>
+            <p>You earned <span id="finalScore">0</span> stars!</p>
+            <p id="endMessage" style="font-size: 16px; margin-bottom: 20px;"></p>
+            <button class="btn" id="playAgainBtn">Play Again</button>
+            <button class="btn" id="backToMapBtn">Galaxy Map</button>
+        </div>
+    </div>
+
+    <script>
+        // Stars bg
+        for (let i = 0; i < 80; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.width = star.style.height = Math.random() * 2 + 1 + 'px';
+            star.style.animationDelay = Math.random() * 3 + 's';
+            document.getElementById('stars').appendChild(star);
+        }
+
+        // Guardian auto-create
+        let guardianData = JSON.parse(localStorage.getItem('guardianData')) || { name: 'Guardian', stars: 0, level: 1 };
+        document.getElementById('guardianDisplay').textContent = guardianData.name;
+        document.getElementById('totalStars').textContent = guardianData.stars;
+        document.getElementById('level').textContent = guardianData.level;
+
+        const planets = [
+            { id: 'meteor', name: 'Noun Nebula', subtitle: 'Meteor Smash', art: `<svg viewBox="0 0 100 100"><defs><radialGradient id="nG"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#6b21a8"/></radialGradient></defs><circle cx="50" cy="50" r="48" fill="url(#nG)"/><circle cx="30" cy="30" r="8" fill="#e9d5ff" opacity="0.6"/><circle cx="70" cy="60" r="12" fill="#e9d5ff" opacity="0.4"/><text x="50" y="55" text-anchor="middle" fill="white" font-size="9" font-weight="bold">Meteor Smash</text></svg>` },
+            { id: 'coop', name: 'Verb Volcano', subtitle: 'Grammar Guardians', art: `<svg viewBox="0 0 100 100"><defs><radialGradient id="vG"><stop offset="0%" stop-color="#fb923c"/><stop offset="100%" stop-color="#c2410c"/></radialGradient></defs><circle cx="50" cy="50" r="48" fill="url(#vG)"/><path d="M 50 20 Q 35 50 50 Q 65 35 50 20" fill="#fed7aa" opacity="0.8"/><path d="M 50 50 Q 40 65 50 80 Q 60 65 50 50" fill="#dc2626" opacity="0.6"/><text x="50" y="55" text-anchor="middle" fill="white" font-size="8" font-weight="bold">Co-Op</text></svg>` },
+            { id: 'comic', name: 'Adjective Asteroids', subtitle: 'Comic Creator', art: `<svg viewBox="0 0 100 100"><defs><radialGradient id="aG"><stop offset="0%" stop-color="#a8a29e"/><stop offset="100%" stop-color="#57534e"/></radialGradient></defs><circle cx="50" cy="50" r="48" fill="url(#aG)"/><circle cx="35" cy="35" r="6" fill="#44403c"/><circle cx="65" cy="65" r="8" fill="#44403c"/><circle cx="70" cy="35" r="5" fill="#44403c"/><text x="50" y="55" text-anchor="middle" fill="white" font-size="9" font-weight="bold">Comic Creator</text></svg>` },
+            { id: 'boss', name: 'Punctuation Planet', subtitle: 'Boss Battle', art: `<svg viewBox="0 0 100 100"><defs><radialGradient id="pG"><stop offset="0%" stop-color="#22d3ee"/><stop offset="100%" stop-color="#0891b2"/></radialGradient></defs><circle cx="50" cy="50" r="48" fill="url(#pG)"/><text x="35" y="45" fill="white" font-size="20" font-weight="bold">?</text><text x="55" y="45" fill="white" font-size="20" font-weight="bold">!</text><text x="45" y="70" fill="white" font-size="20" font-weight="bold">.</text><text x="50" y="85" text-anchor="middle" fill="white" font-size="8" font-weight="bold">Boss Battle</text></svg>` },
+            { id: 'base', name: 'Sentence Station', subtitle: 'Base Repair', art: `<svg viewBox="0 0 100 100"><defs><radialGradient id="sG"><stop offset="0%" stop-color="#e5e7eb"/><stop offset="100%" stop-color="#6b7280"/></radialGradient></defs><rect x="10" y="25" width="80" height="50" rx="8" fill="url(#sG)"/><rect x="20" y="35" width="15" height="8" fill="#4b5563"/><rect x="40" y="35" width="15" height="8" fill="#4b5563"/><rect x="60" y="35" width="15" height="8" fill="#4b5563"/><text x="50" y="88" text-anchor="middle" fill="white" font-size="8" font-weight="bold">Base Repair</text></svg>` }
+        ];
+
+        const map = document.getElementById('galaxyMap');
+        planets.forEach(p => {
+            const div = document.createElement('div');
+            div.className = 'planet';
+            div.innerHTML = p.art + `<div class="planet-label">${p.subtitle}</div>`;
+            div.onclick = () => showInstructions(p.id);
+            map.appendChild(div);
+        });
+
+        let currentGame = '', gameState = {}, gameInterval = null;
+        const gameData = {
+            meteor: { title: 'Meteor Smash: Noun Nebula', instruct: 'Meteors with words are falling! Tap NOUN if it\'s a person/place/thing. Tap NOT NOUN for verbs/adjectives. Wrong tap = meteor hits ship. 3 HP.', example: 'teacher → NOUN ✓ | quickly → NOT NOUN ✓ | jump → NOT NOUN ✓' },
+            coop: { title: 'Grammar Guardians: Verb Volcano', instruct: 'Team up! A story scrolls with blanks. Player 1 taps when a NOUN is needed, Player 2 for VERBS, Player 3 for ADJECTIVES, Player 4 for PUNCTUATION. Work together!', example: 'The ___ dog ___. (P1: brown, P2: runs, P3: fast, P4:.)' },
+            comic: { title: 'Comic Creator: Adjective Asteroids', instruct: 'Pick 3 adjectives. We\'ll make a 3-panel comic with them + voice acting. Then YOU write captions using those adjectives. We check your grammar!', example: 'Pick: sparkly, huge, tiny → We make comic → You caption it' },
+            boss: { title: 'Boss Battle: Grammar Goblin', instruct: 'The Grammar Goblin speaks in broken English! Read his sentence. Tap the ERROR and type the fix. Beat him before he destroys the planet!', example: 'Goblin: "me like pizza" → Tap "me" → Type "I"' },
+            base: { title: 'Base Repair: Sentence Station', instruct: 'Your base is broken into 5 modules. Each module = 1 scrambled sentence. Drag words to fix it. Fix all 5 to restore power!', example: 'dog The barks loud → The dog barks loud' }
+        };
+
+        function showInstructions(game) {
+            currentGame = game;
+            const g = gameData[game];
+            document.getElementById('instructTitle').textContent = g.title;
+            document.getElementById('instructText').textContent = g.instruct;
+            document.getElementById('instructExample').innerHTML = `<strong>Example:</strong><br>${g.example}`;
+            document.getElementById('homeScreen').classList.remove('active');
+            document.getElementById('instructionsScreen').classList.add('active');
+        }
+
+        document.getElementById('startBtn').onclick = startCurrentGame;
+        document.getElementById('backBtn').onclick = backToHome;
+        document.getElementById('abortBtn').onclick = backToHome;
+        document.getElementById('playAgainBtn').onclick = playAgain;
+        document.getElementById('backToMapBtn').onclick = backToHome;
+
+        function startCurrentGame() {
+            document.getElementById('instructionsScreen').classList.remove('active');
+            document.getElementById('gameScreen').classList.add('active');
+            document.getElementById('gameArea').innerHTML = '';
+            gameState = { stars: 0, lives: 3 };
+            updateHUD();
+            if (currentGame === 'meteor') startMeteorSmash();
+            else if (currentGame === 'coop') startCoOp();
+            else if (currentGame === 'comic') startComicCreator();
+            else if (currentGame === 'boss') startBossBattle();
+            else if (currentGame === 'base') startBaseRepair();
+        }
+
+        // METEOR SMASH - Different from before
+        function startMeteorSmash() {
+            const words = [{w:'teacher',n:true},{w:'quickly',n:false},{w:'Mars',n:true},{w:'jump',n:false},{w:'happiness',n:true},{w:'blue',n:false},{w:'pizza',n:true},{w:'run',n:false},{w:'doctor',n:true},{w:'soft',n:false}].sort(()=>Math.random()-0.5);
+            let idx = 0;
+            document.getElementById('gameExtra').innerHTML = `Wave: <span id="wave">1</span>/3`;
+            const ship = document.createElement('div'); ship.className = 'ship'; ship.textContent = '🚀'; document.getElementById('gameArea').appendChild(ship);
+            function spawn() {
+                if (idx >= words.length || gameState.lives <= 0) return endGame(gameState.lives>0?'All meteors cleared!':'Ship destroyed!');
+                const wd = words[idx++]; const meteor = document.createElement('div');
+                meteor.className = 'meteor'; meteor.textContent = wd.w; meteor.style.left = Math.random() * 70 + 15 + '%'; meteor.style.top = '-100px';
+                meteor.onclick = () => { meteor.remove(); if(wd.n){ gameState.stars++; showFeedback('⭐ Noun!', '#FFD700'); } else { gameState.lives--; showFeedback('💥 Not a noun!', '#ef4444'); } updateHUD(); spawn(); };
+                document.getElementById('gameArea').appendChild(meteor);
+                let pos = -100; const fall = setInterval(() => { pos += 4 + idx; meteor.style.top = pos + 'px'; if (pos > window.innerHeight - 200) { clearInterval(fall); meteor.remove(); gameState.lives--; updateHUD(); if(gameState.lives<=0)endGame('Ship destroyed!'); else spawn(); } }, 30);
+            }
+            spawn();
+        }
+
+        // CO-OP - Totally different
+        function startCoOp() {
+            const story = 'The ___ cat ___ over the ___ fence ___.';
+            const answers = ['brown','jumped','tall','.'];
+            const types = ['NOUN','VERB','ADJ','PUNC'];
+            let currentBlank = 0;
+            document.getElementById('gameArea').innerHTML = `<div class="coop-story" id="story">${story}</div><div class="player-zones" id="zones"></div><div style="text-align:center;margin-top:20px;font-size:18px;">Tap your word when it\'s your turn!</div>`;
+            const zones = document.getElementById('zones');
+            types.forEach((t,i) => { const z = document.createElement('div'); z.className = 'player-zone'; z.id = 'zone'+i; z.innerHTML = `<div>P${i+1}</div><div style="font-size:12px">${t}</div>`; zones.appendChild(z); });
+            function nextTurn() {
+                if(currentBlank >= 4) return endGame('Story complete!');
+                document.querySelectorAll('.player-zone').forEach(z=>z.classList.remove('active'));
+                document.getElementById('zone'+currentBlank).classList.add('active');
+                document.getElementById('gameExtra').innerHTML = `Player ${currentBlank+1}'s turn!`;
+            }
+            zones.onclick = e => {
+                const zone = e.target.closest('.player-zone'); if(!zone) return;
+                const idx = parseInt(zone.id.slice(4));
+                if(idx === currentBlank){ document.getElementById('story').innerHTML = document.getElementById('story').innerHTML.replace('___', `<span style="color:#FFD700;font-weight:700">${answers[currentBlank]}</span>`); gameState.stars++; currentBlank++; updateHUD(); showFeedback('⭐ Teamwork!', '#FFD700'); nextTurn(); }
+                else { showFeedback('❌ Not your turn!', '#ef4444'); }
+            };
+            nextTurn();
+        }
+
+        // COMIC CREATOR - Different
+        function startComicCreator() {
+            const adjectives = ['sparkly','huge','tiny','blue','soft','fast','loud','quiet','brave','silly'];
+            document.getElementById('gameArea').innerHTML = `<div style="padding:20px;text-align:center;"><h3>Pick 3 adjectives for your comic:</h3><div id="adjPicker" style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:20px;"></div><div id="comicArea"></div></div>`;
+            const picker = document.getElementById('adjPicker'); let selected = [];
+            adjectives.forEach(adj => { const b = document.createElement('button'); b.className = 'word-tile'; b.textContent = adj; b.onclick = () => { if(selected.includes(adj)) return; selected.push(adj); b.style.background='#22c55e'; if(selected.length===3) makeComic(); }; picker.appendChild(b); });
+            function makeComic() {
+                document.getElementById('comicArea').innerHTML = `<div class="comic-panel">Panel 1: A ${selected[0]} hero appears!</div><div class="comic-panel">Panel 2: They see a ${selected[1]} monster!</div><div class="comic-panel">Panel 3: The hero uses their ${selected[2]} power!</div><p style="margin-top:20px;">Now write YOUR caption using all 3 adjectives:</p><textarea id="caption" style="width:90%;height:80px;border-radius:12px;padding:12px;font-family:Fredoka;font-size:16px;"></textarea><br><button class="btn" onclick="checkCaption()">Submit Caption</button>`;
+            }
+            window.checkCaption = () => {
+                const cap = document.getElementById('caption').value.toLowerCase();
+                const used = selected.filter(s => cap.includes(s.toLowerCase())).length;
+                gameState.stars = used * 2; updateHUD();
+                if(used===3) endGame('Perfect grammar! All 3 adjectives used!');
+                else endGame(`Good! You used ${used}/3 adjectives correctly.`);
+            };
+        }
+
+        // BOSS BATTLE - Different
+        function startBossBattle() {
+            const sentences = [{ bad:'me like pizza', good:'I like pizza', err:'me' }, { bad:'him run fast', good:'He runs fast', err:'him' }, { bad:'they is happy', good:'They are happy', err:'is' }, { bad:'her jump high', good:'She jumps high', err:'her' }, { bad:'we goes home', good:'We go home', err:'goes' }];
+            let idx = 0, goblinHP = 5;
+            document.getElementById('gameExtra').innerHTML = `Goblin HP: <span id="ghp">❤️❤️❤️</span>`;
+            function showGoblin() {
+                if(idx >= sentences.length || goblinHP <= 0) return endGame(goblinHP<=0?'Goblin defeated!':'Goblin escaped!');
+                const s = sentences[idx];
+                document.getElementById('gameArea').innerHTML = `<div class="goblin">👹</div><div class="sentence-fix">"${s.bad}"</div><p style="text-align:center;margin:20px;">Tap the WRONG word, then type the correction:</p><div id="fixInput" style="display:none;text-align:center;"><input id="fix" style="padding:12px;border-radius:12px;font-size:18px;font-family:Fredoka;"><button class="btn" onclick="submitFix()">Fix It!</button></div>`;
+                document.querySelector('.sentence-fix').onclick = e => { if(e.target.textContent===s.err) document.getElementById('fixInput').style.display='block'; };
+                window.submitFix = () => { if(document.getElementById('fix').value.toLowerCase()===s.good.split(' ').find(w=>w!==s.err)){ goblinHP--; gameState.stars+=2; showFeedback('💥 HIT!', '#FFD700'); } else { showFeedback('❌ Miss!', '#ef4444'); } document.getElementById('ghp').textContent='❤️'.repeat(goblinHP); idx++; setTimeout(showGoblin,1000); };
+            }
+            showGoblin();
+        }
+
+        // BASE REPAIR - Different
+        function startBaseRepair() {
+            const modules = [['The','dog','barks','loud'],['I','love','to','read'],['Mars','is','a','planet'],['Stars','twinkle','bright'],['We','explore','space']];
+            let fixed = 0;
+            function showModule() {
+                if(fixed >= 5) return endGame('Base fully repaired!');
+                const words = [...modules[fixed]].sort(()=>Math.random()-0.5);
+                document.getElementById('gameArea').innerHTML = `<h3 style="text-align:center;padding:20px;">Module ${fixed+1}/5: Drag to order</h3><div class="sentence-builder" id="builder"></div><div style="text-align:center;padding:20px;">${words.map(w=>`<div class="word-tile" draggable="true">${w}</div>`).join('')}</div><button class="btn" onclick="checkSentence()">Activate Module</button>`;
+                const builder = document.getElementById('builder');
+                document.querySelectorAll('.word-tile').forEach(t => {
+                    t.ondragstart = e => e.dataTransfer.setData('text', e.target.textContent);
+                    t.onclick = e => { const c = e.target.cloneNode(true); c.draggable=false; c.onclick=()=>c.remove(); builder.appendChild(c); };
+                });
+                builder.ondragover = e => e.preventDefault();
+                builder.ondrop = e => { e.preventDefault(); const w = e.dataTransfer.getData('text'); const t = document.createElement('div'); t.className='word-tile'; t.textContent=w; t.onclick=()=>t.remove(); builder.appendChild(t); };
+                window.checkSentence = () => {
+                    const attempt = Array.from(builder.children).map(c=>c.textContent).join(' ');
+                    const correct = modules[fixed].join(' ');
+                    if(attempt === correct){ fixed++; gameState.stars+=3; showFeedback('⚡ Module Online!', '#22c55e'); updateHUD(); setTimeout(showModule,1000); }
+                    else { gameState.lives--; showFeedback('❌ Sparks!', '#ef4444'); updateHUD(); if(gameState.lives<=0)endGame('Base critical!'); }
+                };
+            }
+            showModule();
+        }
+
+        function update

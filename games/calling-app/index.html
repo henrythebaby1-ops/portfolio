@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calling App</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Signal Flow</p>
+          <h1>Calls</h1>
+        </div>
+        <button class="ghost-button" id="incomingTrigger">Incoming</button>
+      </header>
+
+      <main class="screen">
+        <section class="hero-card">
+          <p class="hero-label">Ready to call</p>
+          <div class="display-number" id="displayNumber">Enter a number</div>
+          <div class="quick-actions">
+            <button class="pill-button active" data-tab-target="dialer">Dialer</button>
+            <button class="pill-button" data-tab-target="contacts">Contacts</button>
+            <button class="pill-button" data-tab-target="recent">Recent</button>
+          </div>
+        </section>
+
+        <section class="tab-panel active" data-tab="dialer">
+          <div class="dialer-panel">
+            <div class="number-input-row">
+              <input
+                id="numberInput"
+                type="text"
+                inputmode="numeric"
+                autocomplete="off"
+                placeholder="Type number"
+                aria-label="Phone number"
+              />
+              <button class="icon-button" id="backspaceButton" aria-label="Delete digit">⌫</button>
+            </div>
+
+            <div class="keypad" id="keypad">
+              <button class="key" data-value="1"><span>1</span></button>
+              <button class="key" data-value="2"><span>2</span><small>ABC</small></button>
+              <button class="key" data-value="3"><span>3</span><small>DEF</small></button>
+              <button class="key" data-value="4"><span>4</span><small>GHI</small></button>
+              <button class="key" data-value="5"><span>5</span><small>JKL</small></button>
+              <button class="key" data-value="6"><span>6</span><small>MNO</small></button>
+              <button class="key" data-value="7"><span>7</span><small>PQRS</small></button>
+              <button class="key" data-value="8"><span>8</span><small>TUV</small></button>
+              <button class="key" data-value="9"><span>9</span><small>WXYZ</small></button>
+              <button class="key" data-value="*"><span>*</span></button>
+              <button class="key" data-value="0"><span>0</span><small>+</small></button>
+              <button class="key" data-value="#"><span>#</span></button>
+            </div>
+
+            <button class="call-button" id="callButton">Call</button>
+          </div>
+        </section>
+
+        <section class="tab-panel" data-tab="contacts">
+          <div class="list-card" id="contactsList"></div>
+        </section>
+
+        <section class="tab-panel" data-tab="recent">
+          <div class="list-card" id="recentList"></div>
+        </section>
+      </main>
+    </div>
+
+    <section class="overlay hidden" id="callOverlay" aria-live="polite">
+      <div class="overlay-card">
+        <p class="status-text" id="callStatus">Calling...</p>
+        <h2 id="callName">Unknown</h2>
+        <p class="sub-text" id="callNumber"></p>
+        <div class="timer" id="callTimer">00:00</div>
+
+        <div class="call-controls">
+          <button class="control-button" data-control="mute">Mute</button>
+          <button class="control-button" data-control="speaker">Speaker</button>
+          <button class="control-button" data-control="video">Video</button>
+        </div>
+
+        <div class="call-actions incoming hidden" id="incomingActions">
+          <button class="secondary-call-button" id="declineButton">Decline</button>
+          <button class="call-button accept" id="acceptButton">Answer</button>
+        </div>
+
+        <button class="end-button" id="endButton">End Call</button>
+      </div>
+    </section>
+
+    <script src="./script.js"></script>
+  </body>
+</html>

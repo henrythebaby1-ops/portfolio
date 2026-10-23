@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude Blocks (web)</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Claude Blocks">
+<meta name="theme-color" content="#262624">
+<link rel="icon" id="favicon">
+<script src="app/edition.js"></script>
+<link rel="stylesheet" href="vendor/cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="app/styles.css">
+<script src="vendor/unpkg.com/blockly@10.4.3/blockly_compressed.js"></script>
+<script src="vendor/unpkg.com/blockly@10.4.3/blocks_compressed.js"></script>
+<script src="vendor/unpkg.com/blockly@10.4.3/javascript_compressed.js"></script>
+<script src="vendor/unpkg.com/blockly@10.4.3/msg/en.js"></script>
+<script src="vendor/cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="vendor/cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script src="vendor/cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
+<script src="vendor/cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+<script src="vendor/cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
+<script src="vendor/cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
+<script src="vendor/cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+<script src="vendor/cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+<script src="vendor/cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closetag.min.js"></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><canvas id="logo"></canvas><span>Claude Blocks</span></div>
+  <input id="projectName" value="My Project" aria-label="Project name" spellcheck="false">
+  <button id="learnBtn" class="tb learn">🎓 Learn</button>
+  <nav class="views">
+    <button class="view-tab active" data-view="blocks">🧩 Blocks</button>
+    <button class="view-tab" data-view="editor">⌨️ Code Editor</button>
+    <button class="view-tab" data-view="terminal">🖥️ Terminal</button>
+  </nav>
+  <div class="runbar">
+    <button id="flagBtn" class="flag" title="Start (green flag)">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 3v18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M6 4c4-2 7 2 12 0v9c-5 2-8-2-12 0z" fill="currentColor"/></svg>
+      Go
+    </button>
+    <button id="stopBtn" class="stop" title="Stop">⏹</button>
+  </div>
+  <span class="spacer"></span>
+  <button id="extBtn" class="tb">＋ Extensions</button>
+  <button id="exportBtn" class="tb">⇄ To HTML/CSS/JS</button>
+  <button id="templatesBtn" class="tb">📋 Templates</button>
+  <button id="newBtn" class="tb">New</button>
+  <button id="openBtn" class="tb">📂 Open</button>
+  <button id="saveBtn" class="tb">💾 Save</button>
+</header>
+
+<main id="view-blocks" class="view active">
+  <div id="blocklyDiv"></div>
+
+  <div id="learnCard" class="learn-card" hidden>
+    <div class="learn-head">
+      <b id="learnTitle"></b>
+      <button id="learnAll" class="link" title="All lessons">☰</button>
+      <button id="learnClose" class="link" title="Close">✕</button>
+    </div>
+    <div class="learn-bar"><div id="learnProgress"></div></div>
+    <small id="learnStep"></small>
+    <p id="learnText"></p>
+    <button id="learnAction" class="learn-action" hidden></button>
+    <div class="learn-nav"><button id="learnBack">← Back</button><button id="learnNext" class="primary">Next →</button></div>
+  </div>
+
+  <aside class="side">
+    <div id="stage"></div>
+    <div class="panel">
+      <div class="ptabs">
+        <button class="ptab active" data-p="sprites">Sprites</button>
+        <button class="ptab" data-p="output">Output</button>
+        <button class="ptab" data-p="pi">🍓 Pi 5</button>
+        <button class="ptab" data-p="ai">✳️ AI Assistant</button>
+      </div>
+
+      <section id="p-sprites" class="pbody active">
+        <div class="sprite-info">
+          <b class="stage-only">🎭 Stage — backdrops and scripts for the whole project</b>
+          <label class="wide sprite-only">Sprite <input id="spName" spellcheck="false"></label>
+          <label class="sprite-only">x <input id="spX" type="number"></label>
+          <label class="sprite-only">y <input id="spY" type="number"></label>
+          <label class="sprite-only">size <input id="spSize" type="number" min="5"></label>
+          <label class="sprite-only">direction <input id="spDir" type="number"></label>
+          <label class="check sprite-only"><input id="spShow" type="checkbox"> show</label>
+          <button id="paintBtn" class="small">🎨 Paint</button>
+          <button id="editTextBtn" class="small sprite-only" hidden>✏️ Edit text</button>
+          <button id="addCostumeBtn" class="small">⬆ Upload costume</button>
+          <button id="deleteSpriteBtn" class="small danger">🗑 Delete sprite</button>
+        </div>
+        <div class="costume-row"><small class="muted" id="costumeLabel">Costumes</small><div id="costumeStrip" class="costume-strip"></div></div>
+        <div id="spriteGrid" class="sprite-grid"></div>
+        <label class="stage-row">Stage color <input id="stageColor" type="color" value="#ffffff"></label>
+      </section>
+
+      <section id="p-output" class="pbody">
+        <div class="row"><small class="muted">Messages from <b>print</b> blocks and errors show up here.</small><span class="spacer"></span><button id="clearOutput" class="small">Clear</button></div>
+        <div id="output" class="term"></div>
+      </section>
+
+      <section id="p-pi" class="pbody">
+        <div class="seg" role="group" aria-label="Pi target">
+          <button class="seg-btn" data-mode="emulator">🖥️ Emulator</button>
+          <button class="seg-btn" data-mode="real">🍓 Real Pi</button>
+        </div>
+        <div id="piEmu" class="emu"></div>
+        <div id="piReal" class="pi-real">
+        <div class="row">
+          <input id="piHost" placeholder="raspberrypi.local:8765" spellcheck="false" aria-label="Pi address">
+          <input id="piToken" placeholder="token" type="password" aria-label="Pi bridge token">
+          <button id="piConnect" class="small">Connect</button>
+          <button id="piDevices" class="small">🔍 View devices</button>
+          <span id="piStatus" class="dot" title="Connection status"></span>
+        </div>
+        <small id="piInfo" class="muted">Run <code>raspberry-pi/pi-bridge.py</code> on your Raspberry Pi 5, then connect.</small>
+        </div>
+        <div id="piTerm" class="term"></div>
+        <form id="piForm" class="term-input"><span id="piPrompt">$</span><input id="piCmd" autocomplete="off" spellcheck="false" placeholder="type a command, e.g. ls" aria-label="Pi command"></form>
+      </section>
+
+      <section id="p-ai" class="pbody">
+        <div class="seg" role="group" aria-label="AI mode">
+          <button class="seg-btn ai-mode active" data-mode="chat">💬 Chat</button>
+          <button class="seg-btn ai-mode" data-mode="build">🪄 Build for me</button>
+        </div>
+        <div class="row">
+          <select id="aiModel" aria-label="AI model"><option value="">Ollama model…</option></select>
+          <button id="aiRefresh" class="small" title="Reload models">↻</button>
+          <label class="check"><input id="aiCtx" type="checkbox" checked> share my blocks</label>
+          <span class="spacer"></span>
+          <button id="aiClear" class="small">New chat</button>
+        </div>
+        <div id="aiLog" class="chat"></div>
+        <form id="aiForm" class="ai-form">
+          <textarea id="aiInput" rows="2" placeholder="Ask how to make something…"></textarea>
+          <button id="aiSend" class="primary">Send</button>
+        </form>
+        <details class="muted"><summary>Ollama settings</summary><label>Address <input id="aiHost" spellcheck="false"></label></details>
+      </section>
+    </div>
+  </aside>
+</main>
+
+<main id="view-editor" class="view">
+  <div class="ed-tabs">
+    <button class="ed-tab active" data-ed="python">🐍 Python</button>
+    <button class="ed-tab" data-ed="html">🌐 HTML</button>
+    <button class="ed-tab" data-ed="gen">⇄ Blocks → HTML / CSS / JS</button>
+  </div>
+  <section id="ed-python" class="ed-section active">
+    <div class="toolbar"><button id="pyRunBrowser" class="primary">▶ Run in browser</button><button id="pyRunPi">🍓 Run on Pi</button></div>
+    <div class="split"><div id="cmPython" class="cm-host"></div><div id="pyOut" class="term"></div></div>
+  </section>
+  <section id="ed-html" class="ed-section">
+    <div class="toolbar"><button id="htmlRun" class="primary">▶ Run</button><button id="htmlDownload">⇩ Download</button></div>
+    <div class="split"><div id="cmHtml" class="cm-host"></div><iframe id="htmlPreview" title="HTML preview" sandbox="allow-scripts allow-modals"></iframe></div>
+  </section>
+  <section id="ed-gen" class="ed-section">
+    <div class="toolbar">
+      <button class="gen-tab active" data-gen="html">index.html</button>
+      <button class="gen-tab" data-gen="css">style.css</button>
+      <button class="gen-tab" data-gen="js">script.js</button>
+      <span class="spacer"></span>
+      <button id="genRefresh">↻ Refresh</button>
+      <button id="genToHtml">▶ Try it in HTML editor</button>
+      <button id="genDownload3">⇩ Download 3 files</button>
+      <button id="genDownload1" class="primary">⇩ Download single .html</button>
+    </div>
+    <div id="cmGen" class="cm-host full"></div>
+  </section>
+</main>
+
+<main id="view-terminal" class="view">
+  <div class="toolbar">
+    <b>🖥️ Terminal</b><span class="muted">— a real shell on this computer</span>
+    <label class="shell-pick">Shell
+      <select id="termShell" aria-label="Shell">
+        <option value="zsh">zsh</option>
+        <option value="bash">bash</option>
+      </select>
+    </label>
+    <span class="spacer"></span>
+    <button data-cmd="python3">🐍 python3</button>
+    <button data-cmd="ollama list">✳️ ollama list</button>
+    <button data-cmd="ls">ls</button>
+    <button id="termClear">Clear</button>
+    <button id="termNew">↻ New terminal</button>
+  </div>
+  <small id="termStatus" class="muted"></small>
+  <div id="termHost"></div>
+  <small class="muted">Commands run on your Mac for real. Be careful with commands that delete things (like <code>rm</code>). For your Raspberry Pi, use the 🍓 Pi 5 tab.</small>
+</main>
+
+<dialog id="spriteDialog">
+  <form method="dialog">
+    <h2>Choose a sprite</h2>
+    <h3>Claude</h3>
+    <div id="pickClaude" class="pick-grid"></div>
+    <div class="pick-head"><h3>Library</h3><input id="spriteSearch" type="search" placeholder="Search sprites…" aria-label="Search sprites"></div>
+    <div id="pickCats" class="chips"></div>
+    <div id="pickEmoji" class="pick-grid"></div>
+    <div class="dialog-actions"><button type="button" id="paintSpriteBtn">🎨 Paint a new sprite</button><button type="button" id="textSpriteBtn">🔤 Text box</button><button type="button" id="uploadSpriteBtn">⬆ Upload an image…</button><span class="spacer"></span><button value="cancel">Cancel</button></div>
+  </form>
+</dialog>
+
+<dialog id="extDialog">
+  <form method="dialog">
+    <h2>Extensions</h2>
+    <div id="extList" class="ext-list"></div>
+    <div class="dialog-actions"><button value="cancel">Close</button></div>
+  </form>
+</dialog>
+
+<dialog id="learnDialog">
+  <form method="dialog">
+    <h2>🎓 Learn to code</h2>
+    <p class="muted">Pick a lesson. A guide will walk you through it step by step while you build.</p>
+    <div id="lessonList" class="lesson-list"></div>
+    <div class="dialog-actions"><button value="cancel">Close</button></div>
+  </form>
+</dialog>
+
+<dialog id="paintDialog" class="paint-dialog">
+  <form method="dialog">
+    <div class="paint-bar">
+      <div class="paint-tools" role="toolbar" aria-label="Paint tools">
+        <button type="button" class="paint-tool active" data-tool="pen" title="Pen">✏️</button>
+        <button type="button" class="paint-tool" data-tool="eraser" title="Eraser">🧽</button>
+        <button type="button" class="paint-tool" data-tool="fill" title="Fill">🪣</button>
+        <button type="button" class="paint-tool" data-tool="line" title="Line">╱</button>
+        <button type="button" class="paint-tool" data-tool="rect" title="Rectangle">▭</button>
+        <button type="button" class="paint-tool" data-tool="circle" title="Circle">◯</button>
+        <button type="button" class="paint-tool" data-tool="text" title="Text">T</button>
+        <button type="button" class="paint-tool" data-tool="picker" title="Pick a colour from the drawing">💧</button>
+      </div>
+      <label class="paint-opt">Colour <input type="color" id="paintColor" value="#d97757"></label>
+      <label class="paint-opt">Size <input type="range" id="paintSize" min="1" max="40" value="6"> <b id="paintSizeVal">6</b></label>
+      <label class="paint-opt" id="paintFilledWrap" hidden><input type="checkbox" id="paintFilled"> filled</label>
+      <label class="paint-opt" id="paintTextWrap" hidden>Text <input id="paintText" value="Hello!" size="10"></label>
+      <span class="spacer"></span>
+      <button type="button" id="paintFlip" class="small" title="Flip left-right">⇋ Flip</button>
+      <button type="button" id="paintUndo" class="small" title="Undo (⌘Z)">↩ Undo</button>
+      <button type="button" id="paintClear" class="small">🗑 Clear</button>
+    </div>
+    <div class="paint-stage"><canvas id="paintCanvas" width="128" height="128"></canvas></div>
+    <div class="dialog-actions">
+      <small id="paintZoom" class="muted"></small>
+      <label class="paint-opt">Name <input id="paintName" size="12"></label>
+      <span class="spacer"></span>
+      <button value="cancel">Cancel</button>
+      <button type="button" id="paintSaveNew">Save as new costume</button>
+      <button type="button" id="paintSave" class="primary">Save costume</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="textDialog">
+  <form method="dialog">
+    <h2>🔤 Text box</h2>
+    <div class="text-form">
+      <label class="wide">Text<textarea id="tbText" rows="2">Hello, New World!</textarea></label>
+      <label>Size <input type="number" id="tbSize" min="8" max="120" value="32"></label>
+      <label>Colour <input type="color" id="tbColor" value="#1f1e1d"></label>
+      <label>Font <select id="tbFont"><option value="sans">Clean</option><option value="serif">Book</option><option value="mono">Code</option><option value="hand">Handwritten</option></select></label>
+      <label><input type="checkbox" id="tbBox" checked> card behind it</label>
+      <label>Card colour <input type="color" id="tbBoxColor" value="#ffffff"></label>
+    </div>
+    <div class="text-preview"><canvas id="tbPreview"></canvas></div>
+    <div class="dialog-actions"><button value="cancel">Cancel</button><button type="button" id="tbSave" class="primary">Add text box</button></div>
+  </form>
+</dialog>
+
+<dialog id="tplDialog">
+  <form method="dialog">
+    <h2>📋 Templates</h2>
+    <p class="muted">Start from a ready-made project, then change it however you like.</p>
+    <div id="tplTags" class="chips"></div>
+    <div id="tplList" class="tpl-list"></div>
+    <div class="dialog-actions"><button value="cancel">Close</button></div>
+  </form>
+</dialog>
+
+<dialog id="partsDialog">
+  <form method="dialog">
+    <h2>＋ Add a part to the Pi emulator</h2>
+    <p class="muted">Pick a part. Parts marked “emulator only” don’t work on a real Pi yet.</p>
+    <div id="partConfig" class="part-config" hidden></div>
+    <div id="partsList" class="parts-list"></div>
+    <div class="dialog-actions"><button value="cancel">Close</button></div>
+  </form>
+</dialog>
+
+<dialog id="devicesDialog">
+  <form method="dialog">
+    <h2>🍓 Devices</h2>
+    <p class="muted">Looks for computers running <code>pi-bridge.py</code> on this computer (localhost) and on your network. Pick one to use it.</p>
+    <div class="row">
+      <button type="button" id="devQuick" class="primary">Check common addresses</button>
+      <span class="muted">or scan network</span>
+      <input id="devSubnet" value="192.168.1" size="11" aria-label="Network to scan" spellcheck="false"><span class="muted">.1 – .254</span>
+      <button type="button" id="devScan">Scan</button>
+      <button type="button" id="devAll">🌐 View all devices</button>
+    </div>
+    <small id="devStatus" class="muted"></small>
+    <div id="devList" class="dev-list"></div>
+    <div class="dialog-actions"><button value="cancel">Close</button></div>
+  </form>
+</dialog>
+
+<dialog id="confirmDialog" class="confirm">
+  <form method="dialog">
+    <p id="confirmText"></p>
+    <div class="dialog-actions"><button value="no">Cancel</button><button value="yes" id="confirmYes" class="primary">OK</button></div>
+  </form>
+</dialog>
+
+<input type="file" id="openFile" accept=".claudeblock,.cbproj,.json" hidden>
+<input type="file" id="uploadFile" accept="image/*" hidden>
+
+<script src="app/runtime.js"></script>
+<script src="app/blocks.js"></script>
+<script src="app/extensions.js"></script>
+<script src="app/editor.js"></script>
+<script src="app/main.js"></script>
+<script src="app/pi-emulator.js"></script>
+<script src="app/pi-console.js"></script>
+<script src="app/ai-build.js"></script>
+<script src="app/assistant.js"></script>
+<script src="app/learn.js"></script>
+<script src="app/terminal.js"></script>
+<script src="app/templates.js"></script>
+<script src="app/paint.js"></script>
+<script src="app/edition-ui.js"></script>
+<script src="app/updates.js"></script>
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});</script>
+</body>
+</html>

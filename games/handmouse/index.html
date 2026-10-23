@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>HandMouse</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --border: #1e1e2e;
+    --accent: #7c3aed;
+    --accent2: #06b6d4;
+    --green: #10b981;
+    --red: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --glow: rgba(124, 58, 237, 0.4);
+  }
+
+  html, body {
+    width: 480px; height: 620px;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    user-select: none;
+    -webkit-app-region: no-drag;
+  }
+
+  .titlebar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px 10px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    -webkit-app-region: drag;
+  }
+  .titlebar-left { display: flex; align-items: center; gap: 8px; }
+  .app-icon {
+    width: 22px; height: 22px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+  }
+  .app-name { font-size: 13px; font-weight: 600; letter-spacing: 0.05em; }
+  .titlebar-right { display: flex; gap: 6px; -webkit-app-region: no-drag; }
+  .win-btn {
+    width: 12px; height: 12px; border-radius: 50%; border: none;
+    cursor: pointer; transition: opacity 0.15s;
+  }
+  .win-btn:hover { opacity: 0.8; }
+  .btn-close { background: var(--red); }
+  .btn-min { background: #f59e0b; }
+
+  .main { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+  /* Video section */
+  .video-wrap {
+    position: relative; border-radius: 12px; overflow: hidden;
+    border: 1px solid var(--border);
+    background: #050508;
+    aspect-ratio: 4/3;
+  }
+  #webcam {
+    width: 100%; height: 100%; object-fit: cover;
+    display: block; transform: scaleX(-1);
+  }
+  #overlay {
+    position: absolute; inset: 0;
+    pointer-events: none;
+  }
+  .video-label {
+    position: absolute; top: 10px; left: 10px;
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+    border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 10px;
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    color: var(--muted); letter-spacing: 0.08em;
+  }
+  .gesture-badge {
+    position: absolute; top: 10px; right: 10px;
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+    border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 12px;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.06em;
+    transition: all 0.15s;
+  }
+  .gesture-badge.open { border-color: var(--green); color: var(--green); }
+  .gesture-badge.fist { border-color: var(--accent); color: var(--accent);
+    box-shadow: 0 0 12px var(--glow); }
+  .gesture-badge.none { color: var(--muted); }
+
+  .no-cam {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 8px; color: var(--muted);
+  }
+  .no-cam .cam-icon { font-size: 32px; opacity: 0.4; }
+  .no-cam p { font-size: 12px; font-family: 'DM Mono', monospace; }
+
+  /* Stats row */
+  .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 12px;
+  }
+  .stat-label { font-size: 9px; font-family: 'DM Mono', monospace; color: var(--muted);
+    letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
+  .stat-val { font-size: 18px; font-weight: 800; letter-spacing: -0.02em; }
+  .stat-val.green { color: var(--green); }
+  .stat-val.purple { color: var(--accent); }
+  .stat-val.cyan { color: var(--accent2); }
+
+  /* Controls */
+  .controls { display: flex; flex-direction: column; gap: 8px; }
+
+  .btn-start {
+    width: 100%; padding: 13px;
+    border: none; border-radius: 10px; cursor: pointer;
+    font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    transition: all 0.2s;
+    position: relative; overflow: hidden;
+  }
+  .btn-start.start {
+    background: linear-gradient(135deg, var(--accent), #9333ea);
+    color: white;
+    box-shadow: 0 0 20px var(--glow);
+  }
+  .btn-start.start:hover { box-shadow: 0 0 32px var(--glow); transform: translateY(-1px); }
+  .btn-start.stop {
+    background: linear-gradient(135deg, var(--red), #b91c1c);
+    color: white;
+    box-shadow: 0 0 20px rgba(239,68,68,0.3);
+  }
+  .btn-start.stop:hover { transform: translateY(-1px); }
+
+  .settings-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .setting-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 12px;
+  }
+  .setting-label { font-size: 9px; font-family: 'DM Mono', monospace; color: var(--muted);
+    letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+  .slider {
+    width: 100%; -webkit-appearance: none; appearance: none;
+    height: 3px; border-radius: 2px;
+    background: var(--border); outline: none;
+  }
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px;
+    border-radius: 50%; background: var(--accent); cursor: pointer;
+    box-shadow: 0 0 6px var(--glow);
+  }
+  .slider-val { font-family: 'DM Mono', monospace; font-size: 11px;
+    color: var(--accent); margin-top: 4px; }
+
+  /* Tips */
+  .tips {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 12px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+  }
+  .tip { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+  .tip-icon { font-size: 14px; }
+  .tip-key {
+    display: inline-block;
+    background: var(--border); border-radius: 3px;
+    padding: 1px 5px; font-family: 'DM Mono', monospace; font-size: 9px;
+    color: var(--text);
+  }
+
+  /* Glow pulse when tracking */
+  @keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 0 0 var(--glow); }
+    50% { box-shadow: 0 0 0 4px var(--glow); }
+  }
+  .video-wrap.tracking { animation: pulseGlow 2s ease-in-out infinite; }
+
+  /* Loading spinner */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: white; border-radius: 50%;
+    animation: spin 0.7s linear infinite; display: inline-block;
+    vertical-align: middle; margin-right: 8px;
+  }
+
+  .status-bar {
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    color: var(--muted); padding: 0 2px;
+  }
+  .status-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--muted); transition: background 0.3s;
+  }
+  .status-dot.active { background: var(--green);
+    box-shadow: 0 0 6px var(--green); }
+</style>
+</head>
+<body>
+
+<div class="titlebar">
+  <div class="titlebar-left">
+    <div class="app-icon">🖐</div>
+    <span class="app-name">HANDMOUSE</span>
+  </div>
+  <div class="titlebar-right">
+    <button class="win-btn btn-min" onclick="minimize()"></button>
+    <button class="win-btn btn-close" onclick="closeApp()"></button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="video-wrap" id="videoWrap">
+    <video id="webcam" autoplay playsinline muted></video>
+    <canvas id="overlay"></canvas>
+    <div class="video-label" id="videoLabel">NO CAMERA</div>
+    <div class="gesture-badge none" id="gestureBadge">WAITING</div>
+    <div class="no-cam" id="noCam">
+      <div class="cam-icon">📷</div>
+      <p>Camera not started</p>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Clicks</div>
+      <div class="stat-val green" id="clickCount">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">FPS</div>
+      <div class="stat-val cyan" id="fpsCount">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Hand</div>
+      <div class="stat-val purple" id="handState">—</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="settings-row">
+      <div class="setting-item">
+        <div class="setting-label">Sensitivity</div>
+        <input type="range" class="slider" id="sensitivitySlider" min="0.5" max="3" step="0.1" value="1.5"/>
+        <div class="slider-val" id="sensitivityVal">1.5×</div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label">Smoothing</div>
+        <input type="range" class="slider" id="smoothSlider" min="0.05" max="0.9" step="0.05" value="0.2"/>
+        <div class="slider-val" id="smoothVal">0.20</div>
+      </div>
+    </div>
+
+    <button class="btn-start start" id="mainBtn" onclick="toggleTracking()">
+      Start Tracking
+    </button>
+
+    <div class="status-bar">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Ready — click Start to begin</span>
+    </div>
+  </div>
+
+  <div class="tips">
+    <div class="tip"><span class="tip-icon">🖐</span> Open hand = move cursor</div>
+    <div class="tip"><span class="tip-icon">✊</span> Fist = left click</div>
+    <div class="tip"><span class="tip-icon">☝</span> Index only = right click</div>
+    <div class="tip"><span class="tip-icon">⌨</span> <span class="tip-key">ESC</span> = stop tracking</div>
+  </div>
+</div>
+
+<!-- MediaPipe via CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+<script>
+const { ipcRenderer } = require('electron');
+
+// ── State ──────────────────────────────────────────────
+let tracking = false;
+let clickCount = 0;
+let lastFistTime = 0;
+let isFist = false;
+let fistClickCooldown = 800; // ms between clicks
+let isRightClick = false;
+let lastRightTime = 0;
+
+let screenW = 1920, screenH = 1080;
+let smoothX = 0, smoothY = 0;
+let hasFirstPos = false;
+
+let frameCount = 0;
+let lastFpsTime = Date.now();
+
+let hands = null;
+let camera = null;
+
+// ── Get screen size ────────────────────────────────────
+ipcRenderer.invoke('get-screen-size').then(({ width, height }) => {
+  screenW = width; screenH = height;
+});
+
+// ── IPC from main ──────────────────────────────────────
+ipcRenderer.on('stop-tracking', () => {
+  if (tracking) stopTracking();
+});
+
+// ── UI Helpers ─────────────────────────────────────────
+function minimize() { ipcRenderer.send('minimize-app'); }
+function closeApp() { ipcRenderer.send('quit-app'); }
+
+const sensitivitySlider = document.getElementById('sensitivitySlider');
+const smoothSlider = document.getElementById('smoothSlider');
+sensitivitySlider.addEventListener('input', () => {
+  document.getElementById('sensitivityVal').textContent = parseFloat(sensitivitySlider.value).toFixed(1) + '×';
+});
+smoothSlider.addEventListener('input', () => {
+  document.getElementById('smoothVal').textContent = parseFloat(smoothSlider.value).toFixed(2);
+});
+
+function getSensitivity() { return parseFloat(sensitivitySlider.value); }
+function getSmooth() { return parseFloat(smoothSlider.value); }
+
+// ── Gesture detection ──────────────────────────────────
+function detectGesture(landmarks) {
+  // Landmark indices:
+  // 0=wrist, 4=thumb tip, 8=index tip, 12=middle tip, 16=ring tip, 20=pinky tip
+  // 5=index mcp, 9=middle mcp, 13=ring mcp, 17=pinky mcp
+  // 6=index pip, 10=middle pip, 14=ring pip, 18=pinky pip
+
+  const tip = [4, 8, 12, 16, 20];
+  const pip = [3, 6, 10, 14, 18];
+
+  // Check each finger if extended (tip y < pip y in normalized coords, since y increases downward)
+  let extended = 0;
+  // Thumb: compare x instead (horizontal extension)
+  const thumbExtended = Math.abs(landmarks[4].x - landmarks[3].x) > 0.04;
+  if (thumbExtended) extended++;
+
+  for (let i = 1; i < 5; i++) {
+    if (landmarks[tip[i]].y < landmarks[pip[i]].y - 0.02) extended++;
+  }
+
+  // Fist: all fingers curled (0-1 extended including thumb)
+  if (extended <= 1) return 'fist';
+
+  // Point (index only): index extended, others curled
+  const indexExtended = landmarks[8].y < landmarks[6].y - 0.02;
+  const middleCurled = landmarks[12].y > landmarks[10].y;
+  const ringCurled   = landmarks[16].y > landmarks[14].y;
+  const pinkyCurled  = landmarks[20].y > landmarks[18].y;
+
+  if (indexExtended && middleCurled && ringCurled && pinkyCurled) return 'point';
+
+  // Otherwise open
+  return 'open';
+}
+
+// ── Hand tracking result handler ───────────────────────
+function onResults(results) {
+  if (!tracking) return;
+
+  // FPS
+  frameCount++;
+  const now = Date.now();
+  if (now - lastFpsTime >= 1000) {
+    document.getElementById('fpsCount').textContent = frameCount;
+    frameCount = 0;
+    lastFpsTime = now;
+  }
+
+  const canvas = document.getElementById('overlay');
+  const ctx = canvas.getContext('2d');
+  const video = document.getElementById('webcam');
+  canvas.width = video.videoWidth || 640;
+  canvas.height = video.videoHeight || 480;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+    setGesture('none');
+    document.getElementById('handState').textContent = '—';
+    return;
+  }
+
+  const landmarks = results.multiHandLandmarks[0];
+  const gesture = detectGesture(landmarks);
+
+  // Draw skeleton
+  drawConnectors(ctx, landmarks, HAND_CONNECTIONS, { color: '#7c3aed55', lineWidth: 1.5 });
+  drawLandmarks(ctx, landmarks, { color: '#06b6d4', lineWidth: 1, radius: 3 });
+
+  // Highlight index fingertip for cursor position
+  const tip = landmarks[8];
+  ctx.beginPath();
+  ctx.arc((1 - tip.x) * canvas.width, tip.y * canvas.height, 7, 0, Math.PI * 2);
+  ctx.fillStyle = gesture === 'fist' ? '#ef4444' : '#10b981';
+  ctx.fill();
+
+  setGesture(gesture);
+  document.getElementById('handState').textContent = gesture.toUpperCase();
+
+  // ── Cursor movement (use index tip) ──────────────────
+  const sensitivity = getSensitivity();
+  const smooth = getSmooth();
+
+  // Flip x because webcam is mirrored
+  const normX = 1 - tip.x;
+  const normY = tip.y;
+
+  // Map to screen with sensitivity centered around 0.5
+  const centerX = 0.5, centerY = 0.5;
+  const targetX = screenW * (centerX + (normX - centerX) * sensitivity);
+  const targetY = screenH * (centerY + (normY - centerY) * sensitivity);
+
+  if (!hasFirstPos) {
+    smoothX = targetX; smoothY = targetY; hasFirstPos = true;
+  } else {
+    smoothX = smoothX + (targetX - smoothX) * smooth;
+    smoothY = smoothY + (targetY - smoothY) * smooth;
+  }
+
+  ipcRenderer.send('move-cursor', { x: Math.round(smoothX), y: Math.round(smoothY) });
+
+  // ── Click detection ───────────────────────────────────
+  const elapsed = Date.now() - lastFistTime;
+
+  if (gesture === 'fist') {
+    if (!isFist && elapsed > fistClickCooldown) {
+      isFist = true;
+      lastFistTime = Date.now();
+      clickCount++;
+      document.getElementById('clickCount').textContent = clickCount;
+      ipcRenderer.send('mouse-click', { button: 'left' });
+    }
+  } else {
+    isFist = false;
+  }
+
+  if (gesture === 'point') {
+    const rElapsed = Date.now() - lastRightTime;
+    if (!isRightClick && rElapsed > fistClickCooldown) {
+      isRightClick = true;
+      lastRightTime = Date.now();
+      ipcRenderer.send('mouse-click', { button: 'right' });
+    }
+  } else {
+    isRightClick = false;
+  }
+}
+
+function setGesture(g) {
+  const badge = document.getElementById('gestureBadge');
+  badge.className = 'gesture-badge';
+  if (g === 'fist') { badge.classList.add('fist'); badge.textContent = '✊ CLICK'; }
+  else if (g === 'open') { badge.classList.add('open'); badge.textContent = '🖐 MOVE'; }
+  else if (g === 'point') { badge.classList.add('fist'); badge.textContent = '☝ R-CLICK'; }
+  else { badge.classList.add('none'); badge.textContent = 'NO HAND'; }
+}
+
+// ── Start / Stop ───────────────────────────────────────
+async function toggleTracking() {
+  if (!tracking) await startTracking();
+  else stopTracking();
+}
+
+async function startTracking() {
+  const btn = document.getElementById('mainBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Loading...';
+  setStatus('Loading MediaPipe...', false);
+
+  try {
+    hands = new Hands({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+    });
+
+    hands.setOptions({
+      maxNumHands: 1,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.7,
+      minTrackingConfidence: 0.6,
+    });
+
+    hands.onResults(onResults);
+
+    const video = document.getElementById('webcam');
+    document.getElementById('noCam').style.display = 'none';
+
+    camera = new Camera(video, {
+      onFrame: async () => { await hands.send({ image: video }); },
+      width: 640, height: 480
+    });
+
+    await camera.start();
+
+    tracking = true;
+    hasFirstPos = false;
+    ipcRenderer.send('tracking-state', true);
+
+    document.getElementById('videoWrap').classList.add('tracking');
+    document.getElementById('videoLabel').textContent = 'LIVE';
+    document.getElementById('statusDot').classList.add('active');
+    btn.className = 'btn-start stop';
+    btn.textContent = 'Stop Tracking';
+    btn.disabled = false;
+    setStatus('Tracking active — move your hand!', true);
+
+  } catch (err) {
+    btn.className = 'btn-start start';
+    btn.textContent = 'Start Tracking';
+    btn.disabled = false;
+    setStatus('Error: ' + err.message, false);
+    console.error(err);
+  }
+}
+
+function stopTracking() {
+  tracking = false;
+  ipcRenderer.send('tracking-state', false);
+
+  if (camera) { camera.stop(); camera = null; }
+  if (hands) { hands.close(); hands = null; }
+
+  hasFirstPos = false;
+  document.getElementById('videoWrap').classList.remove('tracking');
+  document.getElementById('videoLabel').textContent = 'STOPPED';
+  document.getElementById('noCam').style.display = 'flex';
+  document.getElementById('noCam').querySelector('p').textContent = 'Tracking stopped';
+  document.getElementById('statusDot').classList.remove('active');
+  setGesture('none');
+  document.getElementById('handState').textContent = '—';
+  document.getElementById('fpsCount').textContent = '—';
+
+  const btn = document.getElementById('mainBtn');
+  btn.className = 'btn-start start';
+  btn.textContent = 'Start Tracking';
+  setStatus('Stopped. Click Start to resume.', false);
+}
+
+function setStatus(msg, active) {
+  document.getElementById('statusText').textContent = msg;
+  const dot = document.getElementById('statusDot');
+  if (active) dot.classList.add('active'); else dot.classList.remove('active');
+}
+</script>
+</body>
+</html>

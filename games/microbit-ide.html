@@ -1,0 +1,1710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>micro:bit Deluxe IDE</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f1a;
+    --surface: #151929;
+    --surface2: #1e2438;
+    --surface3: #252c45;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --accent3: #7c4dff;
+    --green: #00ff88;
+    --yellow: #ffd600;
+    --red: #ff4444;
+    --text: #e8eaf6;
+    --text-dim: #7b83a8;
+    --border: #2a3255;
+    --microbit-body: #1a1a2e;
+    --microbit-bg: #0d1117;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* TOP BAR */
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(90deg, var(--accent), var(--accent3));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    white-space: nowrap;
+  }
+  .logo span { color: var(--accent2); -webkit-text-fill-color: var(--accent2); }
+  .tab-group {
+    display: flex;
+    gap: 4px;
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 3px;
+  }
+  .tab {
+    padding: 6px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+    transition: all 0.2s;
+    border: none;
+    background: none;
+    font-family: 'Syne', sans-serif;
+  }
+  .tab.active {
+    background: var(--surface2);
+    color: var(--accent);
+    box-shadow: 0 0 12px rgba(0,212,255,0.2);
+  }
+  .tab:hover:not(.active) { color: var(--text); background: var(--surface3); }
+  .spacer { flex:1; }
+  .btn {
+    padding: 7px 18px;
+    border-radius: 7px;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'Syne', sans-serif;
+    transition: all 0.15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .btn-run {
+    background: linear-gradient(135deg, var(--green), #00cc6a);
+    color: #000;
+  }
+  .btn-run:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(0,255,136,0.4); }
+  .btn-stop {
+    background: linear-gradient(135deg, var(--red), #cc2222);
+    color: #fff;
+  }
+  .btn-stop:hover { transform: scale(1.05); }
+  .btn-flash {
+    background: linear-gradient(135deg, var(--accent2), #ff4400);
+    color: #fff;
+  }
+  .btn-flash:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(255,107,53,0.4); }
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    transition: all 0.3s;
+  }
+  .status-dot.running { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+  /* MAIN LAYOUT */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    gap: 0;
+  }
+
+  /* PANELS */
+  .panel-left {
+    width: 220px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .panel-center {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg);
+  }
+  .panel-right {
+    width: 380px;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* BLOCK PALETTE */
+  .palette-header {
+    padding: 12px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+  }
+  .palette-scroll {
+    overflow-y: auto;
+    flex: 1;
+    padding: 8px;
+  }
+  .palette-scroll::-webkit-scrollbar { width: 4px; }
+  .palette-scroll::-webkit-scrollbar-track { background: transparent; }
+  .palette-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .block-category {
+    margin-bottom: 8px;
+  }
+  .block-cat-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 4px 6px;
+    color: var(--text-dim);
+  }
+  .palette-block {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 7px;
+    margin-bottom: 4px;
+    cursor: grab;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+    user-select: none;
+  }
+  .palette-block:hover { transform: translateX(3px); }
+  .palette-block:active { cursor: grabbing; }
+  .pb-basic { background: rgba(0,212,255,0.1); color: var(--accent); border-color: rgba(0,212,255,0.2); }
+  .pb-basic:hover { background: rgba(0,212,255,0.2); }
+  .pb-display { background: rgba(255,107,53,0.1); color: var(--accent2); border-color: rgba(255,107,53,0.2); }
+  .pb-display:hover { background: rgba(255,107,53,0.2); }
+  .pb-input { background: rgba(0,255,136,0.1); color: var(--green); border-color: rgba(0,255,136,0.2); }
+  .pb-input:hover { background: rgba(0,255,136,0.2); }
+  .pb-music { background: rgba(124,77,255,0.1); color: var(--accent3); border-color: rgba(124,77,255,0.2); }
+  .pb-music:hover { background: rgba(124,77,255,0.2); }
+  .pb-logic { background: rgba(255,214,0,0.1); color: var(--yellow); border-color: rgba(255,214,0,0.2); }
+  .pb-logic:hover { background: rgba(255,214,0,0.2); }
+  .pb-loops { background: rgba(255,68,68,0.1); color: var(--red); border-color: rgba(255,68,68,0.2); }
+  .pb-loops:hover { background: rgba(255,68,68,0.2); }
+
+  /* EDITOR AREA */
+  .editor-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  .editor-tab {
+    padding: 9px 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text-dim);
+    border-right: 1px solid var(--border);
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .editor-tab.active {
+    color: var(--accent);
+    background: var(--bg);
+    border-bottom: 2px solid var(--accent);
+  }
+  .editor-tab:hover:not(.active) { color: var(--text); background: var(--surface2); }
+
+  /* PYTHON EDITOR */
+  #python-view {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #python-view.hidden, #blocks-view.hidden { display: none; }
+  #code-editor {
+    flex: 1;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13.5px;
+    line-height: 1.7;
+    padding: 20px;
+    border: none;
+    outline: none;
+    resize: none;
+    tab-size: 4;
+    letter-spacing: 0.2px;
+  }
+  #code-editor::selection { background: rgba(0,212,255,0.2); }
+
+  /* BLOCKS VIEW */
+  #blocks-view {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    background: var(--bg);
+  }
+  #block-canvas {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: auto;
+  }
+  .block-workspace {
+    min-width: 100%;
+    min-height: 100%;
+    padding: 20px;
+    position: relative;
+  }
+  .workspace-hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: var(--text-dim);
+    pointer-events: none;
+    opacity: 0.5;
+  }
+  .workspace-hint svg { width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.4; }
+  .workspace-hint p { font-size: 13px; }
+
+  .placed-block {
+    position: absolute;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: grab;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 160px;
+    border: 1px solid;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    transition: box-shadow 0.15s;
+  }
+  .placed-block:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.6); }
+  .placed-block:active { cursor: grabbing; }
+  .placed-block .block-close {
+    margin-left: auto;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .placed-block .block-close:hover { background: var(--red); }
+  .placed-block input[type="text"] {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: inherit;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    width: 70px;
+  }
+
+  /* CONSOLE */
+  .console-area {
+    height: 130px;
+    border-top: 1px solid var(--border);
+    background: #060810;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .console-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+  }
+  #console-output {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  #console-output::-webkit-scrollbar { width: 4px; }
+  #console-output::-webkit-scrollbar-thumb { background: var(--border); }
+  .console-line { color: var(--text-dim); }
+  .console-line.info { color: var(--accent); }
+  .console-line.success { color: var(--green); }
+  .console-line.error { color: var(--red); }
+  .console-line.print { color: var(--text); }
+
+  /* RIGHT PANEL - SIMULATOR */
+  .sim-header {
+    padding: 12px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .sim-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .sim-body::-webkit-scrollbar { width: 4px; }
+  .sim-body::-webkit-scrollbar-thumb { background: var(--border); }
+
+  /* MICROBIT DEVICE */
+  .microbit-device {
+    background: var(--microbit-body);
+    border-radius: 16px;
+    padding: 20px 16px 16px;
+    width: 280px;
+    border: 2px solid #2a3060;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+    position: relative;
+    flex-shrink: 0;
+  }
+  .microbit-label {
+    text-align: center;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    opacity: 0.5;
+  }
+
+  /* LED MATRIX */
+  .led-matrix {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+    background: #080c18;
+    border-radius: 10px;
+    padding: 14px;
+    border: 1px solid #1a1f35;
+    margin-bottom: 14px;
+  }
+  .led {
+    aspect-ratio: 1;
+    border-radius: 3px;
+    background: #0d1520;
+    cursor: pointer;
+    transition: all 0.1s;
+    border: 1px solid #0a0f1a;
+    position: relative;
+  }
+  .led.on {
+    background: var(--accent2);
+    box-shadow: 0 0 6px var(--accent2), 0 0 12px rgba(255,107,53,0.4);
+    border-color: #ff8855;
+  }
+  .led.bright {
+    background: #ff9966;
+    box-shadow: 0 0 10px #ff6633, 0 0 20px rgba(255,102,51,0.6);
+  }
+
+  /* BUTTONS */
+  .microbit-buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 4px;
+    margin-bottom: 12px;
+  }
+  .mb-btn {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #2a2f4a, #1a1f3a);
+    border: 2px solid #3a4060;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--text-dim);
+    font-family: 'Syne', sans-serif;
+    transition: all 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  .mb-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .mb-btn:active {
+    transform: scale(0.93);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5), inset 0 2px 4px rgba(0,0,0,0.4);
+    background: linear-gradient(145deg, #1a1f3a, #2a2f4a);
+  }
+  .mb-btn.pressed { border-color: var(--green); color: var(--green); background: rgba(0,255,136,0.1); }
+
+  .microbit-info {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    font-size: 10px;
+    color: var(--text-dim);
+    opacity: 0.5;
+    letter-spacing: 0.5px;
+  }
+
+  /* EDGE CONNECTOR */
+  .edge-connector {
+    background: #1a1f35;
+    border-radius: 0 0 8px 8px;
+    padding: 8px 10px 6px;
+    border: 1px solid #2a3055;
+    border-top: none;
+    width: 260px;
+    flex-shrink: 0;
+  }
+  .connector-label { font-size: 9px; color: var(--text-dim); text-align: center; margin-bottom: 6px; letter-spacing: 1px; opacity: 0.5; text-transform: uppercase; }
+  .connector-pins {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    gap: 4px;
+  }
+  .pin {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+  .pin-hole {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 2px solid #3a4060;
+    background: #0d1117;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .pin-hole.connected {
+    border-color: var(--accent);
+    background: rgba(0,212,255,0.1);
+    box-shadow: 0 0 6px var(--accent);
+  }
+  .pin-hole.large {
+    width: 20px; height: 20px;
+  }
+  .pin-label { font-size: 9px; font-family: 'JetBrains Mono', monospace; color: var(--text-dim); }
+  .pin-label.gnd { color: #888; }
+  .pin-label.vcc { color: var(--red); }
+  .pin-label.signal { color: var(--accent); }
+
+  /* HARDWARE COMPONENTS SECTION */
+  .hw-section {
+    width: 100%;
+  }
+  .hw-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .hw-section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .hw-palette {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .hw-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 6px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    font-size: 10px;
+    color: var(--text-dim);
+    font-weight: 600;
+  }
+  .hw-item:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,212,255,0.08);
+    transform: translateY(-2px);
+  }
+  .hw-item-icon { font-size: 22px; margin-bottom: 4px; display: block; }
+
+  /* PLACED HARDWARE */
+  .placed-hw {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .hw-component {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    position: relative;
+    transition: all 0.2s;
+  }
+  .hw-component:hover { border-color: var(--surface3); }
+  .hw-comp-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .hw-comp-icon { font-size: 18px; }
+  .hw-comp-name { font-size: 12px; font-weight: 700; flex: 1; }
+  .hw-comp-remove {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: rgba(255,68,68,0.1);
+    border: 1px solid rgba(255,68,68,0.3);
+    color: var(--red);
+    cursor: pointer;
+    font-size: 11px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .hw-comp-remove:hover { background: var(--red); color: #fff; }
+  .hw-comp-body { font-size: 11px; color: var(--text-dim); line-height: 1.6; }
+  .hw-comp-body .prop { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .hw-comp-body .prop label { width: 60px; color: var(--text-dim); flex-shrink: 0; }
+  .hw-comp-body select, .hw-comp-body input[type="range"] {
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    flex: 1;
+  }
+  .hw-comp-body input[type="range"] { padding: 2px; }
+  .hw-comp-body select:focus, .hw-comp-body input:focus { outline: none; border-color: var(--accent); }
+
+  /* LED Component visual */
+  .hw-led-visual {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: 2px solid #333;
+    background: #111;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .hw-led-visual.on {
+    box-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+  }
+
+  /* Breadboard */
+  .breadboard-visual {
+    background: #c8d8a0;
+    border-radius: 4px;
+    padding: 4px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    border: 1px solid #a0b070;
+  }
+  .bb-row {
+    display: flex;
+    gap: 3px;
+  }
+  .bb-hole {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #789060;
+    border: 1px solid #567050;
+  }
+  .bb-bus {
+    display: flex;
+    gap: 3px;
+  }
+  .bb-bus .bb-hole { background: var(--red); }
+  .bb-bus.gnd .bb-hole { background: #333; }
+
+  /* Scrollbar */
+  .sim-body::-webkit-scrollbar { width: 4px; }
+  .sim-body::-webkit-scrollbar-track { background: transparent; }
+
+  /* ANIMATIONS */
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+  .hw-component { animation: fadeIn 0.2s ease; }
+  .placed-block { animation: fadeIn 0.15s ease; }
+
+  /* BUZZER ANIMATION */
+  @keyframes buzz {
+    0%,100%{transform:translate(0)} 25%{transform:translate(1px,0)} 75%{transform:translate(-1px,0)}
+  }
+  .buzzing { animation: buzz 0.05s infinite; }
+
+  /* SCROLLING TEXT */
+  .scroll-text-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    text-align: center;
+    min-height: 14px;
+    overflow: hidden;
+    letter-spacing: 0.5px;
+  }
+
+  /* Tooltip */
+  [title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface3);
+    color: var(--text);
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 5px;
+    white-space: nowrap;
+    border: 1px solid var(--border);
+    pointer-events: none;
+    z-index: 999;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Collapsible */
+  .collapse-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 0 4px;
+    transition: transform 0.2s;
+  }
+  .collapse-btn.open { transform: rotate(90deg); }
+
+  /* Clear btn */
+  .btn-sm {
+    padding: 3px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-dim);
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    transition: all 0.15s;
+  }
+  .btn-sm:hover { color: var(--text); border-color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="logo">micro<span>:bit</span> Deluxe</div>
+  <div class="tab-group">
+    <button class="tab active" onclick="switchMainMode('python')">🐍 Python</button>
+    <button class="tab" onclick="switchMainMode('blocks')">🧩 Blocks</button>
+  </div>
+  <div class="spacer"></div>
+  <div class="status-dot" id="status-dot"></div>
+  <button class="btn btn-run" onclick="runCode()" id="run-btn">▶ Run</button>
+  <button class="btn btn-stop" onclick="stopCode()" id="stop-btn" style="display:none">■ Stop</button>
+  <button class="btn btn-flash" onclick="flashDevice()">⚡ Flash</button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- LEFT: PALETTE -->
+  <div class="panel-left" id="left-panel">
+    <div class="palette-header">Blocks</div>
+    <div class="palette-scroll" id="block-palette">
+      <!-- Basic -->
+      <div class="block-category">
+        <div class="block-cat-label">⚡ Basic</div>
+        <div class="palette-block pb-basic" draggable="true" data-block="forever">🔁 forever</div>
+        <div class="palette-block pb-basic" draggable="true" data-block="on_start">▶ on start</div>
+        <div class="palette-block pb-basic" draggable="true" data-block="pause">⏸ pause(ms)</div>
+      </div>
+      <!-- Display -->
+      <div class="block-category">
+        <div class="block-cat-label">📺 Display</div>
+        <div class="palette-block pb-display" draggable="true" data-block="show_string">💬 show string</div>
+        <div class="palette-block pb-display" draggable="true" data-block="show_number">🔢 show number</div>
+        <div class="palette-block pb-display" draggable="true" data-block="show_icon">😊 show icon</div>
+        <div class="palette-block pb-display" draggable="true" data-block="clear_display">🗑 clear display</div>
+        <div class="palette-block pb-display" draggable="true" data-block="set_pixel">💡 set pixel</div>
+        <div class="palette-block pb-display" draggable="true" data-block="scroll">📜 scroll</div>
+      </div>
+      <!-- Input -->
+      <div class="block-category">
+        <div class="block-cat-label">🎮 Input</div>
+        <div class="palette-block pb-input" draggable="true" data-block="btn_a">🅰 button A</div>
+        <div class="palette-block pb-input" draggable="true" data-block="btn_b">🅱 button B</div>
+        <div class="palette-block pb-input" draggable="true" data-block="shake">📳 on shake</div>
+        <div class="palette-block pb-input" draggable="true" data-block="temp">🌡 temperature</div>
+        <div class="palette-block pb-input" draggable="true" data-block="light_level">☀ light level</div>
+        <div class="palette-block pb-input" draggable="true" data-block="compass">🧭 compass</div>
+        <div class="palette-block pb-input" draggable="true" data-block="accel">📐 acceleration</div>
+        <div class="palette-block pb-input" draggable="true" data-block="pin_read">📍 read pin</div>
+      </div>
+      <!-- Music -->
+      <div class="block-category">
+        <div class="block-cat-label">🎵 Music</div>
+        <div class="palette-block pb-music" draggable="true" data-block="play_note">🎵 play note</div>
+        <div class="palette-block pb-music" draggable="true" data-block="play_melody">🎼 play melody</div>
+        <div class="palette-block pb-music" draggable="true" data-block="stop_music">🔇 stop music</div>
+      </div>
+      <!-- Logic -->
+      <div class="block-category">
+        <div class="block-cat-label">🧠 Logic</div>
+        <div class="palette-block pb-logic" draggable="true" data-block="if_block">❓ if / else</div>
+        <div class="palette-block pb-logic" draggable="true" data-block="compare">⚖ compare</div>
+        <div class="palette-block pb-logic" draggable="true" data-block="and_or">🔗 and / or</div>
+      </div>
+      <!-- Loops -->
+      <div class="block-category">
+        <div class="block-cat-label">🔄 Loops</div>
+        <div class="palette-block pb-loops" draggable="true" data-block="repeat">🔂 repeat N times</div>
+        <div class="palette-block pb-loops" draggable="true" data-block="for_range">📊 for in range</div>
+        <div class="palette-block pb-loops" draggable="true" data-block="while_loop">♾ while True</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER: EDITOR -->
+  <div class="panel-center">
+    <div class="editor-tabs">
+      <div class="editor-tab active" onclick="switchEditorTab('python')" id="etab-python">🐍 main.py</div>
+      <div class="editor-tab" onclick="switchEditorTab('blocks')" id="etab-blocks">🧩 Block Editor</div>
+    </div>
+
+    <!-- Python editor -->
+    <div id="python-view" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+      <textarea id="code-editor" spellcheck="false">from microbit import *
+
+# micro:bit Deluxe Simulator
+# Write your Python code here!
+
+display.scroll("Hello!")
+
+while True:
+    if button_a.was_pressed():
+        display.show(Image.HAPPY)
+        sleep(500)
+    elif button_b.was_pressed():
+        display.show(Image.SAD)
+        sleep(500)
+    else:
+        display.show(Image.HEART)
+        sleep(1000)
+    
+    temp = temperature()
+    print("Temp:", temp, "°C")
+    sleep(2000)
+</textarea>
+    </div>
+
+    <!-- Blocks view -->
+    <div id="blocks-view" style="display:none;flex:1;overflow:hidden;position:relative;">
+      <div id="block-canvas" style="width:100%;height:100%;overflow:auto;background:var(--bg);">
+        <div class="block-workspace" id="workspace" ondragover="event.preventDefault()" ondrop="dropBlock(event)" style="min-width:800px;min-height:500px;">
+          <div class="workspace-hint" id="workspace-hint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M12 5v14M5 12h14" stroke-linecap="round"/>
+            </svg>
+            <p>Drag blocks here to build your program</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Console -->
+    <div class="console-area">
+      <div class="console-header">
+        📟 Serial Console
+        <button class="btn-sm" onclick="clearConsole()">Clear</button>
+      </div>
+      <div id="console-output">
+        <div class="console-line info">micro:bit Deluxe IDE ready. Press ▶ Run to start simulation.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: SIMULATOR -->
+  <div class="panel-right">
+    <div class="sim-header">
+      <span>⚡ Simulator</span>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <div id="sim-status" style="font-size:11px;color:var(--green);display:none;">● RUNNING</div>
+        <button class="btn-sm" onclick="resetSim()">Reset</button>
+      </div>
+    </div>
+    <div class="sim-body">
+
+      <!-- micro:bit Device -->
+      <div class="microbit-device" id="microbit-device">
+        <div class="microbit-label">BBC micro:bit v2</div>
+        <div class="led-matrix" id="led-matrix"></div>
+        <div class="scroll-text-display" id="scroll-text-display"></div>
+        <div class="microbit-buttons">
+          <button class="mb-btn" id="btn-a" onmousedown="pressBtn('A')" onmouseup="releaseBtn('A')">A</button>
+          <div style="font-size:9px;color:var(--text-dim);opacity:0.5;text-align:center;line-height:1.4">
+            USB<br>──
+          </div>
+          <button class="mb-btn" id="btn-b" onmousedown="pressBtn('B')" onmouseup="releaseBtn('B')">B</button>
+        </div>
+        <div class="microbit-info">
+          <span id="mb-temp">🌡 23°C</span>
+          <span id="mb-light">☀ 128</span>
+          <span id="mb-compass">🧭 270°</span>
+        </div>
+      </div>
+
+      <!-- Edge Connector -->
+      <div class="edge-connector">
+        <div class="connector-label">Edge Connector</div>
+        <div class="connector-pins">
+          <div class="pin">
+            <div class="pin-hole large" id="pin0" title="P0" onclick="togglePin(0)"></div>
+            <div class="pin-label signal">P0</div>
+          </div>
+          <div class="pin">
+            <div class="pin-hole large" id="pin1" title="P1" onclick="togglePin(1)"></div>
+            <div class="pin-label signal">P1</div>
+          </div>
+          <div class="pin">
+            <div class="pin-hole large" id="pin2" title="P2" onclick="togglePin(2)"></div>
+            <div class="pin-label signal">P2</div>
+          </div>
+          <div class="pin">
+            <div class="pin-hole" id="pin3v" title="3V"></div>
+            <div class="pin-label vcc">3V</div>
+          </div>
+          <div class="pin">
+            <div class="pin-hole" id="pinGnd" title="GND"></div>
+            <div class="pin-label gnd">GND</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hardware Palette -->
+      <div class="hw-section">
+        <div class="hw-section-title">Add Components</div>
+        <div class="hw-palette">
+          <div class="hw-item" onclick="addComponent('led')" title="Add LED">
+            <span class="hw-item-icon">💡</span>LED
+          </div>
+          <div class="hw-item" onclick="addComponent('breadboard')" title="Add breadboard">
+            <span class="hw-item-icon">🟫</span>Breadboard
+          </div>
+          <div class="hw-item" onclick="addComponent('crocodile')" title="Add crocodile clips">
+            <span class="hw-item-icon">🐊</span>Croc Clips
+          </div>
+          <div class="hw-item" onclick="addComponent('buzzer')" title="Add buzzer">
+            <span class="hw-item-icon">🔔</span>Buzzer
+          </div>
+          <div class="hw-item" onclick="addComponent('servo')" title="Add servo motor">
+            <span class="hw-item-icon">⚙️</span>Servo
+          </div>
+          <div class="hw-item" onclick="addComponent('neopixel')" title="Add NeoPixel strip">
+            <span class="hw-item-icon">🌈</span>NeoPixel
+          </div>
+          <div class="hw-item" onclick="addComponent('lcd')" title="Add LCD screen">
+            <span class="hw-item-icon">📺</span>LCD
+          </div>
+          <div class="hw-item" onclick="addComponent('sensor')" title="Add sensor">
+            <span class="hw-item-icon">📡</span>Sensor
+          </div>
+          <div class="hw-item" onclick="addComponent('motor')" title="Add DC motor">
+            <span class="hw-item-icon">🔧</span>DC Motor
+          </div>
+        </div>
+      </div>
+
+      <!-- Placed Components -->
+      <div class="hw-section" id="components-section" style="width:100%">
+        <div class="hw-section-title">Wired Components</div>
+        <div class="placed-hw" id="placed-hw">
+          <div style="text-align:center;color:var(--text-dim);font-size:11px;padding:12px 0;opacity:0.5;" id="no-components-hint">
+            No components added yet.<br>Click the buttons above to add hardware.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ==================== LED MATRIX ====================
+const ledMatrix = document.getElementById('led-matrix');
+const leds = [];
+for(let i=0;i<25;i++){
+  const led = document.createElement('div');
+  led.className='led';
+  led.dataset.idx=i;
+  led.onclick=()=>toggleLed(i);
+  led.title=`LED (${i%5}, ${Math.floor(i/5)})`;
+  ledMatrix.appendChild(led);
+  leds.push(led);
+}
+
+function setLed(x,y,on){
+  const idx=y*5+x;
+  if(idx>=0&&idx<25){
+    leds[idx].className='led'+(on?' on':'');
+  }
+}
+function setAllLeds(on){
+  leds.forEach(l=>l.className='led'+(on?' on':''));
+}
+function toggleLed(i){
+  leds[i].classList.toggle('on');
+}
+
+// ==================== MICROBIT IMAGES ====================
+const IMAGES = {
+  HEART: [[0,1,0,1,0],[1,1,1,1,1],[1,1,1,1,1],[0,1,1,1,0],[0,0,1,0,0]],
+  HAPPY: [[0,0,0,0,0],[0,1,0,1,0],[0,0,0,0,0],[1,0,0,0,1],[0,1,1,1,0]],
+  SAD: [[0,0,0,0,0],[0,1,0,1,0],[0,0,0,0,0],[0,1,1,1,0],[1,0,0,0,1]],
+  SMILE: [[0,0,0,0,0],[0,1,0,1,0],[0,0,0,0,0],[1,0,0,0,1],[0,1,1,1,0]],
+  SURPRISED: [[0,1,0,1,0],[0,0,0,0,0],[0,0,1,0,0],[0,1,0,1,0],[0,1,1,1,0]],
+  ASLEEP: [[0,0,0,0,0],[1,1,0,1,1],[0,0,0,0,0],[0,1,1,1,0],[0,0,0,0,0]],
+  YES: [[0,0,0,0,0],[0,0,0,0,1],[0,0,0,1,0],[1,0,1,0,0],[0,1,0,0,0]],
+  NO: [[1,0,0,0,1],[0,1,0,1,0],[0,0,1,0,0],[0,1,0,1,0],[1,0,0,0,1]],
+  ARROW_N: [[0,0,1,0,0],[0,1,1,1,0],[1,0,1,0,1],[0,0,1,0,0],[0,0,1,0,0]],
+  DIAMOND: [[0,0,1,0,0],[0,1,0,1,0],[1,0,0,0,1],[0,1,0,1,0],[0,0,1,0,0]],
+  SQUARE: [[1,1,1,1,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,1,1,1,1]],
+  CLOCK1: [[0,0,1,0,0],[0,0,1,1,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]],
+};
+
+function showImage(imgName) {
+  const img = IMAGES[imgName.toUpperCase()];
+  if(img) {
+    for(let y=0;y<5;y++) for(let x=0;x<5;x++) setLed(x,y,img[y][x]);
+  }
+}
+
+// ==================== SIMULATION STATE ====================
+let running = false;
+let simInterval = null;
+let simTime = 0;
+let scrollTimeout = null;
+let buttonState = {A:false, B:false};
+let buttonPressed = {A:false, B:false};
+let pinStates = [0,0,0];
+let components = [];
+let compIdCounter = 0;
+let simTemp = 23, simLight = 128, simCompass = 270;
+
+// ==================== BUTTON HANDLING ====================
+function pressBtn(btn) {
+  buttonState[btn] = true;
+  buttonPressed[btn] = true;
+  document.getElementById('btn-'+btn.toLowerCase()).classList.add('pressed');
+  log(`Button ${btn} pressed`, 'info');
+}
+function releaseBtn(btn) {
+  buttonState[btn] = false;
+  document.getElementById('btn-'+btn.toLowerCase()).classList.remove('pressed');
+}
+
+// ==================== SCROLL TEXT ====================
+function scrollText(text) {
+  const el = document.getElementById('scroll-text-display');
+  el.textContent = text;
+  if(scrollTimeout) clearTimeout(scrollTimeout);
+  scrollTimeout = setTimeout(()=>{el.textContent='';}, text.length * 200 + 800);
+}
+
+// ==================== CONSOLE ====================
+function log(msg, type='console-line') {
+  const out = document.getElementById('console-output');
+  const line = document.createElement('div');
+  line.className='console-line '+(type==='console-line'?'print':type);
+  const time = new Date().toLocaleTimeString('en',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  line.textContent=`[${time}] ${msg}`;
+  out.appendChild(line);
+  out.scrollTop = out.scrollHeight;
+}
+function clearConsole() {
+  document.getElementById('console-output').innerHTML='<div class="console-line info">Console cleared.</div>';
+}
+
+// ==================== SIMPLE PYTHON INTERPRETER ====================
+function runCode() {
+  const code = document.getElementById('code-editor').value;
+  startSim();
+  log('Running simulation...', 'success');
+  interpretPython(code);
+}
+
+function interpretPython(code) {
+  // Simple line-by-line interpreter for common micro:bit commands
+  const lines = code.split('\n').map(l=>l.trim()).filter(l=>l && !l.startsWith('#') && !l.startsWith('from') && !l.startsWith('import'));
+  
+  let i = 0;
+  let loopCount = 0;
+  const maxLoops = 50;
+  
+  function processLine(line) {
+    // display.scroll()
+    let m;
+    if(m = line.match(/display\.scroll\(["'](.+?)["']\)/)) {
+      scrollText(m[1]);
+      log(`display.scroll("${m[1]}")`, 'info');
+    }
+    // display.show(Image.X)
+    else if(m = line.match(/display\.show\(Image\.(\w+)\)/)) {
+      showImage(m[1]);
+      log(`display.show(Image.${m[1]})`, 'info');
+    }
+    // display.show("x") single char
+    else if(m = line.match(/display\.show\(["'](.+?)["']\)/)) {
+      scrollText(m[1]);
+    }
+    // display.clear()
+    else if(line.match(/display\.clear\(\)/)) {
+      setAllLeds(false);
+      log('display.clear()', 'info');
+    }
+    // display.set_pixel(x,y,b)
+    else if(m = line.match(/display\.set_pixel\((\d+),\s*(\d+),\s*(\d+)\)/)) {
+      setLed(+m[1],+m[2],+m[3]>0);
+    }
+    // print(...)
+    else if(m = line.match(/print\((.+)\)/)) {
+      let val = m[1].replace(/["']/g,'').replace('temp', simTemp).replace('temperature()', simTemp);
+      log('>>> '+val, 'print');
+    }
+    // temperature()
+    else if(m = line.match(/temperature\(\)/)) {
+      log(`temperature() = ${simTemp}°C`, 'info');
+    }
+    // pin.write_digital
+    else if(m = line.match(/pin(\d+)\.write_digital\((\d+)\)/)) {
+      pinStates[+m[1]] = +m[2];
+      updatePinVisual(+m[1], +m[2]);
+      updateComponents(+m[1], +m[2]);
+    }
+    // music.play
+    else if(line.match(/music\.|play_tone|play_builtin/)) {
+      log('🎵 Playing music...', 'info');
+      buzzComponents();
+    }
+  }
+  
+  // Process lines (limited to avoid infinite loops in simulation)
+  let whileLoop = false;
+  for(let ln of lines) {
+    if(ln.includes('while True') || ln.includes('while true')) { whileLoop = true; break; }
+    if(!running) break;
+    processLine(ln);
+  }
+  
+  // If while loop, simulate periodic execution
+  if(whileLoop && running) {
+    let step = 0;
+    const loopLines = lines.slice(lines.findIndex(l=>l.includes('while')));
+    simInterval = setInterval(()=>{
+      if(!running || step > 200) { clearInterval(simInterval); return; }
+      if(loopLines[step % loopLines.length]) processLine(loopLines[step % loopLines.length]);
+      // Update sensors periodically
+      simTemp = 20 + Math.round(Math.sin(step*0.1)*3);
+      simLight = 100 + Math.round(Math.sin(step*0.08)*50);
+      simCompass = (simCompass + 2) % 360;
+      document.getElementById('mb-temp').textContent = `🌡 ${simTemp}°C`;
+      document.getElementById('mb-light').textContent = `☀ ${simLight}`;
+      document.getElementById('mb-compass').textContent = `🧭 ${simCompass}°`;
+      step++;
+    }, 300);
+  }
+}
+
+function startSim() {
+  running = true;
+  document.getElementById('run-btn').style.display='none';
+  document.getElementById('stop-btn').style.display='flex';
+  document.getElementById('status-dot').classList.add('running');
+  document.getElementById('sim-status').style.display='block';
+  setAllLeds(false);
+}
+function stopCode() {
+  running = false;
+  if(simInterval) { clearInterval(simInterval); simInterval = null; }
+  document.getElementById('run-btn').style.display='flex';
+  document.getElementById('stop-btn').style.display='none';
+  document.getElementById('status-dot').classList.remove('running');
+  document.getElementById('sim-status').style.display='none';
+  log('Simulation stopped.', 'error');
+  setAllLeds(false);
+}
+function resetSim() {
+  stopCode();
+  setAllLeds(false);
+  document.getElementById('scroll-text-display').textContent='';
+  buttonPressed = {A:false,B:false};
+  pinStates=[0,0,0];
+  updateAllPinVisuals();
+  updateAllComponents();
+  log('Simulator reset.', 'info');
+}
+function flashDevice() {
+  log('⚡ Flashing device... (Connect a real micro:bit for hardware flash!)', 'info');
+  // Blink effect
+  let b=0;
+  const blink = setInterval(()=>{
+    leds.forEach(l=>l.className='led'+(b%2?' on':''));
+    b++;
+    if(b>6){clearInterval(blink);setAllLeds(false);log('Flash complete! ✓','success');}
+  },100);
+}
+
+// ==================== PIN MANAGEMENT ====================
+function togglePin(n) {
+  pinStates[n] = pinStates[n] ? 0 : 1;
+  updatePinVisual(n, pinStates[n]);
+  updateComponents(n, pinStates[n]);
+}
+function updatePinVisual(n, val) {
+  const el = document.getElementById('pin'+n);
+  if(el) el.className = 'pin-hole large'+(val?' connected':'');
+}
+function updateAllPinVisuals() {
+  for(let i=0;i<3;i++) updatePinVisual(i, 0);
+}
+function updateComponents(pin, val) {
+  components.forEach(c=>{
+    if(c.pin == pin) {
+      if(c.type==='led') setHwLedState(c.id, val);
+      if(c.type==='buzzer' && val) buzzComponents();
+    }
+  });
+}
+function updateAllComponents() {
+  components.forEach(c=>{
+    if(c.type==='led') setHwLedState(c.id, 0);
+  });
+}
+
+// ==================== HARDWARE COMPONENTS ====================
+const componentDefs = {
+  led: {
+    name:'LED', icon:'💡',
+    render(c) {
+      return `
+        <div class="hw-comp-body">
+          <div class="prop"><label>Pin:</label>
+            <select id="sel-${c.id}-pin" onchange="updateCompProp('${c.id}','pin',this.value)">
+              <option value="0">P0</option><option value="1">P1</option><option value="2">P2</option>
+            </select>
+          </div>
+          <div class="prop"><label>Color:</label>
+            <select id="sel-${c.id}-color" onchange="updateCompProp('${c.id}','color',this.value)">
+              <option value="#ff4444">Red</option><option value="#44ff88">Green</option>
+              <option value="#4488ff">Blue</option><option value="#ffff44">Yellow</option>
+              <option value="#ff88ff">Pink</option><option value="#ffffff">White</option>
+            </select>
+          </div>
+          <div class="prop"><label>State:</label>
+            <div class="hw-led-visual" id="hw-led-${c.id}" style="background:#111;border-color:#444;width:24px;height:24px;border-radius:50%;border:2px solid #444;cursor:pointer;" onclick="toggleHwLed('${c.id}')"></div>
+            <span style="margin-left:8px;font-size:11px" id="hw-led-txt-${c.id}">OFF</span>
+          </div>
+        </div>`;
+    }
+  },
+  breadboard: {
+    name:'Breadboard', icon:'🟫',
+    render(c) {
+      let rows = '';
+      for(let r=0;r<5;r++){
+        let holes='';
+        for(let h=0;h<10;h++) holes+=`<div class="bb-hole" style="width:8px;height:8px;border-radius:50%;background:#789060;border:1px solid #567050;"></div>`;
+        rows+=`<div class="bb-row" style="display:flex;gap:3px;margin-bottom:2px;">${holes}</div>`;
+      }
+      return `
+        <div class="hw-comp-body">
+          <div style="background:#c8d8a0;border-radius:4px;padding:6px 8px;border:1px solid #a0b070;margin-bottom:6px;">
+            <div class="bb-bus" style="display:flex;gap:3px;margin-bottom:4px;">
+              ${Array(10).fill('<div style="width:8px;height:8px;border-radius:50%;background:#cc3333;border:1px solid #aa2222;"></div>').join('')}
+            </div>
+            ${rows}
+            <div class="bb-bus" style="display:flex;gap:3px;margin-top:4px;">
+              ${Array(10).fill('<div style="width:8px;height:8px;border-radius:50%;background:#333;border:1px solid #111;"></div>').join('')}
+            </div>
+          </div>
+          <div style="font-size:10px;color:var(--text-dim);">Red row = 3V3 | Black row = GND</div>
+        </div>`;
+    }
+  },
+  crocodile: {
+    name:'Crocodile Clips', icon:'🐊',
+    render(c) {
+      const colors = ['#ff4444','#000000','#4488ff','#ffcc00','#44cc44'];
+      const labels = ['Red → P0','Black → GND','Blue → P1','Yellow → 3V','Green → P2'];
+      return `
+        <div class="hw-comp-body">
+          ${colors.map((col,i)=>`
+            <div class="prop" style="margin-bottom:6px;">
+              <div style="width:12px;height:12px;border-radius:50%;background:${col};flex-shrink:0;border:1px solid rgba(255,255,255,0.2);"></div>
+              <span style="color:${col==='#000000'?'#888':col};font-size:11px;">${labels[i]}</span>
+            </div>
+          `).join('')}
+        </div>`;
+    }
+  },
+  buzzer: {
+    name:'Buzzer', icon:'🔔',
+    render(c) {
+      return `
+        <div class="hw-comp-body">
+          <div class="prop"><label>Pin:</label>
+            <select id="sel-${c.id}-pin" onchange="updateCompProp('${c.id}','pin',this.value)">
+              <option value="0">P0</option><option value="1">P1</option><option value="2">P2</option>
+            </select>
+          </div>
+          <div class="prop"><label>Freq:</label>
+            <input type="range" min="100" max="2000" value="440" oninput="updateCompProp('${c.id}','freq',this.value);document.getElementById('freq-${c.id}').textContent=this.value+'Hz'">
+            <span id="freq-${c.id}" style="width:55px;flex-shrink:0;font-size:10px;font-family:monospace;">440Hz</span>
+          </div>
+          <div class="prop">
+            <button class="btn-sm" onclick="buzzComponents()" style="width:100%;">🔊 Test Buzz</button>
+          </div>
+          <div id="buzz-anim-${c.id}" style="font-size:20px;text-align:center;display:none;">🔔</div>
+        </div>`;
+    }
+  },
+  servo: {
+    name:'Servo Motor', icon:'⚙️',
+    render(c) {
+      return `
+        <div class="hw-comp-body">
+          <div class="prop"><label>Pin:</label>
+            <select onchange="updateCompProp('${c.id}','pin',this.value)">
+              <option>P0</option><option>P1</option><option>P2</option>
+            </select>
+          </div>
+          <div class="prop"><label>Angle:</label>
+            <input type="range" min="0" max="180" value="90" 
+              oninput="document.getElementById('sv-${c.id}').textContent=this.value+'°';rotateServo('${c.id}',this.value)">
+            <span id="sv-${c.id}" style="width:40px;flex-shrink:0;font-size:10px;font-family:monospace;">90°</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:center;margin-top:8px;">
+            <div id="servo-vis-${c.id}" style="width:50px;height:50px;border-radius:50%;border:3px solid #555;background:var(--surface3);display:flex;align-items:center;justify-content:center;position:relative;">
+              <div id="servo-arm-${c.id}" style="width:2px;height:22px;background:var(--accent);position:absolute;top:3px;left:50%;transform-origin:bottom center;transform:rotate(0deg);border-radius:2px;transition:transform 0.3s;"></div>
+            </div>
+          </div>
+        </div>`;
+    }
+  },
+  neopixel: {
+    name:'NeoPixel Strip', icon:'🌈',
+    render(c) {
+      const pixels = Array(8).fill(0).map((_,i)=>`
+        <div id="np-${c.id}-${i}" onclick="cyclePixel('${c.id}',${i})" 
+          style="width:22px;height:22px;border-radius:3px;background:#111;border:1px solid #333;cursor:pointer;transition:all 0.2s;" 
+          title="Pixel ${i}"></div>
+      `).join('');
+      return `
+        <div class="hw-comp-body">
+          <div class="prop"><label>Pin:</label>
+            <select onchange="updateCompProp('${c.id}','pin',this.value)"><option>P0</option><option>P1</option><option>P2</option></select>
+          </div>
+          <div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:6px;">${pixels}</div>
+          <div style="margin-top:6px;display:flex;gap:6px;">
+            <button class="btn-sm" onclick="rainbowPixels('${c.id}')">🌈 Rainbow</button>
+            <button class="btn-sm" onclick="clearPixels('${c.id}')">✕ Clear</button>
+          </div>
+        </div>`;
+    }
+  },
+  lcd: {
+    name:'LCD Screen', icon:'📺',
+    render(c) {
+      return `
+        <div class="hw-comp-body">
+          <div style="background:#1a2a1a;border:2px solid #3a5a3a;border-radius:6px;padding:8px 10px;font-family:'JetBrains Mono',monospace;font-size:12px;margin-bottom:8px;">
+            <div id="lcd-line1-${c.id}" style="color:#00ff66;min-height:16px;letter-spacing:1px;">Hello World!  </div>
+            <div id="lcd-line2-${c.id}" style="color:#00cc55;min-height:16px;letter-spacing:1px;opacity:0.7;margin-top:4px;">micro:bit Deluxe</div>
+          </div>
+          <div class="prop"><label>Line 1:</label>
+            <input type="text" value="Hello World!" oninput="document.getElementById('lcd-line1-${c.id}').textContent=this.value"
+              style="background:var(--surface3);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:2px 6px;font-size:11px;font-family:monospace;flex:1;">
+          </div>
+          <div class="prop"><label>Line 2:</label>
+            <input type="text" value="micro:bit Deluxe" oninput="document.getElementById('lcd-line2-${c.id}').textContent=this.value"
+              style="background:var(--surface3);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:2px 6px;font-size:11px;font-family:monospace;flex:1;">
+          </div>
+        </div>`;
+    }
+  },
+  sensor: {
+    name:'Sensor (Generic)', icon:'📡',
+    render(c) {
+      return `
+        <div class="hw-comp-body">
+          <div class="prop"><label>Type:</label>
+            <select onchange="updateCompProp('${c.id}','sensorType',this.value)">
+              <option>Distance (cm)</option><option>Temperature</option><option>Humidity</option><option>Light</option>
+            </select>
+          </div>
+          <div class="prop"><label>Value:</label>
+            <input type="range" min="0" max="100" value="42"
+              oninput="document.getElementById('sv-val-${c.id}').textContent=this.value">
+            <span id="sv-val-${c.id}" style="width:35px;flex-shrink:0;font-size:10px;font-family:monospace;">42</span>
+          </div>
+          <div class="prop"><label>Pin:</label>
+            <select><option>P0</option><option>P1</option><option>P2</option></select>
+          </div>
+        </div>`;
+    }
+  },
+  motor: {
+    name:'DC Motor', icon:'🔧',
+    render(c) {
+      return `
+        <div class="hw-comp-body">
+          <div class="prop"><label>Pin:</label>
+            <select><option>P0</option><option>P1</option><option>P2</option></select>
+          </div>
+          <div class="prop"><label>Speed:</label>
+            <input type="range" min="0" max="100" value="0"
+              oninput="document.getElementById('mtr-${c.id}').textContent=this.value+'%';setMotorSpeed('${c.id}',this.value)">
+            <span id="mtr-${c.id}" style="width:40px;flex-shrink:0;font-size:10px;font-family:monospace;">0%</span>
+          </div>
+          <div class="prop"><label>Dir:</label>
+            <select id="mdir-${c.id}"><option>Forward ▶</option><option>Backward ◀</option></select>
+          </div>
+          <div id="motor-vis-${c.id}" style="font-size:24px;text-align:center;margin-top:4px;transition:all 0.3s;">⚙️</div>
+        </div>`;
+    }
+  }
+};
+
+function addComponent(type) {
+  const def = componentDefs[type];
+  if(!def) return;
+  const id = 'comp'+(++compIdCounter);
+  const comp = { id, type, pin:0, state:0, ...def };
+  components.push(comp);
+  
+  // Remove hint
+  document.getElementById('no-components-hint').style.display='none';
+  
+  // Render
+  const el = document.createElement('div');
+  el.className = 'hw-component';
+  el.id = 'hw-comp-'+id;
+  el.innerHTML = `
+    <div class="hw-comp-header">
+      <span class="hw-comp-icon">${def.icon}</span>
+      <span class="hw-comp-name">${def.name}</span>
+      <div class="hw-comp-remove" onclick="removeComponent('${id}')">✕</div>
+    </div>
+    ${def.render(comp)}
+  `;
+  document.getElementById('placed-hw').appendChild(el);
+  log(`Added ${def.name} to simulation`, 'success');
+}
+
+function removeComponent(id) {
+  components = components.filter(c=>c.id!==id);
+  const el = document.getElementById('hw-comp-'+id);
+  if(el) el.remove();
+  if(components.length===0) document.getElementById('no-components-hint').style.display='';
+  log(`Removed component`, 'info');
+}
+
+function updateCompProp(id, prop, val) {
+  const c = components.find(x=>x.id===id);
+  if(c) c[prop] = val;
+}
+
+function toggleHwLed(id) {
+  const c = components.find(x=>x.id===id);
+  if(!c) return;
+  c.state = c.state ? 0 : 1;
+  setHwLedState(id, c.state);
+}
+function setHwLedState(id, val) {
+  const c = components.find(x=>x.id===id);
+  if(!c) return;
+  c.state = val;
+  const el = document.getElementById('hw-led-'+id);
+  const txt = document.getElementById('hw-led-txt-'+id);
+  const colorEl = document.getElementById('sel-'+id+'-color');
+  const color = colorEl ? colorEl.value : '#ff4444';
+  if(el) {
+    el.style.background = val ? color : '#111';
+    el.style.boxShadow = val ? `0 0 10px ${color}, 0 0 20px ${color}80` : 'none';
+    el.style.borderColor = val ? color : '#444';
+  }
+  if(txt) txt.textContent = val ? 'ON ✓' : 'OFF';
+}
+function buzzComponents() {
+  components.filter(c=>c.type==='buzzer').forEach(c=>{
+    const el = document.getElementById('buzz-anim-'+c.id);
+    if(el) {
+      el.style.display='block';
+      el.style.animation='buzz 0.05s infinite';
+      setTimeout(()=>{el.style.animation='';el.style.display='none';},500);
+    }
+  });
+  log('🔔 Buzzer activated!', 'info');
+}
+function rotateServo(id, angle) {
+  const arm = document.getElementById('servo-arm-'+id);
+  if(arm) arm.style.transform=`rotate(${angle-90}deg)`;
+}
+function setMotorSpeed(id, speed) {
+  const vis = document.getElementById('motor-vis-'+id);
+  if(vis) {
+    if(speed > 0) {
+      vis.style.animation=`spin ${Math.max(0.2,2-speed/60)}s linear infinite`;
+    } else {
+      vis.style.animation='none';
+    }
+  }
+}
+
+const pixelColors = ['#ff4444','#ff8844','#ffff44','#44ff44','#4488ff','#8844ff','#ff44ff','#ffffff'];
+let pixelColorIdx = {};
+function cyclePixel(compId, px) {
+  const key=compId+'-'+px;
+  pixelColorIdx[key] = ((pixelColorIdx[key]||0)+1) % pixelColors.length;
+  const el = document.getElementById(`np-${compId}-${px}`);
+  const col = pixelColors[pixelColorIdx[key]];
+  if(el) { el.style.background=col; el.style.boxShadow=`0 0 8px ${col}`; }
+}
+function rainbowPixels(compId) {
+  for(let i=0;i<8;i++){
+    const el=document.getElementById(`np-${compId}-${i}`);
+    const col=pixelColors[i%pixelColors.length];
+    if(el){el.style.background=col;el.style.boxShadow=`0 0 8px ${col}`;}
+  }
+}
+function clearPixels(compId) {
+  for(let i=0;i<8;i++){
+    const el=document.getElementById(`np-${compId}-${i}`);
+    if(el){el.style.background='#111';el.style.boxShadow='none';}
+  }
+}
+
+// ==================== MAIN MODE SWITCH ====================
+function switchMainMode(mode) {
+  document.querySelectorAll('.topbar .tab').forEach(t=>t.classList.remove('active'));
+  event.target.classList.add('active');
+  const leftPanel = document.getElementById('left-panel');
+  const pyView = document.getElementById('python-view');
+  const blView = document.getElementById('blocks-view');
+  const etabPy = document.getElementById('etab-python');
+  const etabBl = document.getElementById('etab-blocks');
+  if(mode==='python'){
+    leftPanel.style.display='flex';
+    switchEditorTab('python');
+  } else {
+    leftPanel.style.display='flex';
+    switchEditorTab('blocks');
+  }
+}
+function switchEditorTab(tab) {
+  document.getElementById('etab-python').classList.toggle('active', tab==='python');
+  document.getElementById('etab-blocks').classList.toggle('active', tab==='blocks');
+  document.getElementById('python-view').style.display = tab==='python'?'flex':'none';
+  document.getElementById('blocks-view').style.display = tab==='blocks'?'flex':'none';
+}
+
+// ==================== BLOCKS EDITOR ====================
+let draggingBlock = null;
+
+document.querySelectorAll('.palette-block').forEach(pb=>{
+  pb.addEventListener('dragstart', e=>{
+    draggingBlock = pb.dataset.block;
+    e.dataTransfer.setData('text/plain', pb.dataset.block);
+    e.dataTransfer.effectAllowed = 'copy';
+  });
+});
+
+const blockDefs = {
+  forever: { label:'forever', type:'pb-basic', code:'while True:' },
+  on_start: { label:'on start ▶', type:'pb-basic', code:'# on start' },
+  pause: { label:'pause', type:'pb-basic', code:'sleep(', param:'ms', default:'500', suffix:')' },
+  show_string: { label:'show string', type:'pb-display', code:'display.scroll("', param:'text', default:'Hello!', suffix:'")' },
+  show_number: { label:'show number', type:'pb-display', code:'display.show(', param:'num', default:'42', suffix:')' },
+  show_icon: { label:'show icon', type:'pb-display', code:'display.show(Image.', param:'icon', default:'HEART', suffix:')' },
+  clear_display: { label:'clear display', type:'pb-display', code:'display.clear()' },
+  set_pixel: { label:'set pixel x,y', type:'pb-display', code:'display.set_pixel(2,2,9)' },
+  scroll: { label:'scroll message', type:'pb-display', code:'display.scroll("', param:'msg', default:'Hi!', suffix:'")' },
+  btn_a: { label:'if button A', type:'pb-input', code:'if button_a.was_pressed():' },
+  btn_b: { label:'if button B', type:'pb-input', code:'if button_b.was_pressed():' },
+  shake: { label:'on shake', type:'pb-input', code:'# on shake gesture' },
+  temp: { label:'temperature()', type:'pb-input', code:'temp = temperature()' },
+  light_level: { label:'light_level()', type:'pb-input', code:'lvl = display.read_light_level()' },
+  compass: { label:'compass heading', type:'pb-input', code:'heading = compass.heading()' },
+  accel: { label:'acceleration', type:'pb-input', code:'x = accelerometer.get_x()' },
+  pin_read: { label:'read pin', type:'pb-input', code:'val = pin0.read_digital()' },
+  play_note: { label:'play note', type:'pb-music', code:'music.play(music.BA_DING)' },
+  play_melody: { label:'play melody', type:'pb-music', code:'music.play(music.RINGTONE)' },
+  stop_music: { label:'stop music', type:'pb-music', code:'music.stop()' },
+  if_block: { label:'if condition', type:'pb-logic', code:'if True:' },
+  compare: { label:'compare ==', type:'pb-logic', code:'if x == y:' },
+  and_or: { label:'and / or', type:'pb-logic', code:'if a and b:' },
+  repeat: { label:'repeat N times', type:'pb-loops', code:'for i in range(', param:'times', default:'10', suffix:'):' },
+  for_range: { label:'for in range', type:'pb-loops', code:'for i in range(0, 10):' },
+  while_loop: { label:'while True', type:'pb-loops', code:'while True:' },
+};
+
+function dropBlock(event) {
+  event.preventDefault();
+  const type = event.dataTransfer.getData('text/plain');
+  const def = blockDefs[type];
+  if(!def) return;
+
+  const workspace = document.getElementById('workspace');
+  const hint = document.getElementById('workspace-hint');
+  if(hint) hint.style.display='none';
+
+  const rect = workspace.getBoundingClientRect();
+  const canvasRect = document.getElementById('block-canvas').getBoundingClientRect();
+  const x = event.clientX - canvasRect.left + document.getElementById('block-canvas').scrollLeft - 16;
+  const y = event.clientY - canvasRect.top + document.getElementById('block-canvas').scrollTop - 16;
+
+  const el = document.createElement('div');
+  el.className='placed-block '+def.type;
+  el.style.left=Math.max(0,x)+'px';
+  el.style.top=Math.max(0,y)+'px';
+  
+  let inner=`<span style="flex:1">${def.label}</span>`;
+  if(def.param) inner+=`<input type="text" value="${def.default}" style="width:60px" title="${def.param}">`;
+  inner+=`<div class="block-close" onclick="this.parentElement.remove()">✕</div>`;
+  el.innerHTML=inner;
+
+  // Make draggable within workspace
+  let ox,oy;
+  el.addEventListener('mousedown', e=>{
+    if(e.target.tagName==='INPUT'||e.target.classList.contains('block-close')) return;
+    e.preventDefault();
+    ox = e.clientX - el.offsetLeft;
+    oy = e.clientY - el.offsetTop;
+    const move=mv=>{
+      el.style.left=(mv.clientX-ox)+'px';
+      el.style.top=(mv.clientY-oy)+'px';
+    };
+    const up=()=>{document.removeEventListener('mousemove',move);document.removeEventListener('mouseup',up);};
+    document.addEventListener('mousemove',move);
+    document.addEventListener('mouseup',up);
+  });
+
+  workspace.appendChild(el);
+  generateCodeFromBlocks();
+}
+
+function generateCodeFromBlocks() {
+  const workspace = document.getElementById('workspace');
+  const blocks = [...workspace.querySelectorAll('.placed-block')];
+  if(blocks.length===0) return;
+  
+  let code = 'from microbit import *\n\n';
+  // Sort by Y position
+  blocks.sort((a,b)=>parseInt(a.style.top)-parseInt(b.style.top));
+  
+  blocks.forEach(b=>{
+    const type = [...b.classList].find(c=>c.startsWith('pb-'));
+    const input = b.querySelector('input');
+    const val = input ? input.value : '';
+    const label = b.querySelector('span').textContent;
+    
+    for(const [key,def] of Object.entries(blockDefs)){
+      if(def.label===label){
+        let line = def.code;
+        if(def.suffix && val) line += val + def.suffix;
+        else if(!def.suffix) line = def.code;
+        code += line + '\n';
+        break;
+      }
+    }
+  });
+  
+  document.getElementById('code-editor').value = code;
+}
+
+// ==================== SENSOR SLIDERS ====================
+document.getElementById('mb-temp').onclick = ()=>{
+  simTemp = prompt('Set temperature (°C):', simTemp) || simTemp;
+  document.getElementById('mb-temp').textContent='🌡 '+simTemp+'°C';
+};
+document.getElementById('mb-light').onclick = ()=>{
+  simLight = prompt('Set light level (0-255):', simLight) || simLight;
+  document.getElementById('mb-light').textContent='☀ '+simLight;
+};
+document.getElementById('mb-compass').onclick = ()=>{
+  simCompass = prompt('Set compass heading (0-359):', simCompass) || simCompass;
+  document.getElementById('mb-compass').textContent='🧭 '+simCompass+'°';
+};
+
+// ==================== STYLE FOR SPIN ====================
+const style=document.createElement('style');
+style.textContent='@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}';
+document.head.appendChild(style);
+
+// ==================== INITIAL DISPLAY ====================
+showImage('HEART');
+log('Welcome to micro:bit Deluxe IDE! 🎉', 'success');
+log('Click ▶ Run to simulate your code, or drag blocks onto the canvas.', 'info');
+log('Tip: Click sensor readings to set custom values. Click edge connector pins to toggle signals.', 'info');
+</script>
+</body>
+</html>

@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⬡ POSE SHOOTER</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #000; overflow: hidden; font-family: monospace; }
+#root { width: 100vw; height: 100vh; position: relative; background: #000; }
+#gameCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+#videoEl { position: absolute; bottom: 10px; right: 10px; width: 160px; height: 120px; border: 2px solid #0ff; border-radius: 4px; opacity: 0.7; transform: scaleX(-1); z-index: 10; }
+#poseCanvas { position: absolute; bottom: 10px; right: 10px; width: 160px; height: 120px; border: 2px solid #0ff; border-radius: 4px; z-index: 11; pointer-events: none; }
+#hud { position: absolute; top: 0; left: 0; right: 0; z-index: 20; padding: 10px 16px; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
+#gestureFeed { position: absolute; left: 10px; bottom: 10px; z-index: 20; font-size: 13px; color: #0ff; background: rgba(0,0,0,0.6); padding: 6px 10px; border-radius: 4px; border: 1px solid rgba(0,255,255,0.2); }
+#startOverlay { position: absolute; inset: 0; background: rgba(0,0,0,0.92); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 50; color: #0ff; text-align: center; padding: 20px; }
+#startOverlay h1 { font-size: clamp(20px, 4vw, 36px); letter-spacing: 4px; margin-bottom: 8px; text-shadow: 0 0 20px rgba(0,255,255,0.5); }
+.ctrl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 16px 0; font-size: 12px; }
+.ctrl { background: rgba(0,255,255,0.08); border: 1px solid rgba(0,255,255,0.25); border-radius: 4px; padding: 8px 12px; color: #0ff; }
+.ctrl span { color: #fff; font-weight: bold; display: block; margin-bottom: 2px; font-size: 11px; }
+#startBtn { background: #0ff; color: #000; border: none; padding: 12px 32px; font-size: 15px; font-family: monospace; font-weight: bold; border-radius: 4px; cursor: pointer; letter-spacing: 2px; margin-top: 8px; }
+#startBtn:hover { background: #fff; }
+</style>
+</head>
+<body>
+<div id="root">
+  <canvas id="gameCanvas"></canvas>
+  <video id="videoEl" autoplay playsinline muted></video>
+  <canvas id="poseCanvas"></canvas>
+  <div id="hud">
+    <div>
+      <div style="color:#0ff;font-size:22px;font-weight:bold;letter-spacing:2px;">⬡ POSE SHOOTER</div>
+      <div id="scoreDisplay" style="color:#fff;font-size:13px;margin-top:2px;">SCORE: <span id="score">0</span> &nbsp; WAVE: <span id="wave">1</span></div>
+    </div>
+    <div style="text-align:right;">
+      <div id="healthBar" style="width:140px;height:14px;background:#111;border:1px solid rgba(0,255,255,0.25);border-radius:2px;overflow:hidden;display:inline-block;">
+        <div id="healthFill" style="height:100%;width:100%;background:#0f0;transition:width 0.2s;"></div>
+      </div>
+      <div style="color:rgba(0,255,255,0.6);font-size:11px;margin-top:2px;">HP <span id="hpNum">100</span></div>
+    </div>
+  </div>
+  <div id="gestureFeed">GESTURE: <span id="gestureName" style="color:#ff0">WAITING...</span></div>
+  <div id="startOverlay">
+    <h1>⬡ POSE SHOOTER</h1>
+    <p style="color:#ff0;margin-bottom:12px;font-size:14px;">Use your body as the controller — no keyboard needed</p>
+    <div class="ctrl-grid">
+      <div class="ctrl"><span>RUN IN PLACE</span>Move forward</div>
+      <div class="ctrl"><span>PUNCH / HIT</span>Shoot a bullet</div>
+      <div class="ctrl"><span>THUMBS UP</span>Turn / rotate view</div>
+      <div class="ctrl"><span>LEAN LEFT/RIGHT</span>Strafe direction</div>
+    </div>
+    <p style="font-size:11px;color:rgba(0,255,255,0.5);">Requires webcam access. Your video stays local — nothing is sent anywhere.</p>
+    <button id="startBtn" onclick="startGame()">ALLOW CAMERA &amp; PLAY</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const poseCanvas = document.getElementById('poseCanvas');
+const poseCtx = poseCanvas.getContext('2d');
+const videoEl = document.getElementById('videoEl');
+
+let W, H;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+const state = {
+  running: false,
+  score: 0,
+  wave: 1,
+  hp: 100,
+  playerAngle: 0,
+  playerX: 0,
+  playerY: 0,
+  bullets: [],
+  enemies: [],
+  particles: [],
+  floatingTexts: [],
+  lastGesture: 'IDLE',
+  gestureCooldown: 0,
+  shootCooldown: 0,
+  turnCooldown: 0,
+  invincible: 0,
+};
+
+const SPEED = 3.5;
+const BULLET_SPEED = 8;
+const TURN_SPEED = 0.08;
+
+function spawnWave() {
+  const count = 3 + state.wave * 2;
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 400 + Math.random() * 300;
+    state.enemies.push({
+      x: state.playerX + Math.cos(angle) * dist,
+      y: state.playerY + Math.sin(angle) * dist,
+      hp: 1 + Math.floor(state.wave / 3),
+      maxHp: 1 + Math.floor(state.wave / 3),
+      speed: 0.8 + state.wave * 0.15,
+      size: 22 + Math.random() * 12,
+      angle: Math.random() * Math.PI * 2,
+      color: `hsl(${Math.random()*60+0},100%,55%)`,
+      shootTimer: Math.random() * 120,
+      eBullets: [],
+    });
+  }
+}
+
+function spawnParticles(x, y, color, count=10) {
+  for (let i = 0; i < count; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const s = 1 + Math.random() * 4;
+    state.particles.push({ x, y, vx: Math.cos(a)*s, vy: Math.sin(a)*s, life: 1, color, size: 2 + Math.random()*3 });
+  }
+}
+
+function addFloatText(x, y, text, color='#ff0') {
+  state.floatingTexts.push({ x, y, text, color, life: 1, vy: -1.5 });
+}
+
+let gestureLandmarks = null;
+let kneeHistory = [];
+let runScore = 0;
+
+function analyzeGesture(landmarks) {
+  if (!landmarks || landmarks.length < 33) return 'IDLE';
+  const lm = landmarks;
+
+  const lShoulder = lm[11], rShoulder = lm[12];
+  const lElbow = lm[13], rElbow = lm[14];
+  const lWrist = lm[15], rWrist = lm[16];
+  const lHip = lm[23], rHip = lm[24];
+  const lKnee = lm[25], rKnee = lm[26];
+  const lThumb = lm[21], rThumb = lm[22];
+  const lIndex = lm[19], rIndex = lm[20];
+
+  kneeHistory.push({ lKneeY: lKnee.y, rKneeY: rKnee.y });
+  if (kneeHistory.length > 12) kneeHistory.shift();
+  if (kneeHistory.length >= 6) {
+    const old = kneeHistory[0];
+    const newK = kneeHistory[kneeHistory.length-1];
+    const lDelta = Math.abs(newK.lKneeY - old.lKneeY);
+    const rDelta = Math.abs(newK.rKneeY - old.rKneeY);
+    if (lDelta > 0.04 || rDelta > 0.04) runScore = Math.min(runScore + 1, 10);
+    else runScore = Math.max(runScore - 1, 0);
+  }
+  const isRunning = runScore >= 5;
+
+  const lPunch = lWrist.y < lShoulder.y + 0.1 && lWrist.x < lElbow.x - 0.05;
+  const rPunch = rWrist.y < rShoulder.y + 0.1 && rWrist.x > rElbow.x + 0.05;
+  const isPunch = lPunch || rPunch;
+
+  const lThumbUp = lThumb.y < lWrist.y - 0.05 && lIndex.y > lWrist.y - 0.02;
+  const rThumbUp = rThumb.y < rWrist.y - 0.05 && rIndex.y > rWrist.y - 0.02;
+  const isThumbsUp = (lThumbUp || rThumbUp) && !isPunch;
+
+  const shoulderTilt = lShoulder.x - rShoulder.x;
+  let lean = 'CENTER';
+  if (shoulderTilt > 0.08) lean = 'LEFT';
+  else if (shoulderTilt < -0.08) lean = 'RIGHT';
+
+  if (isRunning) return 'RUN';
+  if (isPunch) return 'PUNCH';
+  if (isThumbsUp) return 'THUMBS_UP';
+  if (lean === 'LEFT') return 'LEAN_LEFT';
+  if (lean === 'RIGHT') return 'LEAN_RIGHT';
+  return 'IDLE';
+}
+
+function update() {
+  if (!state.running) return;
+
+  const gesture = gestureLandmarks ? analyzeGesture(gestureLandmarks) : 'IDLE';
+  document.getElementById('gestureName').textContent = gesture;
+  state.lastGesture = gesture;
+
+  if (gesture === 'RUN') {
+    state.playerX += Math.sin(state.playerAngle) * SPEED;
+    state.playerY -= Math.cos(state.playerAngle) * SPEED;
+  }
+  if (gesture === 'LEAN_LEFT') {
+    state.playerX -= Math.cos(state.playerAngle) * SPEED * 0.7;
+    state.playerY -= Math.sin(state.playerAngle) * SPEED * 0.7;
+  }
+  if (gesture === 'LEAN_RIGHT') {
+    state.playerX += Math.cos(state.playerAngle) * SPEED * 0.7;
+    state.playerY += Math.sin(state.playerAngle) * SPEED * 0.7;
+  }
+  if (gesture === 'PUNCH' && state.shootCooldown <= 0) {
+    state.shootCooldown = 25;
+    const bx = state.playerX + Math.sin(state.playerAngle) * 30;
+    const by = state.playerY - Math.cos(state.playerAngle) * 30;
+    state.bullets.push({ x: bx, y: by, vx: Math.sin(state.playerAngle)*BULLET_SPEED, vy: -Math.cos(state.playerAngle)*BULLET_SPEED, life: 1 });
+    spawnParticles(bx, by, '#ff0', 4);
+  }
+  if (gesture === 'THUMBS_UP' && state.turnCooldown <= 0) {
+    state.playerAngle += TURN_SPEED * 8;
+    state.turnCooldown = 2;
+  }
+
+  if (state.shootCooldown > 0) state.shootCooldown--;
+  if (state.turnCooldown > 0) state.turnCooldown--;
+  if (state.invincible > 0) state.invincible--;
+
+  state.bullets = state.bullets.filter(b => {
+    b.x += b.vx; b.y += b.vy; b.life -= 0.008;
+    return b.life > 0;
+  });
+
+  for (let e of state.enemies) {
+    const dx = state.playerX - e.x, dy = state.playerY - e.y;
+    const dist = Math.sqrt(dx*dx+dy*dy);
+    if (dist > 0) { e.x += (dx/dist)*e.speed; e.y += (dy/dist)*e.speed; }
+    e.angle += 0.03;
+
+    e.shootTimer--;
+    if (e.shootTimer <= 0 && dist < 500) {
+      e.shootTimer = 90 + Math.random()*60;
+      const ea = Math.atan2(dy, dx);
+      if (!e.eBullets) e.eBullets = [];
+      e.eBullets.push({ x: e.x, y: e.y, vx: Math.cos(ea)*3, vy: Math.sin(ea)*3, life: 1 });
+    }
+    if (!e.eBullets) e.eBullets = [];
+    e.eBullets = e.eBullets.filter(b => {
+      b.x += b.vx; b.y += b.vy; b.life -= 0.006;
+      const pdx = state.playerX - b.x, pdy = state.playerY - b.y;
+      if (Math.sqrt(pdx*pdx+pdy*pdy) < 18 && state.invincible <= 0) {
+        state.hp = Math.max(0, state.hp - 10);
+        state.invincible = 40;
+        document.getElementById('healthFill').style.width = state.hp + '%';
+        document.getElementById('healthFill').style.background = state.hp > 50 ? '#0f0' : state.hp > 25 ? '#ff0' : '#f00';
+        document.getElementById('hpNum').textContent = state.hp;
+        spawnParticles(state.playerX, state.playerY, '#f00', 6);
+        return false;
+      }
+      return b.life > 0;
+    });
+
+    if (dist < e.size + 16 && state.invincible <= 0) {
+      state.hp = Math.max(0, state.hp - 5);
+      state.invincible = 30;
+    }
+  }
+
+  state.bullets.forEach(b => {
+    state.enemies.forEach(e => {
+      const dx = e.x - b.x, dy = e.y - b.y;
+      if (Math.sqrt(dx*dx+dy*dy) < e.size) {
+        e.hp--;
+        b.life = 0;
+        spawnParticles(e.x, e.y, e.color, 8);
+        if (e.hp <= 0) {
+          state.score += 10 * state.wave;
+          addFloatText(e.x, e.y, '+' + (10*state.wave));
+          document.getElementById('score').textContent = state.score;
+          spawnParticles(e.x, e.y, '#ff0', 16);
+          e.dead = true;
+        }
+      }
+    });
+  });
+  state.enemies = state.enemies.filter(e => !e.dead);
+
+  state.particles = state.particles.filter(p => {
+    p.x += p.vx; p.y += p.vy; p.vx *= 0.92; p.vy *= 0.92; p.life -= 0.04;
+    return p.life > 0;
+  });
+  state.floatingTexts = state.floatingTexts.filter(t => {
+    t.y += t.vy; t.life -= 0.02; return t.life > 0;
+  });
+
+  if (state.enemies.length === 0) {
+    state.wave++;
+    document.getElementById('wave').textContent = state.wave;
+    addFloatText(state.playerX, state.playerY - 60, 'WAVE ' + state.wave + '!', '#0ff');
+    spawnWave();
+  }
+
+  if (state.hp <= 0) {
+    state.running = false;
+    showGameOver();
+  }
+}
+
+function drawGrid(camX, camY) {
+  const gs = 80;
+  ctx.strokeStyle = 'rgba(0,255,255,0.07)';
+  ctx.lineWidth = 0.5;
+  const ox = ((-camX) % gs + gs) % gs;
+  const oy = ((-camY) % gs + gs) % gs;
+  for (let x = ox; x < W; x += gs) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = oy; y < H; y += gs) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+}
+
+function drawPlayer(cx, cy) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(state.playerAngle);
+
+  if (state.invincible > 0 && Math.floor(state.invincible/4)%2 === 0) {
+    ctx.restore(); return;
+  }
+
+  const gesture = state.lastGesture;
+  ctx.strokeStyle = '#0ff';
+  ctx.lineWidth = 2.5;
+
+  ctx.beginPath(); ctx.arc(0, -32, 12, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(0,255,255,0.15)'; ctx.fill();
+  ctx.strokeStyle = '#0ff'; ctx.stroke();
+
+  ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(0, 10); ctx.stroke();
+
+  let lArmAngle = Math.PI/4, rArmAngle = -Math.PI/4;
+  let lLegAngle = Math.PI/8, rLegAngle = -Math.PI/8;
+
+  const t = Date.now() / 150;
+  if (gesture === 'RUN') {
+    lArmAngle = Math.sin(t)*0.6 + Math.PI/4;
+    rArmAngle = -Math.sin(t)*0.6 - Math.PI/4;
+    lLegAngle = Math.sin(t)*0.7;
+    rLegAngle = -Math.sin(t)*0.7;
+  } else if (gesture === 'PUNCH') {
+    lArmAngle = -Math.PI/2;
+    rArmAngle = -Math.PI/2;
+  } else if (gesture === 'THUMBS_UP') {
+    lArmAngle = -Math.PI/3;
+    rArmAngle = -Math.PI/3;
+  } else if (gesture === 'LEAN_LEFT') {
+    lLegAngle = -Math.PI/5; rLegAngle = Math.PI/5;
+  } else if (gesture === 'LEAN_RIGHT') {
+    lLegAngle = Math.PI/5; rLegAngle = -Math.PI/5;
+  }
+
+  ctx.strokeStyle = '#0ff';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(-8, -12);
+  ctx.lineTo(-8 + Math.sin(lArmAngle)*22, -12 + Math.cos(lArmAngle)*22);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(8, -12);
+  ctx.lineTo(8 + Math.sin(rArmAngle)*22, -12 + Math.cos(rArmAngle)*22);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(-6, 10);
+  ctx.lineTo(-6 + Math.sin(lLegAngle)*22, 10 + Math.cos(lLegAngle)*22);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(6, 10);
+  ctx.lineTo(6 + Math.sin(rLegAngle)*22, 10 + Math.cos(rLegAngle)*22);
+  ctx.stroke();
+
+  ctx.strokeStyle = 'rgba(0,255,255,0.5)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(0, -40); ctx.stroke();
+  ctx.fillStyle = '#0ff';
+  ctx.beginPath(); ctx.arc(0, -44, 3, 0, Math.PI*2); ctx.fill();
+
+  ctx.restore();
+}
+
+function drawEnemy(e, camX, camY) {
+  const sx = e.x - camX + W/2;
+  const sy = e.y - camY + H/2;
+  if (sx < -100 || sx > W+100 || sy < -100 || sy > H+100) return;
+
+  ctx.save();
+  ctx.translate(sx, sy);
+  ctx.rotate(e.angle);
+
+  ctx.strokeStyle = e.color;
+  ctx.lineWidth = 2;
+  ctx.fillStyle = e.color + '33';
+  const s = e.size;
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) {
+    const a = (i/6)*Math.PI*2;
+    i === 0 ? ctx.moveTo(Math.cos(a)*s, Math.sin(a)*s) : ctx.lineTo(Math.cos(a)*s, Math.sin(a)*s);
+  }
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+
+  for (let i = 0; i < 3; i++) {
+    const a = (i/3)*Math.PI*2;
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(a)*s*1.3, Math.sin(a)*s*1.3); ctx.stroke();
+  }
+
+  if (e.maxHp > 1) {
+    const hpFrac = e.hp / e.maxHp;
+    ctx.fillStyle = '#333';
+    ctx.fillRect(-s, s+4, s*2, 4);
+    ctx.fillStyle = `hsl(${hpFrac*120},100%,50%)`;
+    ctx.fillRect(-s, s+4, s*2*hpFrac, 4);
+  }
+  ctx.restore();
+
+  if (e.eBullets) {
+    for (let b of e.eBullets) {
+      const bx = b.x - camX + W/2;
+      const by = b.y - camY + H/2;
+      ctx.beginPath(); ctx.arc(bx, by, 5, 0, Math.PI*2);
+      ctx.fillStyle = '#f44'; ctx.fill();
+    }
+  }
+}
+
+function render() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#000a0f';
+  ctx.fillRect(0, 0, W, H);
+
+  const camX = state.playerX;
+  const camY = state.playerY;
+  drawGrid(camX, camY);
+
+  const cx = W/2, cy = H/2;
+
+  state.bullets.forEach(b => {
+    const bx = b.x - camX + cx;
+    const by = b.y - camY + cy;
+    ctx.save();
+    ctx.shadowColor = '#ff0'; ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.arc(bx, by, 5, 0, Math.PI*2);
+    ctx.fillStyle = '#ff0'; ctx.fill();
+    ctx.restore();
+  });
+
+  state.enemies.forEach(e => drawEnemy(e, camX, camY));
+
+  state.particles.forEach(p => {
+    const px = p.x - camX + cx;
+    const py = p.y - camY + cy;
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(px, py, p.size, 0, Math.PI*2); ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+
+  state.floatingTexts.forEach(t => {
+    const tx = t.x - camX + cx;
+    const ty = t.y - camY + cy;
+    ctx.globalAlpha = t.life;
+    ctx.fillStyle = t.color;
+    ctx.font = 'bold 16px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(t.text, tx, ty);
+  });
+  ctx.globalAlpha = 1;
+
+  drawPlayer(cx, cy);
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(state.playerAngle);
+  ctx.strokeStyle = 'rgba(0,255,255,0.3)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(0,-50); ctx.lineTo(0,-80);
+  ctx.stroke(); ctx.setLineDash([]);
+  ctx.restore();
+
+  const miniSize = 90, miniX = W - 105, miniY = 10;
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.strokeStyle = 'rgba(0,255,255,0.2)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.roundRect(miniX, miniY, miniSize, miniSize, 4); ctx.fill(); ctx.stroke();
+  ctx.save();
+  ctx.beginPath(); ctx.roundRect(miniX, miniY, miniSize, miniSize, 4); ctx.clip();
+  state.enemies.forEach(e => {
+    const ex = miniX + miniSize/2 + (e.x - camX)*0.06;
+    const ey = miniY + miniSize/2 + (e.y - camY)*0.06;
+    ctx.fillStyle = e.color;
+    ctx.beginPath(); ctx.arc(ex, ey, 3, 0, Math.PI*2); ctx.fill();
+  });
+  ctx.fillStyle = '#0ff';
+  ctx.beginPath(); ctx.arc(miniX+miniSize/2, miniY+miniSize/2, 4, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+function gameLoop() {
+  update();
+  render();
+  requestAnimationFrame(gameLoop);
+}
+
+function showGameOver() {
+  const ov = document.getElementById('startOverlay');
+  ov.innerHTML = `<h1 style="color:#f44;letter-spacing:4px;">GAME OVER</h1>
+    <p style="color:#ff0;font-size:20px;margin:12px 0">SCORE: ${state.score}</p>
+    <p style="color:rgba(0,255,255,0.6)">Wave reached: ${state.wave}</p>
+    <button onclick="restartGame()" style="margin-top:16px;background:#f44;color:#fff;border:none;padding:12px 32px;font-family:monospace;font-size:15px;font-weight:bold;border-radius:4px;cursor:pointer;letter-spacing:2px;">PLAY AGAIN</button>`;
+  ov.style.display = 'flex';
+}
+
+function restartGame() {
+  Object.assign(state, {
+    running: true, score: 0, wave: 1, hp: 100,
+    playerAngle: 0, playerX: 0, playerY: 0,
+    bullets: [], enemies: [], particles: [], floatingTexts: [],
+    lastGesture: 'IDLE', gestureCooldown: 0, shootCooldown: 0,
+    turnCooldown: 0, invincible: 0,
+  });
+  document.getElementById('score').textContent = '0';
+  document.getElementById('wave').textContent = '1';
+  document.getElementById('healthFill').style.width = '100%';
+  document.getElementById('healthFill').style.background = '#0f0';
+  document.getElementById('hpNum').textContent = '100';
+  document.getElementById('startOverlay').style.display = 'none';
+  spawnWave();
+}
+
+async function startGame() {
+  const btn = document.getElementById('startBtn');
+  btn.textContent = 'STARTING...';
+  btn.disabled = true;
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: 'user' } });
+    videoEl.srcObject = stream;
+    await new Promise(r => videoEl.onloadedmetadata = r);
+    poseCanvas.width = videoEl.videoWidth || 160;
+    poseCanvas.height = videoEl.videoHeight || 120;
+
+    const pose = new Pose({
+      locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`
+    });
+    pose.setOptions({ modelComplexity: 0, smoothLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+    pose.onResults(results => {
+      poseCtx.clearRect(0, 0, poseCanvas.width, poseCanvas.height);
+      if (results.poseLandmarks) {
+        gestureLandmarks = results.poseLandmarks;
+        drawConnectors(poseCtx, results.poseLandmarks, POSE_CONNECTIONS, { color: 'rgba(0,255,255,0.5)', lineWidth: 1 });
+        drawLandmarks(poseCtx, results.poseLandmarks, { color: '#0ff', lineWidth: 1, radius: 2 });
+      }
+    });
+
+    const camera = new Camera(videoEl, {
+      onFrame: async () => { await pose.send({ image: videoEl }); },
+      width: 320, height: 240,
+    });
+    camera.start();
+
+    restartGame();
+    gameLoop();
+  } catch (err) {
+    btn.textContent = 'CAMERA ERROR — RETRY';
+    btn.disabled = false;
+    console.error(err);
+  }
+}
+</script>
+</body>
+</html>

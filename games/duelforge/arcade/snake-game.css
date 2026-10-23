@@ -1,0 +1,146 @@
+:root {
+  --bg1: #9fd9ff;
+  --bg2: #a8f4d0;
+  --card: #fffdf3;
+  --line: #8ed1e8;
+  --ink: #164c63;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Nunito', sans-serif;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--bg1), var(--bg2));
+}
+
+.shell {
+  width: min(860px, 100% - 1rem);
+  margin: 0.8rem auto 2rem;
+}
+
+.hero,
+.card {
+  background: var(--card);
+  border: 2px solid var(--line);
+  border-radius: 22px;
+  padding: 1rem;
+  margin-bottom: 0.8rem;
+  box-shadow: 0 12px 28px rgba(20, 76, 99, 0.2);
+}
+
+.eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  font-size: 0.76rem;
+  letter-spacing: 0.07em;
+  font-weight: 800;
+}
+
+h1,
+h2 {
+  font-family: 'Chewy', cursive;
+  margin: 0.2rem 0 0.5rem;
+}
+
+h1 {
+  font-size: clamp(2rem, 6vw, 3.3rem);
+}
+
+h2 {
+  font-size: clamp(1.45rem, 4vw, 2rem);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn {
+  border: 0;
+  border-radius: 12px;
+  padding: 0.62rem 0.95rem;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn.primary {
+  background: linear-gradient(180deg, #76d0ff, #3ea9e8);
+  color: #08344a;
+}
+
+.btn.soft {
+  background: linear-gradient(180deg, #ffe9f7, #ffcae8);
+  color: #7a2d5b;
+}
+
+.pill {
+  border: 1px solid #97d7ea;
+  background: #e9f8ff;
+  border-radius: 999px;
+  padding: 0.35rem 0.72rem;
+  font-weight: 800;
+}
+
+.snake-board {
+  --snake-grid-size: 16;
+  width: min(520px, 100%);
+  aspect-ratio: 1 / 1;
+  border: 1px solid #8fd2e7;
+  border-radius: 12px;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: repeat(var(--snake-grid-size), 1fr);
+  background: #f2fcff;
+}
+
+.snake-cell {
+  border: 1px solid #dbf0f7;
+  background: #f2fcff;
+}
+
+.snake-cell.food {
+  background: #ff8db5;
+}
+
+.snake-cell.snake-body {
+  background: #4fb56f;
+}
+
+.snake-cell.snake-head {
+  background: #2d8e4c;
+}
+
+.controls-pad {
+  margin-top: 0.8rem;
+  width: min(260px, 100%);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.45rem;
+}
+
+.controls-pad .btn {
+  width: 100%;
+}
+
+.spacer {
+  visibility: hidden;
+}
+
+.note {
+  color: #346677;
+  margin: 0.6rem 0 0;
+}
+
+@media (max-width: 760px) {
+  .btn {
+    width: 100%;
+  }
+}

@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RoboArena - Main Menu</title>
+  <style>
+    :root {
+      --bg: #2b2b2b;
+      --panel: #242424;
+      --text: #f4f4f4;
+      --muted: #b8b8b8;
+      --green: #1aa472;
+      --blue: #3b8ce0;
+      --purple: #3a285f;
+      --outline: rgba(255, 255, 255, 0.18);
+      --shadow: rgba(0, 0, 0, 0.4);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(900px 600px at 30% 20%, #333333, transparent 60%),
+                  radial-gradient(900px 600px at 70% 30%, #2a2a2a, transparent 60%),
+                  var(--bg);
+      font-family: "Plus Jakarta Sans", "Trebuchet MS", sans-serif;
+      color: var(--text);
+    }
+
+    .menu {
+      width: min(520px, 92vw);
+      text-align: center;
+      padding: 28px 22px 20px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.2));
+      box-shadow: 0 20px 50px var(--shadow);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(28px, 5vw, 46px);
+      letter-spacing: 0.4px;
+    }
+
+    .subtitle {
+      margin: 0 0 24px;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 14px;
+      margin: 18px 0 16px;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 16px 18px;
+      font-size: 18px;
+      font-weight: 700;
+      border-radius: 14px;
+      color: #fff;
+      text-decoration: none;
+      border: 2px solid var(--outline);
+      box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.05);
+      transition: transform 120ms ease, box-shadow 120ms ease;
+    }
+
+    .btn:active {
+      transform: translateY(2px);
+    }
+
+    .btn.green { background: var(--green); }
+    .btn.blue { background: var(--blue); }
+    .btn.purple { background: var(--purple); }
+
+    .footer {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #9b9b9b;
+    }
+
+    .glow {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image: radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.08), transparent 45%);
+      mix-blend-mode: screen;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="glow"></div>
+  <main class="menu" aria-label="Main menu">
+    <h1>RoboArena</h1>
+    <p class="subtitle">Build your VEX IQ bot. Pick your AI. Fight.</p>
+
+    <div class="stack">
+      <a class="btn green" href="#vs-ai">⚔️ VS AI</a>
+      <a class="btn blue" href="#multiplayer">👥 Multiplayer</a>
+      <a class="btn purple" href="#shop">🛒 Shop</a>
+    </div>
+
+    <div class="footer">Professor Edgar's Robotics class project</div>
+  </main>
+</body>
+</html>

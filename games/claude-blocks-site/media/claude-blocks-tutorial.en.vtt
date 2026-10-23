@@ -1,0 +1,70 @@
+WEBVTT
+
+1
+00:00:00.795 --> 00:00:06.649
+Hi! This video shows how to download Claude Blocks, and how to make your first project.
+
+2
+00:00:07.316 --> 00:00:12.783
+First, go to the Claude Blocks website. It shows the best download for your device.
+
+3
+00:00:13.475 --> 00:00:22.181
+Scroll down to see every version: Mac, Windows, Linux, and Android and Chromebook. On an iPhone or iPad, use the web version.
+
+4
+00:00:22.880 --> 00:00:31.981
+Download the file and open it. The first time on a Mac, right-click Claude Blocks and choose Open. On Windows, click More info, then Run anyway.
+
+5
+00:00:34.241 --> 00:00:40.965
+Now open Claude Blocks. The blocks are on the left, your workspace is in the middle, and the stage is on the right.
+
+6
+00:00:41.618 --> 00:00:46.037
+Let's start fresh. Click New, then choose Blank project.
+
+7
+00:00:46.714 --> 00:00:53.997
+Open Events, and drag the when green flag clicked block into the workspace. Every script starts with a hat block like this.
+
+8
+00:00:54.635 --> 00:00:57.859
+From Looks, snap a say block underneath.
+
+9
+00:00:58.521 --> 00:01:08.634
+From Control, add a forever loop. Then put move ten steps, and if on edge, bounce, inside it.
+
+10
+00:01:09.301 --> 00:01:13.670
+Click Go! Claude says hello, then walks back and forth.
+
+11
+00:01:14.321 --> 00:01:20.954
+Want ideas? Click Templates and pick one, like Catch the Apple.
+
+12
+00:01:21.593 --> 00:01:29.597
+Press Go, then move your mouse to catch the apples!
+
+13
+00:01:30.262 --> 00:01:37.534
+Click Learn for step by step lessons. A guide stays on screen while you build.
+
+14
+00:01:38.226 --> 00:02:08.716
+Stuck? In the AI Assistant, choose Build for me, describe what you want, and the AI makes the blocks for you. It uses Ollama on your computer.
+
+15
+00:02:09.739 --> 00:02:15.873
+Check the plan, then click Add and run. Your new blocks appear in the workspace, ready to change.
+
+16
+00:02:16.596 --> 00:02:28.511
+Claude Blocks even has a Raspberry Pi emulator, with lights, a fan, a screen and more. This thermostat turns the fan on when the chip gets hot.
+
+17
+00:02:29.194 --> 00:02:33.672
+When you're done, click Save to keep your project. Have fun coding!
+

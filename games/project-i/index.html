@@ -1,0 +1,427 @@
+<!DOCTYPE html><html><head><title>Project I</title><meta http-equiv="content-type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui=1"><meta charset="UTF-8"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="description" content=""><link rel="manifest" href="manifest.json"><link rel="icon" type="image/png" href="icon64.png"><link rel="apple-touch-icon" sizes="180x180" href="icon180.png"><link rel="icon" type="image/png" sizes="32x32" href="icon32.png"><link rel="icon" type="image/png" sizes="16x16" href="icon16.png"><style>html,body {
+  margin: 0;
+  padding: 0;
+  background-color: #000;
+  overflow:hidden;
+  font-family: Verdana;
+}
+.noselect {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+#canvaswrapper {
+  text-align: center ;
+}
+</style><style>@font-face { font-family: "BitCell" ; src: url("fonts/BitCell.ttf") format("truetype"); }</style><script>window.fonts = ["BitCell"]</script></head><body class="noselect custom-cursor" oncontextmenu="return false;"><div id="canvaswrapper"></div><script type="text/javascript">var resources = {"images":[{"file":"bg.png","version":14,"size":5905,"properties":{"frames":1,"fps":5}},{"file":"icon.png","version":20,"size":157,"properties":{"frames":1,"fps":5}},{"file":"player.png","version":72,"size":178,"properties":{"frames":1,"fps":7}},{"file":"player2.png","version":6,"size":185,"properties":{"frames":1,"fps":5}},{"file":"player3.png","version":5,"size":186,"properties":{"frames":1,"fps":5}},{"file":"player_down.png","version":7,"size":195,"properties":{"frames":1,"fps":5}},{"file":"player_up.png","version":6,"size":204,"properties":{"frames":1,"fps":5}}],"assets":[],"maps":{},"sounds":[],"music":[]};
+var graphics = "M1";
+
+</script><script type="text/javascript">var orientation = 'any' ;
+var aspect = 'free' ;
+var ms_libs = [] ;
+window.skip_service_worker = true;
+window.exported_project = true;
+window.ms_use_server = false ;
+</script><script src="compiler.js"></script><script src="parser.js"></script><script src="processor.js"></script><script src="program.js"></script><script src="routine.js"></script><script src="runner.js"></script><script src="token.js"></script><script src="tokenizer.js"></script><script src="transpiler.js"></script><script src="microengine.js"></script></body><script type="text/javascript">//
+//
+// The game is started with the code below.
+// Once you have received the "started" signal (see below),
+// you can do the following:
+// 1) Inject functions or objects into the global context of the microStudio engine, example:
+//
+//   window.player.setGlobal("special_callback",function(x) { console.info(x) }) ;
+//   // Your microScript code can now call the "special_callback" function
+//
+// 2) Call microScript global functions from your JavaScript code, example:
+//
+//   window.player.call("call_me_from_javascript",[10,1000]) ;
+//   // arguments to the function call are provided as an array
+//
+// 3) Run a microScript code snippet from your JavaScript code, example:
+//
+//   window.player.exec("player.position_x = 50",function(result) { console.log(result) ; }) ;
+//
+
+window.addEventListener("load",function() {
+  window.player = new Player(function(event) {
+    if (event.name == "started") {
+      // signal that the game is started
+    }
+    else if (event.name == "log") {
+      // console.info(event.data) ;
+    }
+  }) ;
+  document.body.focus() ;
+}) ;
+
+</script><script id="code" type="text/x-microscript">
+
+
+function()
+// ==========================================
+// CLIENT LOGIC (Runs on each player's device)
+// ==========================================
+
+init = function()
+  player = object
+    x = 0
+    y = -50        
+    vy = 0         
+    speed = 2
+    sprite = "player"
+    is_grounded = 1
+    username = ""      
+    bubble_text = ""     // Local player speech text
+    bubble_timer = 0     // Local player speech duration tracker
+  end
+  
+  gravity = -0.15   
+  jump_force = 4   
+  bg_size = 200 
+  ground_y = -50
+  
+  other_players = object end
+  server = new ServerConnection()
+
+  chat_log = []          
+  chat_input = ""        
+  chat_active = 0        
+  enter_released = 1     
+
+  game_state = "login"   
+  
+  alphabet = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","0","1","2","3","4","5","6","7","8","9"," "]
+end
+
+update = function()
+  local typed_char = ""
+  for key in alphabet
+    if keyboard.press[key] then typed_char = key end
+  end
+  
+  if keyboard.press.BACKSPACE then typed_char = "backspace" end
+
+  // --- Speech Bubble Countdown Timers ---
+  if player.bubble_timer > 0 then player.bubble_timer -= 1 end
+  for id in other_players
+    if other_players[id].bubble_timer > 0 then
+      other_players[id].bubble_timer -= 1
+    end
+  end
+
+  // ----------------------------------------------------
+  // STATE 1: USERNAME SELECTION STATE
+  // ----------------------------------------------------
+  if game_state == "login" then
+    if typed_char == "backspace" then
+      if player.username.length > 0 then
+        player.username = sub(player.username, 0, player.username.length - 1)
+      end
+    elsif typed_char != "" then
+      if player.username.length < 12 then player.username += typed_char end
+    end
+
+    if keyboard.ENTER then
+      if enter_released and player.username != "" then
+        enter_released = 0
+        game_state = "playing" 
+        chat_input = ""
+        
+        if server and server.status == "connected" then
+          server.send(object
+            type = "player_joined"
+            username = player.username
+            x = player.x
+            y = player.y
+            sprite = player.sprite
+          end)
+        end
+      end
+    else
+      enter_released = 1
+    end
+    return 
+  end
+
+  // ----------------------------------------------------
+  // STATE 2: PLAYING GAME STATE
+  // ----------------------------------------------------
+  local moving = 0
+  local old_x = player.x
+  local old_y = player.y
+
+  if keyboard.ENTER then
+    if enter_released then
+      enter_released = 0
+      if chat_active == 0 then
+        chat_active = 1
+        chat_input = ""
+      else
+        chat_active = 0
+        if chat_input != "" and server and server.status == "connected" then
+          // Show speech bubble on our own screen
+          player.bubble_text = chat_input
+          player.bubble_timer = 240 // 4 seconds at 60fps
+          
+          server.send(object
+            type = "chat_message"
+            sender = player.username
+            text = chat_input
+          end)
+        end
+      end
+    end
+  else
+    enter_released = 1
+  end
+
+  if chat_active then
+    if typed_char == "backspace" then
+      if chat_input.length > 0 then
+        chat_input = sub(chat_input, 0, chat_input.length - 1)
+      end
+    elsif typed_char != "" then
+      if chat_input.length < 30 then chat_input += typed_char end
+    end
+  else
+    // Movement Physics
+    player.vy += gravity
+    player.y += player.vy
+    
+    if player.y <= ground_y then
+      player.y = ground_y
+      player.vy = 0
+      player.is_grounded = 1
+    end
+
+    if keyboard.UP and player.is_grounded then 
+      player.vy = jump_force
+      player.is_grounded = 0
+      player.sprite = "player_up"
+      moving = 1
+    end
+    
+    if player.is_grounded == 0 and player.vy < 0 then
+      player.sprite = "player_down"
+      moving = 1
+    end
+    
+    if keyboard.LEFT then 
+      player.x -= player.speed 
+      if player.is_grounded then player.sprite = "player3" end
+      moving = 1
+    end
+    if keyboard.RIGHT then 
+      player.x += player.speed 
+      if player.is_grounded then player.sprite = "player2" end
+      moving = 1
+    end
+
+    if moving == 0 and player.is_grounded then player.sprite = "player" end
+  end
+
+  // Network Sync Broadcast
+  if server and server.status == "connected" then
+    if player.x != old_x or player.y != old_y or moving == 1 or moving == 0 then
+      server.send(object
+        type = "update_position"
+        x = player.x
+        y = player.y
+        sprite = player.sprite
+        username = player.username
+      end)
+    end
+  end
+
+  // Network Packet Receiver
+  if server then
+    for message in server.messages
+      // Sync list of players already online when we join
+      if message.type == "initial_sync" then
+        for id in message.players
+          if id != server.id then
+            other_players[id] = message.players[id]
+            if other_players[id].bubble_timer == undefined then
+              other_players[id].bubble_timer = 0
+            end
+          end
+        end
+      
+      elsif message.type == "player_moved" or message.type == "announce_presence" then
+        if message.id != server.id then
+          if other_players[message.id] == undefined then
+            other_players[message.id] = object bubble_text = "" bubble_timer = 0 end
+          end
+          other_players[message.id].x = message.x
+          other_players[message.id].y = message.y
+          other_players[message.id].sprite = message.sprite
+          other_players[message.id].username = message.username
+        end
+        
+      elsif message.type == "player_disconnected" then
+        delete other_players[message.id]
+        
+      elsif message.type == "chat_broadcast" then
+        chat_log.push(message.sender + ": " + message.text)
+        if chat_log.length > 5 then chat_log.remove(0) end
+        
+        // Attach speech bubble data to the correct remote sender profile
+        if message.sender_id != server.id and other_players[message.sender_id] != undefined then
+          other_players[message.sender_id].bubble_text = message.text
+          other_players[message.sender_id].bubble_timer = 240
+        end
+      end
+    end
+  end
+end
+
+draw = function()
+  screen.clear()
+  
+  if game_state == "login" then
+    screen.fillRect(0, 0, screen.width, screen.height, "#1a1a2e")
+    screen.drawText("ENTER YOUR USERNAME:", 0, 30, 14, "rgb(255,255,255)")
+    screen.fillRect(0, -5, 200, 26, "rgba(255,255,255,0.1)")
+    screen.drawText(player.username + "_", -90, -5, 12, "rgb(0,255,150)")
+    screen.drawText("Press Enter to Join World", 0, -40, 9, "rgba(255,255,255,0.4)")
+    return
+  end
+
+  screen.fillRect(0, 0, screen.width, screen.height, "lightblue")
+  
+  local cam_x = player.x
+  local cam_y = player.y
+  local start_x = floor((cam_x - screen.width/2) / bg_size) * bg_size
+  local end_x = floor((cam_x + screen.width/2) / bg_size) * bg_size
+  
+  for x = start_x to end_x by bg_size
+    screen.drawSprite("bg", x - cam_x, ground_y - cam_y, bg_size, bg_size)
+  end
+  
+  // --- Draw Other Connected Players + Speech Bubbles ---
+  for id in other_players
+    local p = other_players[id]
+    if p.x != undefined and p.y != undefined then
+      screen.drawSprite(p.sprite, p.x - cam_x, p.y - cam_y, 20, 20)
+      if p.username then
+        screen.drawText(p.username, p.x - cam_x, p.y - cam_y + 16, 8, "rgb(255,255,255)")
+      end
+      // Speech Bubble Render
+      if p.bubble_timer > 0 then
+        local text_w = p.bubble_text.length * 6 + 10
+        screen.fillRect(p.x - cam_x, p.y - cam_y + 32, text_w, 14, "rgb(255,255,255)")
+        screen.drawText(p.bubble_text, p.x - cam_x - (text_w/2 - 5), p.y - cam_y + 32, 8, "rgb(0,0,0)")
+      end
+    end
+  end
+  
+  // --- Draw Local Player + Speech Bubble ---
+  screen.drawSprite(player.sprite, player.x - cam_x, player.y - cam_y, 20, 20)
+  screen.drawText(player.username, player.x - cam_x, player.y - cam_y + 16, 8, "rgb(0,255,150)")
+  
+  if player.bubble_timer > 0 then
+    local text_w = player.bubble_text.length * 6 + 10
+    screen.fillRect(player.x - cam_x, player.y - cam_y + 32, text_w, 14, "rgb(255,255,255)")
+    screen.drawText(player.bubble_text, player.x - cam_x - (text_w/2 - 5), player.y - cam_y + 32, 8, "rgb(0,0,0)")
+  end
+
+  // --- Global Sidebar Text Log ---
+  local start_draw_y = screen.height / 2 - 15
+  for i = 0 to chat_log.length - 1
+    screen.drawText(chat_log[i], -screen.width/2 + 15, start_draw_y - (i * 12), 10, "rgb(255,255,255)")
+  end
+
+  if chat_active then
+    screen.fillRect(0, -screen.height/2 + 20, screen.width - 40, 20, "rgba(0,0,0,0.6)")
+    screen.drawText("Chat: " + chat_input + "_", -screen.width/2 + 30, -screen.height/2 + 20, 10, "rgb(255,255,255)")
+  else
+    screen.drawText("Press ENTER to chat", -screen.width/2 + 15, -screen.height/2 + 15, 8, "rgba(255,255,255,0.5)")
+  end
+end
+
+
+// ==========================================
+// SERVER LOGIC (Runs globally on the host)
+// ==========================================
+
+serverInit = function()
+  server_players = object end
+end
+
+serverUpdate = function()
+  for client in server.new_connections
+    server_players[client.id] = object
+      x = 0
+      y = -50 
+      sprite = "player"
+      username = ""
+      bubble_text = ""
+      bubble_timer = 0
+    end
+    
+    // NEW: Instantly sync all existing users to the newly joined client
+    client.send(object
+      type = "initial_sync"
+      players = server_players
+    end)
+  end
+
+  for client in server.clients
+    for message in client.messages
+      if message.type == "player_joined" then
+        server_players[client.id].username = message.username
+        server_players[client.id].x = message.x
+        server_players[client.id].y = message.y
+        server_players[client.id].sprite = message.sprite
+        
+        server.broadcast(object
+          type = "announce_presence"
+          id = client.id
+          x = message.x
+          y = message.y
+          sprite = message.sprite
+          username = message.username
+        end)
+        
+      elsif message.type == "update_position" then
+        server_players[client.id].x = message.x
+        server_players[client.id].y = message.y
+        server_players[client.id].sprite = message.sprite
+        if message.username then server_players[client.id].username = message.username end
+        
+        server.broadcast(object
+          type = "player_moved"
+          id = client.id
+          x = message.x
+          y = message.y
+          sprite = message.sprite
+          username = server_players[client.id].username
+        end)
+        
+      elsif message.type == "chat_message" then
+        server.broadcast(object
+          type = "chat_broadcast"
+          sender_id = client.id
+          sender = message.sender
+          text = message.text
+        end)
+      end
+    end
+  end
+
+  for client in server.closed_connections
+    delete server_players[client.id]
+    server.broadcast(object
+      type = "player_disconnected"
+      id = client.id
+    end)
+  end
+end
+
+end()
+
+
+</script></html>

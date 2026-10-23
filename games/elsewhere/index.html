@@ -1,0 +1,342 @@
+<title>Elsewhere Departures</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Martian+Mono:wght@400;600&family=Instrument+Sans:wght@400;600&display=swap">
+<style>
+/* Layout: a single departures board, centered column; board on top, controls under it, trip log below. Deliberately dark-only (a lit station board). */
+:root {
+  --ground: #101318;
+  --board: #191d24;
+  --flap: #232833;
+  --flap-seam: #0b0d11;
+  --amber: #ffb547;
+  --amber-dim: #8a6a3a;
+  --ink: #e9e6df;
+  --muted: #8b919c;
+  --line: #2b313c;
+  --go: #3ddc84;
+  --f-display: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+  --f-flap: "Martian Mono", ui-monospace, Menlo, monospace;
+  --f-body: "Instrument Sans", system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+html, body { background: var(--ground); color: var(--ink); }
+body {
+  font-family: var(--f-body);
+  font-size: 15px;
+  line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 56px;
+}
+.wrap { max-width: 860px; margin: 0 auto; display: grid; gap: 28px; }
+
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; }
+h1 {
+  font-family: var(--f-display); font-weight: 900; text-transform: uppercase;
+  font-size: clamp(44px, 9vw, 84px); line-height: .9; margin: 0; letter-spacing: .01em;
+  text-wrap: balance;
+}
+h1 span { color: var(--amber); }
+.clock { font-family: var(--f-flap); color: var(--muted); font-size: 13px; letter-spacing: .08em; font-variant-numeric: tabular-nums; }
+
+.board {
+  background: var(--board); border: 1px solid var(--line); border-radius: 6px;
+  padding: 20px; display: grid; gap: 16px;
+  box-shadow: 0 30px 60px -30px #000;
+}
+.board-head {
+  display: grid; grid-template-columns: 1fr auto; gap: 12px;
+  font-family: var(--f-flap); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+}
+.flaps { display: flex; flex-wrap: wrap; gap: 3px; min-height: 2.4em; }
+.cell {
+  font-family: var(--f-flap); font-weight: 600; color: var(--amber);
+  background: var(--flap); width: 1.35em; height: 1.9em; display: grid; place-items: center;
+  font-size: clamp(15px, 3.6vw, 26px); border-radius: 3px; position: relative; text-transform: uppercase;
+}
+.cell::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: var(--flap-seam); }
+.cell.flip { animation: flip .09s linear; }
+@keyframes flip { 50% { transform: scaleY(.15); } }
+
+.meta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; border-top: 1px solid var(--line); padding-top: 14px; }
+.meta div { min-width: 0; }
+.meta dt { font-family: var(--f-flap); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.meta dd { margin: 2px 0 0; color: var(--ink); overflow-wrap: anywhere; }
+.status { color: var(--go); font-family: var(--f-flap); font-size: 13px; }
+.status::before { content: "● "; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.depart {
+  font-family: var(--f-display); font-weight: 900; text-transform: uppercase; letter-spacing: .04em;
+  font-size: 30px; line-height: 1; text-decoration: none;
+  background: var(--amber); color: var(--ground); padding: 16px 28px; border-radius: 4px;
+  display: inline-flex; align-items: center; gap: 12px; transition: transform .12s, filter .12s;
+}
+.depart:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.depart:active { transform: translateY(1px); }
+.depart svg { width: 22px; height: 22px; }
+.btn {
+  font: 600 14px var(--f-body); color: var(--ink); background: transparent;
+  border: 1px solid var(--line); border-radius: 4px; padding: 12px 16px; cursor: pointer;
+}
+.btn:hover { border-color: var(--amber-dim); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; }
+.hint { color: var(--muted); font-size: 13px; flex-basis: 100%; margin: 0; }
+kbd { font-family: var(--f-flap); font-size: 11px; border: 1px solid var(--line); border-radius: 3px; padding: 1px 5px; }
+
+.lines { display: flex; flex-wrap: wrap; gap: 8px; }
+.lines-label { font-family: var(--f-flap); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); flex-basis: 100%; }
+.chip {
+  font: 600 13px var(--f-body); color: var(--muted); background: var(--board);
+  border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; cursor: pointer;
+}
+.chip[aria-pressed="true"] { color: var(--ground); background: var(--ink); border-color: var(--ink); }
+
+.log h2 { font-family: var(--f-display); font-weight: 700; text-transform: uppercase; font-size: 24px; letter-spacing: .03em; margin: 0 0 8px; }
+.log ol { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.log li {
+  display: grid; grid-template-columns: 4.5em minmax(0, 1fr) auto; gap: 12px; align-items: baseline;
+  padding: 10px 0; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums;
+}
+.log time { font-family: var(--f-flap); font-size: 12px; color: var(--muted); }
+.log a { color: var(--ink); text-decoration: none; overflow-wrap: anywhere; }
+.log a:hover { color: var(--amber); }
+.log .tag { font-family: var(--f-flap); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--amber-dim); }
+.empty { color: var(--muted); padding: 12px 0; margin: 0; }
+
+@media (max-width: 520px) {
+  .meta { grid-template-columns: 1fr 1fr; }
+  .depart { width: 100%; justify-content: center; }
+}
+@media (prefers-reduced-motion: reduce) { .cell.flip { animation: none; } .depart { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Elsewhere<br><span>Departures</span></h1>
+    <div class="clock" id="clock">--:--</div>
+  </header>
+
+  <section class="board" aria-live="polite">
+    <div class="board-head"><span>Next departure</span><span id="platform">Platform 1</span></div>
+    <div class="flaps" id="flaps" aria-label="Destination"></div>
+    <dl class="meta">
+      <div><dt>Line</dt><dd id="line">—</dd></div>
+      <div><dt>Destination</dt><dd id="blurb">—</dd></div>
+      <div><dt>Status</dt><dd class="status">Boarding</dd></div>
+    </dl>
+  </section>
+
+  <div class="controls">
+    <a class="depart" id="depart" href="https://neal.fun/deep-sea/" target="_blank" rel="noopener noreferrer">
+      Depart
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </a>
+    <button class="btn" id="shuffle" type="button">Change destination</button>
+    <p class="hint">Opens a random website in a new tab, then posts the next departure. Press <kbd>Space</kbd> to change destination.</p>
+  </div>
+
+  <div class="lines" id="lines" role="group" aria-label="Lines">
+    <span class="lines-label">Lines</span>
+  </div>
+
+  <section class="log">
+    <h2>Trip log</h2>
+    <ol id="log"></ol>
+  </section>
+</div>
+
+<script>
+const SITES = [
+  // Toys
+  ["neal.fun/deep-sea/", "Toys", "Scroll to the bottom of the ocean"],
+  ["neal.fun/infinite-craft/", "Toys", "Combine elements forever"],
+  ["neal.fun/password-game/", "Toys", "The worst password rules ever"],
+  ["neal.fun/space-elevator/", "Toys", "Ride an elevator to space"],
+  ["pointerpointer.com", "Toys", "Photos that point at your cursor"],
+  ["weavesilk.com", "Toys", "Draw glowing silk"],
+  ["thisissand.com", "Toys", "Pour digital sand"],
+  ["paint.toys", "Toys", "A box of strange paint tools"],
+  ["www.windows93.net", "Toys", "An operating system that never was"],
+  ["cat-bounce.com", "Toys", "Cats. Bouncing."],
+  ["eelslap.com", "Toys", "Slap a man with an eel"],
+  ["findtheinvisiblecow.com", "Toys", "Find the cow by sound"],
+  ["hackertyper.net", "Toys", "Type like a movie hacker"],
+  ["zoomquilt.org", "Toys", "An endless painted zoom"],
+  ["www.koalastothemax.com", "Toys", "Split circles into a koala"],
+  ["sandspiel.club", "Toys", "A falling-sand sandbox"],
+  ["quickdraw.withgoogle.com", "Toys", "Doodle while a neural net guesses"],
+  // Games
+  ["orteil.dashnet.org/cookieclicker/", "Games", "Bake an unreasonable number of cookies"],
+  ["play2048.co", "Games", "Slide tiles to 2048"],
+  ["littlealchemy2.com", "Games", "Mix elements to make the world"],
+  ["onesquareminesweeper.com", "Games", "Minesweeper, one square"],
+  ["zty.pe", "Games", "Shoot words by typing them"],
+  ["www.geoguessr.com", "Games", "Guess where on Earth you are"],
+  ["www.sporcle.com", "Games", "Trivia quizzes on everything"],
+  ["ncase.me/trust/", "Games", "The evolution of trust"],
+  ["ncase.me/polygons/", "Games", "A playable post about segregation"],
+  // Space
+  ["joshworth.com/dev/pixelspace/pixelspace_solarsystem.html", "Space", "The solar system at scale, one pixel = the Moon"],
+  ["htwins.net/scale2/", "Space", "Zoom from quantum foam to the universe"],
+  ["www.solarsystemscope.com", "Space", "A 3D model of the solar system"],
+  ["stellarium-web.org", "Space", "Tonight's sky from anywhere"],
+  ["eyes.nasa.gov", "Space", "Follow NASA spacecraft live"],
+  ["apod.nasa.gov/apod/astropix.html", "Space", "Today's astronomy picture"],
+  ["www.spacejam.com/1996/", "Space", "A 1996 website, still up"],
+  // World
+  ["radio.garden", "World", "Spin a globe of live radio"],
+  ["window-swap.com", "World", "Look out a stranger's window"],
+  ["drivenlisten.com", "World", "Drive a city with its local radio"],
+  ["earth.nullschool.net", "World", "Global winds, live"],
+  ["www.mapcrunch.com", "World", "Random Street View drop"],
+  ["www.flightradar24.com", "World", "Every plane in the sky"],
+  ["www.lightningmaps.org", "World", "Lightning strikes in real time"],
+  ["www.submarinecablemap.com", "World", "The cables under the sea"],
+  ["www.atlasobscura.com", "World", "The world's hidden wonders"],
+  // Sound
+  ["www.patatap.com", "Sound", "Keyboard sounds with shapes"],
+  ["musiclab.chromeexperiments.com", "Sound", "Play with music in the browser"],
+  ["typatone.com", "Sound", "Turn your writing into music"],
+  ["everynoise.com", "Sound", "A map of every music genre"],
+  ["mynoise.net", "Sound", "Tunable background noise"],
+  ["asoftmurmur.com", "Sound", "Mix rain, wind and fire"],
+  ["www.rainymood.com", "Sound", "Rain, on repeat"],
+  ["www.musicmap.info", "Sound", "A genealogy of popular music"],
+  // Learn
+  ["en.wikipedia.org/wiki/Special:Random", "Learn", "A random Wikipedia article"],
+  ["www.wikihow.com/Special:Randomizer", "Learn", "Learn to do a random thing"],
+  ["pudding.cool", "Learn", "Visual essays about culture"],
+  ["histography.io", "Learn", "Every event on Wikipedia, on a timeline"],
+  ["www.therestartpage.com", "Learn", "Rebuild civilization from scratch"],
+];
+
+const $ = id => document.getElementById(id);
+const flapsEl = $("flaps"), departEl = $("depart");
+const LINES = ["All", ...new Set(SITES.map(s => s[1]))];
+const MAX_CELLS = 22;
+let line = "All", current = null, recent = [];
+
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
+let log = store.get("elsewhere-log", []);
+line = store.get("elsewhere-line", "All");
+if (!LINES.includes(line)) line = "All";
+
+function displayName(host) {
+  let s = host.replace(/^www\./, "").replace(/\/$/, "");
+  if (s.length > MAX_CELLS) s = s.split("/")[0];
+  return s.slice(0, MAX_CELLS);
+}
+
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789./-";
+let flapTimer;
+function setFlaps(text) {
+  clearInterval(flapTimer);
+  const len = Math.max(text.length, flapsEl.children.length ? Math.min(flapsEl.children.length, MAX_CELLS) : 0);
+  flapsEl.textContent = "";
+  const cells = [];
+  for (let i = 0; i < len; i++) {
+    const c = document.createElement("span");
+    c.className = "cell";
+    flapsEl.append(c);
+    cells.push(c);
+  }
+  flapsEl.setAttribute("aria-label", "Destination: " + text);
+  if (reduce) { cells.forEach((c, i) => c.textContent = text[i] || ""); return; }
+  let tick = 0;
+  flapTimer = setInterval(() => {
+    tick++;
+    let done = true;
+    cells.forEach((c, i) => {
+      const target = text[i] || "";
+      const settleAt = 3 + i;
+      if (tick >= settleAt) { if (c.textContent !== target) { c.textContent = target; c.classList.remove("flip"); void c.offsetWidth; c.classList.add("flip"); } }
+      else { done = false; c.textContent = CHARS[(Math.random() * CHARS.length) | 0]; }
+    });
+    if (done) clearInterval(flapTimer);
+  }, 55);
+}
+
+function pick() {
+  const pool = SITES.filter(s => line === "All" || s[1] === line);
+  let choices = pool.filter(s => !recent.includes(s[0]));
+  if (!choices.length) { recent = []; choices = pool; }
+  const s = choices[(Math.random() * choices.length) | 0];
+  recent.push(s[0]);
+  if (recent.length > Math.min(10, pool.length - 1)) recent.shift();
+  current = { host: s[0], line: s[1], blurb: s[2], url: "https://" + s[0] };
+  departEl.href = current.url;
+  $("line").textContent = current.line;
+  $("blurb").textContent = current.blurb;
+  $("platform").textContent = "Platform " + (1 + ((Math.random() * 9) | 0));
+  setFlaps(displayName(current.host));
+}
+
+function renderLog() {
+  const ol = $("log");
+  ol.textContent = "";
+  if (!log.length) {
+    const li = document.createElement("li");
+    li.innerHTML = '<p class="empty">No trips yet. Press Depart and your journeys will show up here.</p>';
+    li.style.display = "block";
+    ol.append(li);
+    return;
+  }
+  for (const t of log) {
+    const li = document.createElement("li");
+    const time = document.createElement("time");
+    time.textContent = t.time;
+    const a = document.createElement("a");
+    a.href = t.url; a.target = "_blank"; a.rel = "noopener noreferrer";
+    a.textContent = t.host.replace(/^www\./, "").replace(/\/$/, "");
+    const tag = document.createElement("span");
+    tag.className = "tag"; tag.textContent = t.line;
+    li.append(time, a, tag);
+    ol.append(li);
+  }
+}
+
+function renderLines() {
+  const wrap = $("lines");
+  for (const l of LINES) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.id = "line-" + l.toLowerCase();
+    b.textContent = l; b.setAttribute("aria-pressed", String(l === line));
+    b.addEventListener("click", () => {
+      line = l; store.set("elsewhere-line", l); recent = [];
+      wrap.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", String(c.textContent === l)));
+      pick();
+    });
+    wrap.append(b);
+  }
+}
+
+departEl.addEventListener("click", () => {
+  // The link itself opens current.url; afterwards record it and post the next departure.
+  const now = new Date();
+  log.unshift({ host: current.host, url: current.url, line: current.line,
+    time: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) });
+  log = log.slice(0, 12);
+  store.set("elsewhere-log", log);
+  renderLog();
+  setTimeout(pick, 50);
+});
+$("shuffle").addEventListener("click", pick);
+document.addEventListener("keydown", e => {
+  if (e.code === "Space" && !/^(BUTTON|A|INPUT)$/.test(document.activeElement.tagName)) { e.preventDefault(); pick(); }
+});
+
+function tickClock() {
+  $("clock").textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+}
+setInterval(tickClock, 1000); tickClock();
+
+renderLines();
+renderLog();
+pick();
+</script>

@@ -1,0 +1,13 @@
+{
+  "name": "calling-app",
+  "version": "1.0.0",
+  "description": "Desktop calling app with keypad, contacts, and simulated calls",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^31.7.7"
+  }
+}

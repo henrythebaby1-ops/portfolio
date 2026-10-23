@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fire & Ice: Fake Temple</title>
+  <style>
+    :root {
+      --fire: #ff5a24;
+      --ember: #ffd166;
+      --ice: #4dd8ff;
+      --frost: #d9fbff;
+      --ink: #111827;
+      --panel: rgba(12, 18, 34, 0.82);
+      --line: rgba(255, 255, 255, 0.22);
+      --good: #9cffb5;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 16% 20%, rgba(255, 90, 36, 0.24), transparent 26%),
+        radial-gradient(circle at 86% 18%, rgba(77, 216, 255, 0.25), transparent 28%),
+        linear-gradient(135deg, #241014 0%, #172334 52%, #07131b 100%);
+      color: white;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .game-shell {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 12px;
+      width: min(1120px, calc(100vw - 28px));
+      height: min(740px, calc(100vh - 28px));
+      margin: 14px auto;
+    }
+
+    header,
+    .command-bar,
+    .status-card {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 76px;
+      padding: 14px 18px;
+      border-radius: 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.35rem, 2.2vw, 2.2rem);
+      letter-spacing: 0;
+    }
+
+    .title-mark {
+      display: inline-grid;
+      grid-template-columns: 1fr 1fr;
+      width: 42px;
+      height: 42px;
+      margin-right: 10px;
+      vertical-align: middle;
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+    }
+
+    .title-mark span:first-child {
+      background: linear-gradient(#fff5b8, var(--fire));
+    }
+
+    .title-mark span:last-child {
+      background: linear-gradient(var(--frost), var(--ice));
+    }
+
+    .scoreboard {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(88px, 1fr));
+      gap: 8px;
+      min-width: min(420px, 45vw);
+    }
+
+    .score {
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      text-align: center;
+    }
+
+    .score b {
+      display: block;
+      color: var(--ember);
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .arena-wrap {
+      position: relative;
+      min-height: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #0b1420;
+      box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.4), 0 20px 60px rgba(0, 0, 0, 0.24);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+    }
+
+    .fake-stamp {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      padding: 8px 12px;
+      border: 2px solid rgba(255, 255, 255, 0.55);
+      border-radius: 8px;
+      background: rgba(17, 24, 39, 0.72);
+      color: #ffe8e0;
+      font-weight: 900;
+      transform: rotate(-6deg);
+      pointer-events: none;
+      transition: opacity 180ms ease;
+    }
+
+    .fake-stamp.hidden {
+      opacity: 0;
+    }
+
+    .win-screen {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: rgba(3, 9, 18, 0.78);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 220ms ease;
+    }
+
+    .win-screen.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .win-box {
+      width: min(520px, 92vw);
+      padding: 22px;
+      border: 1px solid rgba(156, 255, 181, 0.5);
+      border-radius: 8px;
+      background: linear-gradient(135deg, rgba(255, 90, 36, 0.18), rgba(77, 216, 255, 0.18)), rgba(11, 20, 32, 0.94);
+      text-align: center;
+      box-shadow: 0 18px 60px rgba(0, 0, 0, 0.38);
+    }
+
+    .win-box h2 {
+      margin: 0 0 8px;
+      color: var(--good);
+      font-size: clamp(2rem, 7vw, 4.2rem);
+      letter-spacing: 0;
+    }
+
+    .win-box p {
+      margin: 0;
+      color: #e6f8ff;
+      line-height: 1.5;
+    }
+
+    .command-bar {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 8px;
+    }
+
+    label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+
+    input {
+      min-width: 0;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      color: white;
+      font: 700 1rem/1 Arial, Helvetica, sans-serif;
+      padding: 13px 14px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--ice);
+      box-shadow: 0 0 0 3px rgba(77, 216, 255, 0.18);
+    }
+
+    button {
+      border: 0;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--fire), var(--ice));
+      color: #06101a;
+      cursor: pointer;
+      font-weight: 900;
+      padding: 0 16px;
+      min-height: 44px;
+    }
+
+    button.secondary {
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      background: rgba(255, 255, 255, 0.08);
+      color: white;
+    }
+
+    .status-card {
+      min-height: 42px;
+      padding: 11px 14px;
+      border-radius: 8px;
+      color: #e7f7ff;
+    }
+
+    .status-card strong {
+      color: var(--good);
+    }
+
+    @media (max-width: 740px) {
+      body {
+        overflow: auto;
+      }
+
+      .game-shell {
+        height: auto;
+        min-height: calc(100vh - 20px);
+        width: calc(100vw - 20px);
+        margin: 10px auto;
+      }
+
+      header {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .scoreboard {
+        min-width: 0;
+        width: 100%;
+      }
+
+      .arena-wrap {
+        height: min(62vh, 560px);
+      }
+
+      .command-bar {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="game-shell">
+    <header>
+      <h1><span class="title-mark" aria-hidden="true"><span></span><span></span></span>Fire & Ice: Fake Temple</h1>
+      <section class="scoreboard" aria-label="Scoreboard">
+        <div class="score"><b>Mode</b><span id="modeText">Fake</span></div>
+        <div class="score"><b>Keys</b><span>WASD / Arrows</span></div>
+        <div class="score"><b>Goal</b><span id="goalText">Enter command</span></div>
+      </section>
+    </header>
+
+    <section class="arena-wrap" aria-label="Fire and ice arena">
+      <canvas id="game" width="960" height="520"></canvas>
+      <div id="fakeStamp" class="fake-stamp">FAKE GAME LOCKED</div>
+      <div id="winScreen" class="win-screen" aria-live="polite">
+        <div class="win-box">
+          <h2>YOU WIN</h2>
+          <p>The secret command worked. Fire and Ice both agree: you played, you won.</p>
+        </div>
+      </div>
+    </section>
+
+    <form class="command-bar" id="commandForm">
+      <label for="commandInput">Command</label>
+      <input id="commandInput" autocomplete="off" spellcheck="false" placeholder='Command place: type ?"KIS"'>
+      <button type="submit" aria-label="Run command">RUN</button>
+      <button type="button" class="secondary" id="resetButton" aria-label="Reset game">RESET</button>
+    </form>
+
+    <div id="status" class="status-card">This temple is pretending to be impossible. The command place is waiting.</div>
+  </main>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const form = document.getElementById("commandForm");
+    const input = document.getElementById("commandInput");
+    const statusEl = document.getElementById("status");
+    const modeText = document.getElementById("modeText");
+    const goalText = document.getElementById("goalText");
+    const fakeStamp = document.getElementById("fakeStamp");
+    const winScreen = document.getElementById("winScreen");
+    const resetButton = document.getElementById("resetButton");
+
+    const keys = new Set();
+    const player = { x: 116, y: 380, w: 34, h: 44, vx: 0, vy: 0, grounded: false };
+    const finish = { x: 818, y: 84, w: 74, h: 92 };
+    let mode = "fake";
+    let won = false;
+    let lastTime = 0;
+    let sparkleTick = 0;
+
+    const solids = [
+      { x: 0, y: 474, w: 960, h: 46 },
+      { x: 70, y: 390, w: 168, h: 20 },
+      { x: 308, y: 336, w: 156, h: 20 },
+      { x: 524, y: 282, w: 150, h: 20 },
+      { x: 744, y: 206, w: 166, h: 20 },
+      { x: 112, y: 218, w: 122, h: 18 },
+      { x: 362, y: 164, w: 180, h: 18 },
+    ];
+
+    const traps = [
+      { x: 256, y: 452, w: 86, h: 22, type: "fire" },
+      { x: 458, y: 452, w: 90, h: 22, type: "ice" },
+      { x: 646, y: 452, w: 94, h: 22, type: "fire" },
+    ];
+
+    function setStatus(message) {
+      statusEl.innerHTML = message;
+    }
+
+    function commandMatches(value) {
+      const typed = value.trim().toUpperCase();
+      return typed === '?"KIS"' || typed === '?"KIS' || typed === "?KIS";
+    }
+
+    function unlockWinMode() {
+      mode = "play";
+      won = false;
+      player.x = 760;
+      player.y = 158;
+      player.vx = 0;
+      player.vy = 0;
+      modeText.textContent = "Play";
+      goalText.textContent = "Touch portal";
+      fakeStamp.classList.add("hidden");
+      winScreen.classList.remove("visible");
+      setStatus('<strong>Secret accepted.</strong> You are playing for real now. Touch the glowing portal to win.');
+      input.blur();
+    }
+
+    function winGame() {
+      if (won) return;
+      won = true;
+      modeText.textContent = "Winner";
+      goalText.textContent = "Done";
+      winScreen.classList.add("visible");
+      setStatus('<strong>You played. You won.</strong> The fake temple has been defeated by the command place.');
+    }
+
+    function resetGame() {
+      mode = "fake";
+      won = false;
+      player.x = 116;
+      player.y = 380;
+      player.vx = 0;
+      player.vy = 0;
+      modeText.textContent = "Fake";
+      goalText.textContent = "Enter command";
+      fakeStamp.classList.remove("hidden");
+      winScreen.classList.remove("visible");
+      input.value = "";
+      setStatus("This temple is pretending to be impossible. The command place is waiting.");
+    }
+
+    function rectsTouch(a, b) {
+      return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    }
+
+    function movePlayer(dt) {
+      if (mode !== "play" || won) return;
+      const left = keys.has("ArrowLeft") || keys.has("a");
+      const right = keys.has("ArrowRight") || keys.has("d");
+      const jump = keys.has("ArrowUp") || keys.has("w") || keys.has(" ");
+      player.vx = (right - left) * 260;
+      if (jump && player.grounded) {
+        player.vy = -440;
+      }
+      player.vy += 960 * dt;
+      player.x += player.vx * dt;
+      collide("x");
+      player.y += player.vy * dt;
+      player.grounded = false;
+      collide("y");
+      player.x = Math.max(14, Math.min(canvas.width - player.w - 14, player.x));
+      if (player.y > canvas.height + 80) {
+        player.x = 116;
+        player.y = 380;
+        player.vy = 0;
+      }
+      if (rectsTouch(player, finish)) winGame();
+    }
+
+    function collide(axis) {
+      for (const solid of solids) {
+        if (!rectsTouch(player, solid)) continue;
+        if (axis === "x") {
+          if (player.vx > 0) player.x = solid.x - player.w;
+          if (player.vx < 0) player.x = solid.x + solid.w;
+          player.vx = 0;
+        } else {
+          if (player.vy > 0) {
+            player.y = solid.y - player.h;
+            player.grounded = true;
+          }
+          if (player.vy < 0) player.y = solid.y + solid.h;
+          player.vy = 0;
+        }
+      }
+    }
+
+    function drawBackground() {
+      const sky = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      sky.addColorStop(0, "#271018");
+      sky.addColorStop(0.52, "#132131");
+      sky.addColorStop(1, "#07131b");
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < 22; i++) {
+        const x = (i * 89 + sparkleTick * (i % 2 ? 0.18 : -0.12)) % canvas.width;
+        const y = 36 + ((i * 53) % 210);
+        ctx.fillStyle = i % 2 ? "rgba(255, 177, 64, 0.5)" : "rgba(132, 231, 255, 0.52)";
+        ctx.fillRect(x, y, 3, 3);
+      }
+
+      ctx.fillStyle = "rgba(255,255,255,0.06)";
+      for (let i = 0; i < 10; i++) {
+        ctx.fillRect(i * 106 - 12, 0, 2, canvas.height);
+      }
+    }
+
+    function drawPlatforms() {
+      for (const solid of solids) {
+        const grad = ctx.createLinearGradient(solid.x, solid.y, solid.x + solid.w, solid.y);
+        grad.addColorStop(0, "#463536");
+        grad.addColorStop(0.5, "#44546a");
+        grad.addColorStop(1, "#2b7485");
+        ctx.fillStyle = grad;
+        ctx.fillRect(solid.x, solid.y, solid.w, solid.h);
+        ctx.fillStyle = "rgba(255,255,255,0.22)";
+        ctx.fillRect(solid.x, solid.y, solid.w, 4);
+      }
+
+      for (const trap of traps) {
+        const grad = ctx.createLinearGradient(trap.x, trap.y, trap.x + trap.w, trap.y);
+        if (trap.type === "fire") {
+          grad.addColorStop(0, "#ffdf67");
+          grad.addColorStop(1, "#ff3c20");
+        } else {
+          grad.addColorStop(0, "#e8ffff");
+          grad.addColorStop(1, "#35c6ff");
+        }
+        ctx.fillStyle = grad;
+        ctx.fillRect(trap.x, trap.y, trap.w, trap.h);
+        ctx.fillStyle = "rgba(255,255,255,0.35)";
+        for (let i = 0; i < trap.w; i += 16) {
+          ctx.beginPath();
+          ctx.moveTo(trap.x + i, trap.y + trap.h);
+          ctx.lineTo(trap.x + i + 8, trap.y + 4 + Math.sin((sparkleTick + i) / 12) * 4);
+          ctx.lineTo(trap.x + i + 16, trap.y + trap.h);
+          ctx.fill();
+        }
+      }
+    }
+
+    function drawPortal() {
+      const pulse = 1 + Math.sin(sparkleTick / 15) * 0.08;
+      ctx.save();
+      ctx.translate(finish.x + finish.w / 2, finish.y + finish.h / 2);
+      ctx.scale(pulse, pulse);
+      const grad = ctx.createRadialGradient(0, 0, 8, 0, 0, 62);
+      grad.addColorStop(0, "rgba(255,255,255,0.95)");
+      grad.addColorStop(0.38, "rgba(156,255,181,0.85)");
+      grad.addColorStop(1, "rgba(77,216,255,0.04)");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 38, 56, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.7)";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawPlayer() {
+      ctx.save();
+      ctx.translate(player.x, player.y);
+      ctx.fillStyle = "#111827";
+      ctx.fillRect(4, 8, player.w - 8, player.h - 8);
+      const split = player.w / 2;
+      ctx.fillStyle = "#ff6b2b";
+      ctx.fillRect(0, 0, split, player.h);
+      ctx.fillStyle = "#66e7ff";
+      ctx.fillRect(split, 0, split, player.h);
+      ctx.fillStyle = "#fff8dd";
+      ctx.fillRect(8, 10, 6, 6);
+      ctx.fillStyle = "#063046";
+      ctx.fillRect(21, 10, 6, 6);
+      ctx.fillStyle = "rgba(255,255,255,0.72)";
+      ctx.fillRect(6, player.h - 8, player.w - 12, 4);
+      ctx.restore();
+    }
+
+    function drawFakeLock() {
+      if (mode !== "fake") return;
+      ctx.fillStyle = "rgba(8, 12, 24, 0.48)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "rgba(255,255,255,0.86)";
+      ctx.font = "900 36px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("LOCKED UNTIL THE SECRET COMMAND", canvas.width / 2, 95);
+      ctx.font = "700 18px Arial";
+      ctx.fillStyle = "rgba(231,247,255,0.88)";
+      ctx.fillText('Try the command place below: ?"KIS"', canvas.width / 2, 128);
+      ctx.textAlign = "left";
+    }
+
+    function draw() {
+      drawBackground();
+      drawPortal();
+      drawPlatforms();
+      drawPlayer();
+      drawFakeLock();
+    }
+
+    function loop(time) {
+      const dt = Math.min(0.032, (time - lastTime) / 1000 || 0);
+      lastTime = time;
+      sparkleTick += 1;
+      movePlayer(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (commandMatches(input.value)) {
+        unlockWinMode();
+      } else {
+        setStatus("Wrong command. The fake temple refuses to become fair.");
+      }
+    });
+
+    resetButton.addEventListener("click", resetGame);
+
+    window.addEventListener("keydown", (event) => {
+      if (event.target === input) return;
+      keys.add(event.key.length === 1 ? event.key.toLowerCase() : event.key);
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(event.key)) {
+        event.preventDefault();
+      }
+    });
+
+    window.addEventListener("keyup", (event) => {
+      keys.delete(event.key.length === 1 ? event.key.toLowerCase() : event.key);
+    });
+
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

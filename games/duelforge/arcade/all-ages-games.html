@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PixelSprout All Ages Games | 1-18</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chewy&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="all-ages-games.css" />
+</head>
+<body data-app="all-ages">
+  <main class="shell">
+    <header class="hero">
+      <p class="eyebrow">Playable 1-18 Game Hub</p>
+      <h1>All Ages Arcade</h1>
+      <p>Different mechanics across early childhood, kids, pre-teens, and teens.</p>
+      <div class="coin-bar">
+        <span>Coins</span>
+        <strong data-coin-balance>0</strong>
+      </div>
+      <div class="row">
+        <a class="btn soft" href="index.html">Back to Arcade</a>
+        <a class="btn soft" href="tiny-tots-games.html">Ages 1-4 Pack</a>
+        <a class="btn soft" href="kids-games.html">Ages 1-10 Pack</a>
+        <button class="btn primary" type="button" data-music-toggle>Play Hub Music</button>
+      </div>
+      <p class="note" data-coin-log>Earn coins by winning games and spend them in the shop.</p>
+      <p class="note" data-music-status>Hub music is paused.</p>
+    </header>
+
+    <section class="card" id="volcano-escape">
+      <h2>Volcano Escape (6-12) 🌋</h2>
+      <p>Lava flows across the bar. Jump only inside the clear safe lane. Close hits count as a fail.</p>
+      <div class="row">
+        <button class="btn primary" type="button" data-volcano-start>Start</button>
+        <button class="btn soft" type="button" data-volcano-jump>Jump</button>
+        <span class="pill" data-volcano-score>Escapes: 0</span>
+        <span class="pill" data-volcano-lives>Lives: 3</span>
+        <span class="pill" data-volcano-time>Time: 25</span>
+      </div>
+      <div class="track">
+        <span class="safe-window" data-volcano-safe></span>
+        <span class="pulse" data-volcano-pulse></span>
+      </div>
+      <p class="note" data-volcano-status>Press start.</p>
+    </section>
+
+    <section class="card" id="shop">
+      <h2>Coin Shop</h2>
+      <p>Buy and equip car skins, color themes, and extras.</p>
+      <div class="shop-grid">
+        <article>
+          <h3>Car Skin</h3>
+          <div class="garage-car" data-garage-car></div>
+          <div class="row">
+            <button class="btn soft" type="button" data-shop-buy="car_red">Red Racer (60)</button>
+            <button class="btn soft" type="button" data-shop-buy="car_neon">Neon Bolt (120)</button>
+          </div>
+        </article>
+        <article>
+          <h3>Color Theme</h3>
+          <div class="theme-preview" data-theme-preview></div>
+          <div class="row">
+            <button class="btn soft" type="button" data-shop-buy="theme_sunset">Sunset (80)</button>
+            <button class="btn soft" type="button" data-shop-buy="theme_forest">Forest (90)</button>
+            <button class="btn soft" type="button" data-shop-buy="theme_ocean">Ocean (100)</button>
+          </div>
+        </article>
+        <article>
+          <h3>Extras</h3>
+          <p class="note">More: double coin boost and sparkle pulse.</p>
+          <div class="row">
+            <button class="btn soft" type="button" data-shop-buy="boost_double">Double Coins (140)</button>
+            <button class="btn soft" type="button" data-shop-buy="pulse_sparkle">Sparkle Pulse (70)</button>
+          </div>
+        </article>
+      </div>
+      <p class="note" data-shop-status>Select an item to buy or equip.</p>
+    </section>
+
+    <section class="card" id="survival-camp">
+      <h2>Survival Camp (7-14)</h2>
+      <p>Manage food, tools, and energy for 8 days.</p>
+      <div class="row">
+        <button class="btn primary" type="button" data-camp-start>Start Camp</button>
+        <button class="btn soft" type="button" data-camp-action="hunt">Hunt Food</button>
+        <button class="btn soft" type="button" data-camp-action="craft">Craft Tool</button>
+        <button class="btn soft" type="button" data-camp-action="rest">Rest</button>
+        <button class="btn soft" type="button" data-camp-view>View Resources</button>
+      </div>
+      <div class="row">
+        <span class="pill" data-camp-day>Day: 1</span>
+        <span class="pill" data-camp-food>Food: 4</span>
+        <span class="pill" data-camp-tools>Tools: 1</span>
+        <span class="pill" data-camp-energy>Energy: 5</span>
+      </div>
+      <div class="resource-screen is-open" data-camp-screen-panel>
+        <h3>Resource HUD</h3>
+        <div class="resource-grid">
+          <article>
+            <span class="res-icon food"></span>
+            <div class="meter"><span data-camp-meter-food style="width: 40%"></span></div>
+            <strong data-camp-screen-food>4</strong>
+          </article>
+          <article>
+            <span class="res-icon tools"></span>
+            <div class="meter"><span data-camp-meter-tools style="width: 10%"></span></div>
+            <strong data-camp-screen-tools>1</strong>
+          </article>
+          <article>
+            <span class="res-icon energy"></span>
+            <div class="meter"><span data-camp-meter-energy style="width: 50%"></span></div>
+            <strong data-camp-screen-energy>5</strong>
+          </article>
+          <article>
+            <span class="res-icon shelter"></span>
+            <div class="meter"><span data-camp-meter-shelter style="width: 0%"></span></div>
+            <strong data-camp-screen-shelter>0</strong>
+          </article>
+        </div>
+      </div>
+      <p class="note" data-camp-log>Press start.</p>
+    </section>
+
+    <section class="card" id="creative-studio">
+      <h2>Creative Studio (1-18)</h2>
+      <p>Match your build to the mission card to score points.</p>
+      <div class="row">
+        <label>Theme<select data-scene-theme><option value="beach">Beach</option><option value="space">Space</option><option value="forest">Forest</option></select></label>
+        <label>Style<select data-scene-style><option value="low-poly">Low Poly</option><option value="cartoon">Cartoon</option><option value="neon">Neon</option></select></label>
+        <label>Focus<select data-scene-focus><option value="teamwork">Teamwork</option><option value="adventure">Adventure</option><option value="learning">Learning</option></select></label>
+        <button class="btn soft" type="button" data-scene-mission>New Mission</button>
+        <button class="btn primary" type="button" data-scene-build>Generate Scene</button>
+        <span class="pill" data-scene-score>Studio Score: 0</span>
+      </div>
+      <p class="note" data-scene-target>Mission: Match all 3 settings.</p>
+      <p class="scene-output" data-scene-output>Your custom scene appears here.</p>
+    </section>
+
+    <section class="card" id="learning-lab">
+      <h2>Learning Lab (5-18)</h2>
+      <p>Mixed math, spelling, science, and logic questions.</p>
+      <div class="row">
+        <button class="btn primary" type="button" data-quiz-start>Start Quiz</button>
+        <span class="pill" data-quiz-score>Score: 0</span>
+      </div>
+      <p class="question" data-quiz-question>Press start.</p>
+      <div class="options" data-quiz-options></div>
+    </section>
+
+    <section class="card" id="typing-sprint">
+      <h2>Typing Sprint (10-18)</h2>
+      <p>Type words quickly before time runs out.</p>
+      <div class="row">
+        <button class="btn primary" type="button" data-type-start>Start Typing</button>
+        <span class="pill" data-type-time>Time: 30</span>
+        <span class="pill" data-type-score>Words: 0</span>
+      </div>
+      <p class="question" data-type-word>Press start.</p>
+      <input class="type-input" data-type-input placeholder="Type word here" />
+    </section>
+
+    <section class="card" id="logic-lock">
+      <h2>Logic Lock (12-18)</h2>
+      <p>Match all lights to the target pattern.</p>
+      <div class="row">
+        <button class="btn primary" type="button" data-logic-start>New Puzzle</button>
+        <span class="pill" data-logic-moves>Moves: 0</span>
+      </div>
+      <p class="note" data-logic-target>Target: 10101</p>
+      <div class="logic-grid" data-logic-grid></div>
+    </section>
+
+    <section class="card" id="strategy-duel">
+      <h2>Strategy Grid Duel (13-18)</h2>
+      <p>Beat the bot in a 3x3 strategy duel.</p>
+      <div class="row">
+        <button class="btn primary" type="button" data-duel-reset>Reset Duel</button>
+        <span class="pill" data-duel-status>Your turn (X)</span>
+      </div>
+      <div class="duel-grid" data-duel-grid></div>
+    </section>
+
+    <section class="card" id="snake-classic">
+      <h2>Classic Snake (8-18)</h2>
+      <p>Guide the snake, eat food, grow longer, and avoid walls and your own tail.</p>
+      <div class="row">
+        <a class="btn primary" href="snake-game.html">Play Snake</a>
+      </div>
+    </section>
+  </main>
+
+  <script src="all-ages-games.js"></script>
+</body>
+</html>

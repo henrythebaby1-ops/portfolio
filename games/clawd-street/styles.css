@@ -1,0 +1,482 @@
+:root {
+  --panel-text: #f3f4ff;
+  --panel-border: #4b588b;
+  --panel-bg: #1a2148;
+  --panel-accent: #87a2ff;
+  --frame-bg: #0b1026;
+  --world-border: #243055;
+  --ground-top: #5b4a9d;
+  --ground-main: #304a8e;
+  --ground-shadow: #1f3160;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  user-select: none;
+  color: var(--panel-text);
+  font-family: "Trebuchet MS", "Lucida Grande", sans-serif;
+  background:
+    radial-gradient(circle at top, #2e3c72 0%, #151b3f 46%, #090c1b 100%);
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 290px minmax(0, 1fr);
+  gap: 18px;
+  height: 100%;
+  padding: 18px;
+}
+
+.control-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px;
+  border: 4px solid var(--panel-border);
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 30%),
+    linear-gradient(180deg, #243066 0%, var(--panel-bg) 100%);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.08),
+    0 18px 30px rgba(0, 0, 0, 0.28);
+}
+
+.eyebrow,
+.panel-copy,
+.status-card p {
+  margin: 0;
+}
+
+.eyebrow {
+  color: #b7caff;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.control-panel h1 {
+  margin: 0;
+  font-size: 38px;
+  line-height: 0.95;
+}
+
+.panel-copy,
+.status-card p {
+  line-height: 1.45;
+}
+
+.button-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.button-grid button {
+  min-height: 54px;
+  cursor: pointer;
+  color: #0f1430;
+  border: 3px solid #30457f;
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, #f9fbff 0%, #cadeff 55%, #96b6ff 100%);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.8),
+    0 7px 0 #2e4480;
+}
+
+.button-grid button:active {
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.8),
+    0 4px 0 #2e4480;
+}
+
+.toggle-row,
+.field,
+.status-card {
+  padding: 16px;
+  border: 3px solid rgba(186, 203, 255, 0.18);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.toggle-row,
+.field {
+  display: grid;
+  gap: 10px;
+}
+
+.toggle-row input {
+  width: 26px;
+  height: 26px;
+  accent-color: #a7c1ff;
+}
+
+.field select {
+  min-height: 48px;
+  color: #0f1430;
+  border: 3px solid #30457f;
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, #f9fbff 0%, #cadeff 55%, #96b6ff 100%);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.8),
+    0 7px 0 #2e4480;
+  padding: 0 14px;
+}
+
+.world-frame {
+  min-width: 0;
+  height: 100%;
+  padding: 10px;
+  border-radius: 26px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.12)),
+    var(--frame-bg);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.08);
+}
+
+.world {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: 4px solid var(--world-border);
+  border-radius: 20px;
+  background: #1d2553;
+}
+
+.world::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to right, transparent 0 96%, rgba(255, 255, 255, 0.08) 96% 100%),
+    linear-gradient(to bottom, transparent 0 96%, rgba(255, 255, 255, 0.08) 96% 100%);
+  background-size: 32px 32px;
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+.backdrop,
+#weather-canvas,
+.house,
+.clawd-layer,
+.crab-layer,
+.potion-layer,
+.towel-layer,
+.clawd,
+.crab,
+.potion,
+.towel,
+.ground-strip {
+  position: absolute;
+}
+
+.backdrop,
+#weather-canvas {
+  inset: 0;
+}
+
+.backdrop {
+  overflow: hidden;
+}
+
+.skyline,
+.day-wash {
+  position: absolute;
+  inset: 0;
+}
+
+.skyline {
+  image-rendering: pixelated;
+  background:
+    linear-gradient(180deg, rgba(15, 19, 42, 0.2), transparent 55%),
+    url("./assets/cityscape-night.webp");
+  background-repeat: repeat-x;
+  background-position: center bottom;
+  background-size: auto 44%;
+}
+
+.day-wash {
+  background:
+    linear-gradient(180deg, rgba(139, 212, 255, 0.9) 0%, rgba(187, 232, 255, 0.65) 44%, rgba(255, 218, 170, 0.18) 100%);
+  transition: opacity 300ms ease;
+}
+
+.sun-moon {
+  position: absolute;
+  top: 52px;
+  right: 72px;
+  width: 84px;
+  height: 84px;
+  border-radius: 0;
+  background:
+    repeating-linear-gradient(0deg, #fff2b8 0 12px, #ffd36d 12px 24px);
+  clip-path: polygon(14% 0, 86% 0, 100% 14%, 100% 86%, 86% 100%, 14% 100%, 0 86%, 0 14%);
+  box-shadow: 0 0 0 8px rgba(255, 229, 143, 0.14);
+  transition: all 300ms ease;
+}
+
+.world.is-night .day-wash {
+  opacity: 0;
+}
+
+.world.is-night .sun-moon {
+  background:
+    repeating-linear-gradient(0deg, #dde8ff 0 12px, #b7cbff 12px 24px);
+  box-shadow: 0 0 0 8px rgba(183, 203, 255, 0.1);
+}
+
+.house {
+  left: 64%;
+  bottom: 104px;
+  width: 286px;
+  height: 232px;
+  image-rendering: pixelated;
+}
+
+.house.is-hidden {
+  display: none;
+}
+
+.house .roof,
+.house .roof-trim,
+.house .wall,
+.house .porch,
+.house .door,
+.house .window,
+.house .chimney,
+.house .shrub {
+  position: absolute;
+}
+
+.house .chimney {
+  left: 188px;
+  top: 10px;
+  width: 28px;
+  height: 66px;
+  border: 4px solid #654f92;
+  background:
+    repeating-linear-gradient(180deg, #b2b9e7 0 12px, #9299cc 12px 24px);
+}
+
+.house .roof {
+  left: 20px;
+  top: 28px;
+  width: 246px;
+  height: 96px;
+  border: 4px solid #5a2d66;
+  background:
+    repeating-linear-gradient(90deg, #ec8cdc 0 24px, #cb67bd 24px 48px);
+  clip-path: polygon(50% 0, 100% 54%, 100% 100%, 0 100%, 0 54%);
+}
+
+.house .roof-trim {
+  left: 38px;
+  top: 106px;
+  width: 210px;
+  height: 12px;
+  background:
+    repeating-linear-gradient(90deg, #6d3a7c 0 16px, #8c4f98 16px 32px);
+  box-shadow: 0 4px 0 rgba(42, 25, 59, 0.6);
+}
+
+.house .wall {
+  left: 48px;
+  top: 114px;
+  width: 190px;
+  height: 112px;
+  border: 4px solid #566496;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.25), transparent 32%),
+    repeating-linear-gradient(90deg, #eef3ff 0 20px, #dbe5ff 20px 40px);
+}
+
+.house .porch {
+  left: 84px;
+  bottom: 0;
+  width: 118px;
+  height: 24px;
+  border: 4px solid #516492;
+  background:
+    repeating-linear-gradient(90deg, #aab7e8 0 14px, #8d9fda 14px 28px);
+}
+
+.house .door {
+  left: 122px;
+  bottom: 0;
+  width: 44px;
+  height: 86px;
+  border: 4px solid #5a3557;
+  border-bottom: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 30%),
+    repeating-linear-gradient(90deg, #9e7bd0 0 11px, #8566b2 11px 22px);
+}
+
+.house .window {
+  top: 136px;
+  width: 40px;
+  height: 40px;
+  border: 4px solid #4f6eaa;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.36), transparent 26%),
+    repeating-linear-gradient(90deg, #fff4b0 0 10px, #f9d86a 10px 20px);
+}
+
+.house .window.left {
+  left: 74px;
+}
+
+.house .window.right {
+  right: 74px;
+}
+
+.world.is-night .house .window {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 24%),
+    repeating-linear-gradient(90deg, #ffeaa5 0 10px, #f7ca58 10px 20px);
+}
+
+.house .shrub {
+  bottom: 0;
+  width: 42px;
+  height: 26px;
+  border: 4px solid #2d6b52;
+  background:
+    repeating-linear-gradient(90deg, #57bb82 0 10px, #3da66a 10px 20px);
+}
+
+.house .shrub.left {
+  left: 48px;
+}
+
+.house .shrub.right {
+  right: 48px;
+}
+
+.clawd-layer {
+  inset: 0;
+  pointer-events: none;
+}
+
+.crab-layer {
+  inset: 0;
+  pointer-events: none;
+}
+
+.potion-layer {
+  inset: 0;
+  pointer-events: none;
+}
+
+.towel-layer {
+  inset: 0;
+  pointer-events: none;
+}
+
+.clawd {
+  left: 0;
+  top: 0;
+  bottom: auto;
+  width: 128px;
+  height: 128px;
+  image-rendering: pixelated;
+  pointer-events: auto;
+  cursor: grab;
+}
+
+.clawd canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: drop-shadow(0 8px 8px rgba(0, 0, 0, 0.22));
+}
+
+.clawd.is-dragging {
+  cursor: grabbing;
+}
+
+.crab {
+  left: 0;
+  top: 0;
+  width: 72px;
+  height: 48px;
+  image-rendering: pixelated;
+}
+
+.crab canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.18));
+}
+
+.potion {
+  left: 0;
+  top: 0;
+  width: 56px;
+  height: 64px;
+  image-rendering: pixelated;
+}
+
+.potion canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: drop-shadow(0 5px 4px rgba(0, 0, 0, 0.18));
+}
+
+.towel {
+  left: 0;
+  top: 0;
+  width: 80px;
+  height: 48px;
+  image-rendering: pixelated;
+}
+
+.towel canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.16));
+}
+
+.ground-strip {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 108px;
+  background:
+    linear-gradient(180deg, var(--ground-top) 0 14px, transparent 14px),
+    repeating-linear-gradient(90deg, var(--ground-main) 0 48px, var(--ground-shadow) 48px 96px);
+}
+
+#weather-canvas {
+  pointer-events: none;
+}
+
+@media (max-width: 1100px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .control-panel {
+    max-height: 250px;
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "name": "clawd-street",
+  "version": "1.0.0",
+  "description": "Clawd Street is an 8-bit Electron app with animated Clawds.",
+  "main": "main.js",
+  "private": true,
+  "productName": "Clawd Street",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.codex.clawdstreet",
+    "productName": "Clawd Street",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "assets/**/*",
+      "index.html",
+      "main.js",
+      "preload.js",
+      "renderer.js",
+      "styles.css",
+      "app-config.json",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.games",
+      "icon": "build/icon.icns"
+    },
+    "linux": {
+      "icon": "build/icon.png",
+      "target": [
+        "AppImage"
+      ]
+    }
+  }
+}

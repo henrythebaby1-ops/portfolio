@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Clawd Street</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="control-panel">
+        <p class="eyebrow">8-bit npc scene</p>
+        <h1>Clawd Street</h1>
+        <p class="panel-copy">
+          Clawd walks the ground in the daytime and falls asleep at night.
+        </p>
+
+        <div class="button-grid">
+          <button id="add-clawd-button" type="button">Add Clawd</button>
+          <button id="feed-crab-button" type="button">Feed Crab</button>
+          <button id="drop-towel-button" type="button">Drop Towel</button>
+          <button id="drop-climb-potion-button" type="button">Climb Potion</button>
+          <button id="drop-fly-potion-button" type="button">Fly Potion</button>
+          <button id="clear-world-button" type="button">Make It Disappear</button>
+          <button id="day-button" type="button">Day</button>
+          <button id="night-button" type="button">Night</button>
+        </div>
+
+        <label class="field" for="weather-select">
+          <span>Weather</span>
+          <select id="weather-select">
+            <option value="clear">Clear</option>
+            <option value="rain">Rain</option>
+            <option value="snow">Snow</option>
+            <option value="wind">Wind</option>
+            <option value="fog">Fog</option>
+          </select>
+        </label>
+
+        <div class="status-card">
+          <p id="status-line">Clawd is out for a walk.</p>
+          <p id="weather-line">The street is quiet.</p>
+        </div>
+      </aside>
+
+      <main class="world-frame">
+        <div id="world" class="world is-day">
+          <canvas id="weather-canvas" aria-hidden="true"></canvas>
+          <div class="backdrop">
+            <div class="skyline"></div>
+            <div class="day-wash"></div>
+            <div class="sun-moon"></div>
+          </div>
+          <div id="house" class="house">
+            <div class="chimney"></div>
+            <div class="roof"></div>
+            <div class="roof-trim"></div>
+            <div class="wall"></div>
+            <div class="porch"></div>
+            <div class="door"></div>
+            <div class="window left"></div>
+            <div class="window right"></div>
+            <div class="shrub left"></div>
+            <div class="shrub right"></div>
+          </div>
+          <div id="clawd-layer" class="clawd-layer" aria-label="Clawd NPCs"></div>
+          <div id="crab-layer" class="crab-layer" aria-label="Crabs"></div>
+          <div id="potion-layer" class="potion-layer" aria-label="Potions"></div>
+          <div id="towel-layer" class="towel-layer" aria-label="Towels"></div>
+          <div class="ground-strip"></div>
+        </div>
+      </main>
+    </div>
+
+    <script src="./renderer.js"></script>
+  </body>
+</html>

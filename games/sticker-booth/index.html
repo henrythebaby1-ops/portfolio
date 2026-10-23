@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sticker Booth</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --marigold:#F5A623;
+    --periwinkle:#6C8EF5;
+    --bubblegum:#F76CA1;
+    --cream:#FFF8ED;
+    --plum:#2E2140;
+    --mint:#4ECDC4;
+    --radius:22px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;}
+  body{
+    font-family:'Nunito',sans-serif;
+    background:
+      radial-gradient(circle at 12% 15%, rgba(108,142,245,0.25), transparent 40%),
+      radial-gradient(circle at 88% 85%, rgba(247,108,161,0.25), transparent 40%),
+      var(--cream);
+    color:var(--plum);
+    min-height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .booth{
+    width:100%;
+    max-width:520px;
+  }
+  h1{
+    font-family:'Baloo 2',cursive;
+    font-size:clamp(28px,6vw,40px);
+    margin:0 0 4px;
+    text-align:center;
+    letter-spacing:0.5px;
+  }
+  h1 span{color:var(--bubblegum);}
+  .sub{
+    text-align:center;
+    margin:0 0 20px;
+    font-weight:700;
+    color:#6b5f80;
+    font-size:14px;
+  }
+  .frame{
+    position:relative;
+    background:var(--plum);
+    border-radius:32px;
+    padding:14px;
+    box-shadow:0 18px 40px rgba(46,33,64,0.25);
+  }
+  .screen{
+    position:relative;
+    width:100%;
+    aspect-ratio:4/3;
+    border-radius:var(--radius);
+    overflow:hidden;
+    background:#1a1225;
+  }
+  video{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    transform:scaleX(-1);
+  }
+  canvas#overlay{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+  }
+  .status{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:20px;
+    color:#fff;
+    font-weight:800;
+    font-family:'Baloo 2',cursive;
+    font-size:18px;
+    background:rgba(26,18,37,0.55);
+  }
+  .status.hidden{display:none;}
+  .lightbar{
+    display:flex;
+    justify-content:space-between;
+    padding:10px 4px 2px;
+  }
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--marigold);opacity:0.6;}
+
+  .shelf{
+    margin-top:22px;
+  }
+  .shelf-label{
+    font-family:'Baloo 2',cursive;
+    font-size:15px;
+    margin:0 0 10px 4px;
+    color:var(--plum);
+  }
+  .row{
+    display:flex;
+    gap:10px;
+    overflow-x:auto;
+    padding:4px 2px 10px;
+  }
+  .chip{
+    flex:0 0 auto;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    background:#fff;
+    border:3px solid transparent;
+    border-radius:18px;
+    padding:10px 12px;
+    cursor:pointer;
+    font-weight:800;
+    font-size:12px;
+    color:var(--plum);
+    transition:transform .15s ease, border-color .15s ease;
+    user-select:none;
+  }
+  .chip:hover{transform:translateY(-3px) rotate(-1deg);}
+  .chip.active{border-color:var(--bubblegum); background:#FFF0F6;}
+  .chip .emoji{font-size:26px;}
+
+  .stickerToggles{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-top:2px;
+  }
+  .toggle{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    background:#fff;
+    border:3px solid transparent;
+    border-radius:14px;
+    padding:8px 12px;
+    cursor:pointer;
+    font-weight:800;
+    font-size:13px;
+    color:var(--plum);
+  }
+  .toggle.active{border-color:var(--periwinkle); background:#EEF2FF;}
+
+  .controls{
+    display:flex;
+    justify-content:center;
+    margin-top:20px;
+  }
+  .snap{
+    font-family:'Baloo 2',cursive;
+    font-size:18px;
+    font-weight:800;
+    color:#fff;
+    background:linear-gradient(135deg,var(--bubblegum),var(--marigold));
+    border:none;
+    padding:14px 30px;
+    border-radius:999px;
+    cursor:pointer;
+    box-shadow:0 10px 22px rgba(247,108,161,0.4);
+    transition:transform .15s ease;
+  }
+  .snap:hover{transform:scale(1.04);}
+  .snap:active{transform:scale(0.97);}
+
+  .hint{
+    text-align:center;
+    font-size:12px;
+    color:#8a7fa0;
+    margin-top:14px;
+    font-weight:700;
+  }
+
+  #shotCanvas{display:none;}
+</style>
+</head>
+<body>
+<div class="booth">
+  <h1>Sticker <span>Booth</span></h1>
+  <p class="sub">Pick a hat, add some sparkle, strike a pose</p>
+
+  <div class="frame">
+    <div class="screen">
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="overlay"></canvas>
+      <div class="status" id="status">Tap "Start Camera" below to open the booth 🎬</div>
+    </div>
+    <div class="lightbar">
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    </div>
+  </div>
+
+  <div class="shelf">
+    <p class="shelf-label">Hats & headgear</p>
+    <div class="row" id="hatRow">
+      <div class="chip active" data-hat="none"><span class="emoji">🚫</span>None</div>
+      <div class="chip" data-hat="crown"><span class="emoji">👑</span>Crown</div>
+      <div class="chip" data-hat="grad"><span class="emoji">🎓</span>Grad Cap</div>
+      <div class="chip" data-hat="party"><span class="emoji">🎉</span>Party Hat</div>
+      <div class="chip" data-hat="ears"><span class="emoji">🐱</span>Cat Ears</div>
+      <div class="chip" data-hat="halo"><span class="emoji">😇</span>Halo</div>
+    </div>
+
+    <p class="shelf-label">Floating stickers</p>
+    <div class="stickerToggles" id="stickerToggles">
+      <div class="toggle" data-sticker="stars">⭐ Stars</div>
+      <div class="toggle" data-sticker="hearts">💖 Hearts</div>
+      <div class="toggle" data-sticker="plus">➕ Plus</div>
+      <div class="toggle" data-sticker="x">❌ X's</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="snap" id="startBtn">Start Camera</button>
+  </div>
+  <p class="hint" id="hintText">Your camera stays on your device — nothing is uploaded anywhere.</p>
+</div>
+
+<canvas id="shotCanvas"></canvas>
+
+<script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.js"></script>
+<script>
+const MODEL_URL = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
+
+let video = document.getElementById('video');
+let overlay = document.getElementById('overlay');
+let ctx = overlay.getContext('2d');
+let statusEl = document.getElementById('status');
+let startBtn = document.getElementById('startBtn');
+let hintText = document.getElementById('hintText');
+
+let faceLandmarker = null;
+let running = false;
+let currentHat = 'none';
+let activeStickers = new Set();
+let lastVideoTime = -1;
+let latestResult = null;
+let t0 = performance.now();
+
+document.getElementById('hatRow').addEventListener('click', (e)=>{
+  const chip = e.target.closest('.chip');
+  if(!chip) return;
+  document.querySelectorAll('#hatRow .chip').forEach(c=>c.classList.remove('active'));
+  chip.classList.add('active');
+  currentHat = chip.dataset.hat;
+});
+
+document.getElementById('stickerToggles').addEventListener('click', (e)=>{
+  const tog = e.target.closest('.toggle');
+  if(!tog) return;
+  const key = tog.dataset.sticker;
+  if(activeStickers.has(key)){
+    activeStickers.delete(key);
+    tog.classList.remove('active');
+  } else {
+    activeStickers.add(key);
+    tog.classList.add('active');
+  }
+});
+
+startBtn.addEventListener('click', startBooth);
+
+async function startBooth(){
+  startBtn.disabled = true;
+  startBtn.textContent = "Loading...";
+  statusEl.textContent = "Warming up the camera and face tracker...";
+  statusEl.classList.remove('hidden');
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({video:{width:640,height:480}, audio:false});
+    video.srcObject = stream;
+    await new Promise(res=>{ video.onloadedmetadata = ()=>{ video.play(); res(); }; });
+
+    overlay.width = video.videoWidth || 640;
+    overlay.height = video.videoHeight || 480;
+
+    await loadFaceLandmarker();
+
+    statusEl.classList.add('hidden');
+    startBtn.textContent = "Restart Camera";
+    startBtn.disabled = false;
+    hintText.textContent = "Move around a bit — the accessories follow your face.";
+    running = true;
+    requestAnimationFrame(loop);
+  }catch(err){
+    console.error(err);
+    statusEl.textContent = "Couldn't open the camera 😕 Check that this page has camera permission, then try again.";
+    startBtn.textContent = "Try Again";
+    startBtn.disabled = false;
+  }
+}
+
+async function loadFaceLandmarker(){
+  if(faceLandmarker) return;
+  const vision = await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
+  );
+  faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+    baseOptions:{ modelAssetPath: MODEL_URL, delegate:"GPU" },
+    outputFaceBlendshapes:false,
+    runningMode:"VIDEO",
+    numFaces:1
+  });
+}
+
+function loop(){
+  if(!running) return;
+  if(video.currentTime !== lastVideoTime){
+    lastVideoTime = video.currentTime;
+    const nowMs = performance.now();
+    latestResult = faceLandmarker.detectForVideo(video, nowMs);
+  }
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// FaceLandmarker (MediaPipe) 468-point mesh, key indices we use:
+// 10 = top of forehead, 152 = chin, 234 = left cheek edge, 454 = right cheek edge,
+// 168 = between eyebrows (nose bridge top), 1 = nose tip
+function draw(){
+  ctx.clearRect(0,0,overlay.width, overlay.height);
+  ctx.save();
+  ctx.translate(overlay.width,0);
+  ctx.scale(-1,1); // mirror to match mirrored video
+
+  const t = (performance.now()-t0)/1000;
+
+  if(activeStickers.size){
+    drawFloatingStickers(t);
+  }
+
+  const faces = latestResult && latestResult.faceLandmarks;
+  if(faces && faces.length){
+    const lm = faces[0];
+    const toPx = (p)=>({x:p.x*overlay.width, y:p.y*overlay.height});
+    const forehead = toPx(lm[10]);
+    const chin = toPx(lm[152]);
+    const left = toPx(lm[234]);
+    const right = toPx(lm[454]);
+    const faceWidth = Math.hypot(right.x-left.x, right.y-left.y);
+    const faceHeight = Math.hypot(forehead.x-chin.x, forehead.y-chin.y);
+    const cx = (left.x+right.x)/2;
+
+    drawHat(currentHat, cx, forehead.y, faceWidth, faceHeight, t);
+  } else if(running){
+    // no face found this frame — draw nothing extra, stickers still float
+  }
+
+  ctx.restore();
+}
+
+function drawHat(kind, cx, foreheadY, w, h, t){
+  if(kind==='none') return;
+  ctx.save();
+  ctx.translate(cx, foreheadY);
+  const bob = Math.sin(t*2)*2;
+  ctx.translate(0, bob);
+
+  if(kind==='crown'){
+    const cw = w*1.15, ch = h*0.55;
+    ctx.save();
+    ctx.translate(0,-ch*0.55);
+    ctx.fillStyle = '#F5C518';
+    ctx.strokeStyle = '#B8860B';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-cw/2, ch*0.35);
+    ctx.lineTo(-cw/2, -ch*0.05);
+    ctx.lineTo(-cw/3, ch*0.15);
+    ctx.lineTo(-cw/6, -ch*0.35);
+    ctx.lineTo(0, ch*0.05);
+    ctx.lineTo(cw/6, -ch*0.35);
+    ctx.lineTo(cw/3, ch*0.15);
+    ctx.lineTo(cw/2, -ch*0.05);
+    ctx.lineTo(cw/2, ch*0.35);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#E63946';
+    ctx.beginPath(); ctx.arc(-cw/6,-ch*0.28,cw*0.045,0,7); ctx.fill();
+    ctx.fillStyle = '#4ECDC4';
+    ctx.beginPath(); ctx.arc(0,-ch*0.05,cw*0.045,0,7); ctx.fill();
+    ctx.fillStyle = '#6C8EF5';
+    ctx.beginPath(); ctx.arc(cw/6,-ch*0.28,cw*0.045,0,7); ctx.fill();
+    ctx.restore();
+  }
+  else if(kind==='grad'){
+    const bw = w*1.35;
+    ctx.save();
+    ctx.translate(0,-h*0.28);
+    // mortarboard base cap
+    ctx.fillStyle = '#1f1730';
+    ctx.beginPath();
+    ctx.ellipse(0, h*0.10, w*0.42, h*0.14, 0, 0, Math.PI*2);
+    ctx.fill();
+    // flat board
+    ctx.beginPath();
+    ctx.moveTo(-bw/2, 0);
+    ctx.lineTo(0, -h*0.22);
+    ctx.lineTo(bw/2, 0);
+    ctx.lineTo(0, h*0.22);
+    ctx.closePath();
+    ctx.fillStyle = '#241a38';
+    ctx.fill();
+    // button
+    ctx.fillStyle = '#F5A623';
+    ctx.beginPath(); ctx.arc(0,0,w*0.035,0,7); ctx.fill();
+    // tassel
+    ctx.strokeStyle = '#F5A623';
+    ctx.lineWidth = w*0.02;
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.quadraticCurveTo(w*0.28, h*0.15, w*0.30, h*0.5);
+    ctx.stroke();
+    ctx.fillStyle = '#F5A623';
+    ctx.beginPath(); ctx.arc(w*0.30, h*0.55, w*0.045, 0, 7); ctx.fill();
+    ctx.restore();
+  }
+  else if(kind==='party'){
+    ctx.save();
+    ctx.translate(0,-h*0.15);
+    const grad = ctx.createLinearGradient(0,-h*0.7,0,0);
+    grad.addColorStop(0,'#F76CA1');
+    grad.addColorStop(1,'#6C8EF5');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(-w*0.42,0);
+    ctx.lineTo(w*0.42,0);
+    ctx.lineTo(0,-h*0.85);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    for(let i=0;i<3;i++){
+      const yy = -i*h*0.18-h*0.05;
+      const rr = w*(0.35 - i*0.09);
+      ctx.beginPath(); ctx.arc(-rr*0.4, yy, w*0.035, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(rr*0.4, yy, w*0.035, 0, 7); ctx.fill();
+    }
+    ctx.fillStyle = '#F5A623';
+    ctx.beginPath(); ctx.arc(0,-h*0.85,w*0.06,0,7); ctx.fill();
+    ctx.restore();
+  }
+  else if(kind==='ears'){
+    ctx.save();
+    ctx.fillStyle = '#2E2140';
+    const ex = w*0.36, ey = -h*0.08, er = w*0.16;
+    [[-ex, 'l'],[ex,'r']].forEach(([sx])=>{
+      ctx.beginPath();
+      ctx.moveTo(sx-er, ey+er*0.6);
+      ctx.lineTo(sx, ey-er*1.6);
+      ctx.lineTo(sx+er, ey+er*0.6);
+      ctx.closePath();
+      ctx.fill();
+    });
+    ctx.fillStyle = '#F76CA1';
+    [-ex, ex].forEach((sx)=>{
+      ctx.beginPath();
+      ctx.moveTo(sx-er*0.55, ey+er*0.35);
+      ctx.lineTo(sx, ey-er*0.9);
+      ctx.lineTo(sx+er*0.55, ey+er*0.35);
+      ctx.closePath();
+      ctx.fill();
+    });
+    ctx.restore();
+  }
+  else if(kind==='halo'){
+    ctx.save();
+    ctx.translate(0,-h*0.55);
+    ctx.strokeStyle = '#F5D76E';
+    ctx.lineWidth = w*0.045;
+    ctx.beginPath();
+    ctx.ellipse(0,0,w*0.32,h*0.10,0,0,Math.PI*2);
+    ctx.stroke();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+let stickerSeeds = null;
+function drawFloatingStickers(t){
+  if(!stickerSeeds){
+    stickerSeeds = [];
+    for(let i=0;i<14;i++){
+      stickerSeeds.push({
+        x: Math.random()*overlay.width,
+        y: Math.random()*overlay.height,
+        speed: 0.3+Math.random()*0.5,
+        phase: Math.random()*10,
+        size: 16+Math.random()*14,
+        kindPool: []
+      });
+    }
+  }
+  const kinds = Array.from(activeStickers);
+  if(!kinds.length) return;
+
+  stickerSeeds.forEach((s, i)=>{
+    const kind = kinds[i % kinds.length];
+    const yy = (s.y + Math.sin(t*s.speed + s.phase)*18);
+    const xx = (s.x + Math.cos(t*s.speed*0.6 + s.phase)*14);
+    drawSticker(kind, xx, yy, s.size, t+s.phase);
+  });
+}
+
+function drawSticker(kind, x, y, size, t){
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.rotate(Math.sin(t*0.8)*0.25);
+  if(kind==='stars'){
+    ctx.fillStyle = '#F5C518';
+    drawStar(0,0,5,size/2,size/4.5);
+  } else if(kind==='hearts'){
+    ctx.fillStyle = '#F76CA1';
+    drawHeart(0,0,size);
+  } else if(kind==='plus'){
+    ctx.strokeStyle = '#F5A623';
+    ctx.lineWidth = size*0.22;
+    ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.moveTo(-size/2,0); ctx.lineTo(size/2,0);
+    ctx.moveTo(0,-size/2); ctx.lineTo(0,size/2);
+    ctx.stroke();
+  } else if(kind==='x'){
+    ctx.strokeStyle = '#6C8EF5';
+    ctx.lineWidth = size*0.2;
+    ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.moveTo(-size/2,-size/2); ctx.lineTo(size/2,size/2);
+    ctx.moveTo(size/2,-size/2); ctx.lineTo(-size/2,size/2);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawStar(cx,cy,spikes,outerR,innerR){
+  let rot = Math.PI/2*3;
+  let x=cx, y=cy;
+  const step = Math.PI/spikes;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy-outerR);
+  for(let i=0;i<spikes;i++){
+    x = cx + Math.cos(rot)*outerR; y = cy + Math.sin(rot)*outerR;
+    ctx.lineTo(x,y); rot += step;
+    x = cx + Math.cos(rot)*innerR; y = cy + Math.sin(rot)*innerR;
+    ctx.lineTo(x,y); rot += step;
+  }
+  ctx.lineTo(cx, cy-outerR);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawHeart(x,y,size){
+  ctx.beginPath();
+  const s = size/2;
+  ctx.moveTo(x, y+s*0.3);
+  ctx.bezierCurveTo(x, y, x-s, y-s*0.4, x, y+s*0.6);
+  ctx.bezierCurveTo(x+s, y-s*0.4, x, y, x, y+s*0.3);
+  ctx.fill();
+}
+</script>
+</body>
+</html>

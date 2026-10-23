@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Blind Box Simulator</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}
+body{background:#121222;color:#fff;text-align:center;padding:25px}
+.container{max-width:800px;margin:0 auto}
+h1{margin-bottom:15px;color:#ffd700}
+.status-bar{
+    background:#1e1e3f;
+    padding:12px;
+    border-radius:12px;
+    margin-bottom:20px;
+    display:flex;
+    justify-content:space-around;
+    font-size:18px;
+}
+.box-display{
+    height:260px;
+    background:#16213e;
+    border-radius:18px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    font-size:22px;
+    margin-bottom:25px;
+    padding:20px;
+}
+.box-display img{
+    width:120px;
+    height:120px;
+    object-fit:contain;
+    margin-bottom:10px;
+}
+.btn-group button{
+    padding:13px 20px;
+    margin:6px;
+    border:none;
+    border-radius:10px;
+    font-size:16px;
+    cursor:pointer;
+    transition:0.2s;
+}
+#buyBox{background:#2ec4b6;color:#000}
+#draw1{background:#4895ef;color:white}
+#draw10{background:#f72585;color:white}
+#sellAll{background:#ff9f1c;color:#000}
+#clearInv{background:#666;color:white}
+.inventory{
+    margin-top:30px;
+    text-align:left;
+    background:#0f3460;
+    padding:20px;
+    border-radius:14px;
+}
+.inventory h3{margin-bottom:12px}
+.item-tag{
+    display:inline-block;
+    padding:7px 11px;
+    margin:5px;
+    border-radius:7px;
+    font-size:14px;
+    cursor:pointer;
+}
+.common{background:#888}
+.rare{background:#4285F4}
+.epic{background:#9c27b0}
+.legendary{background:#ffb300;color:#000;font-weight:bold}
+
+/* Animations */
+@keyframes shake{
+    0%,100%{transform:rotate(-7deg)}
+    50%{transform:rotate(7deg)}
+}
+@keyframes popOpen{
+    0%{scale:0.7;opacity:0}
+    60%{scale:1.15}
+    100%{scale:1;opacity:1}
+}
+@keyframes sparkle{
+    0%,100%{filter:brightness(1)}
+    50%{filter:brightness(1.6)}
+}
+.shake-anim{animation:shake 0.7s infinite}
+.pop-anim{animation:popOpen 0.6s ease-out}
+.legend-sparkle{animation:sparkle 0.8s infinite}
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>🎁 Blind Box Simulator</h1>
+    <div class="status-bar">
+        <div>💰 Money: <span id="cash">500</span></div>
+        <div>📦 Blind Boxes Owned: <span id="boxCount">0</span></div>
+    </div>
+
+    <div class="box-display" id="boxArea">
+        <p>Buy boxes then draw!</p>
+    </div>
+
+    <div class="btn-group">
+        <button id="buyBox">Buy 1 Blind Box ($20)</button>
+        <button id="draw1">Single Draw (1 Box)</button>
+        <button id="draw10">10 Draw (10 Boxes)</button>
+        <button id="sellAll">Sell All Items</button>
+        <button id="clearInv">Clear Inventory</button>
+    </div>
+
+    <div class="inventory">
+        <h3>📦 Your Collection</h3>
+        <div id="bag"></div>
+    </div>
+</div>
+
+<script>
+// Item & rarity setup + images
+const rarityConfig = [
+    {
+        name:"Common", rate:60, sellPrice:5, className:"common",
+        image:"https://i.imgur.com/ZL5H2HV.png",
+        items:["Cat Figure","Rabbit Badge","Cloud Ornament","Flower Doll","Star Pin"]
+    },
+    {
+        name:"Rare", rate:25, sellPrice:15, className:"rare",
+        image:"https://i.imgur.com/dCL8M5T.png",
+        items:["Forest Fox","Moon Bunny","Crystal Bird","Ocean Elf"]
+    },
+    {
+        name:"Epic", rate:12, sellPrice:40, className:"epic",
+        image:"https://i.imgur.com/AQrQ2cK.png",
+        items:["Ice Dragon Cub","Phoenix Chick","Shadow Wolf"]
+    },
+    {
+        name:"Legendary", rate:3, sellPrice:120, className:"legendary",
+        image:"https://i.imgur.com/4M5YtXH.png",
+        items:["Void Dragon","Stellar God","Ancient Phoenix"]
+    }
+];
+
+let cash = 500;
+let blindBoxAmount = 0;
+let inventory = [];
+
+const boxArea = document.getElementById("boxArea");
+const bag = document.getElementById("bag");
+const cashText = document.getElementById("cash");
+const boxCounter = document.getElementById("boxCount");
+
+function updateUI(){
+    cashText.textContent = cash;
+    boxCounter.textContent = blindBoxAmount;
+    renderInventory();
+}
+
+// Get random pulled item
+function getRandomItem(){
+    let rand = Math.random() * 100;
+    let cumulative = 0;
+    for(let r of rarityConfig){
+        cumulative += r.rate;
+        if(rand <= cumulative){
+            let randomItemName = r.items[Math.floor(Math.random()*r.items.length)];
+            return {
+                rarity: r.name,
+                name: randomItemName,
+                cls: r.className,
+                img: r.image,
+                sell: r.sellPrice
+            };
+        }
+    }
+}
+
+function renderInventory(){
+    bag.innerHTML = "";
+    inventory.forEach(item=>{
+        let span = document.createElement("span");
+        span.className = "item-tag "+item.cls;
+        span.textContent = `[${item.rarity}] ${item.name} ($${item.sell})`;
+        bag.appendChild(span);
+    })
+}
+
+// Buy blind box
+document.getElementById("buyBox").onclick = function(){
+    if(cash >= 20){
+        cash -= 20;
+        blindBoxAmount += 1;
+        updateUI();
+        boxArea.innerHTML = `<p>✅ Purchased a blind box!</p>`;
+    }else{
+        boxArea.innerHTML = `<p>❌ Not enough money!</p>`;
+    }
+}
+
+// Single draw
+async function singleDraw(){
+    if(blindBoxAmount < 1){
+        boxArea.innerHTML = `<p>❌ You need blind boxes!</p>`;
+        return;
+    }
+    blindBoxAmount--;
+    boxArea.innerHTML = `<p>🎁 Shaking blind box...</p>`;
+    boxArea.classList.add("shake-anim");
+    updateUI();
+
+    await new Promise(res=>setTimeout(res,900));
+    boxArea.classList.remove("shake-anim");
+    let result = getRandomItem();
+    inventory.push(result);
+
+    boxArea.classList.add("pop-anim");
+    if(result.rarity === "Legendary") boxArea.classList.add("legend-sparkle");
+
+    boxArea.innerHTML = `
+        <img src="${result.img}">
+        <p>${result.rarity}</p>
+        <p>${result.name}</p>
+        <p>Sell value: $${result.sell}</p>
+    `;
+    setTimeout(()=>{
+        boxArea.classList.remove("pop-anim","legend-sparkle");
+    },1200);
+    updateUI();
+}
+
+// 10 pulls
+async function tenDraw(){
+    if(blindBoxAmount <10){
+        boxArea.innerHTML = `<p>❌ Need 10 blind boxes!</p>`;
+        return;
+    }
+    blindBoxAmount -=10;
+    boxArea.innerHTML = `<p>🎁 Opening 10 blind boxes...</p>`;
+    boxArea.classList.add("shake-anim");
+    updateUI();
+
+    await new Promise(res=>setTimeout(res,1100));
+    boxArea.classList.remove("shake-anim");
+    let results = [];
+    for(let i=0;i<10;i++){
+        let res = getRandomItem();
+        inventory.push(res);
+        results.push(res);
+    }
+    boxArea.classList.add("pop-anim");
+    let text = results.map(x=>`${x.rarity}:${x.name}`).join("<br>");
+    boxArea.innerHTML = `<p>10 Pull Results:</p><p style="font-size:14px">${text}</p>`;
+    setTimeout(()=>boxArea.classList.remove("pop-anim"),1200);
+    updateUI();
+}
+
+// Sell all inventory
+document.getElementById("sellAll").onclick = function(){
+    let totalSell = 0;
+    inventory.forEach(item=>totalSell += item.sell);
+    cash += totalSell;
+    inventory = [];
+    boxArea.innerHTML = `<p>✅ Sold all items for $${totalSell}</p>`;
+    updateUI();
+}
+
+document.getElementById("clearInv").onclick = function(){
+    inventory = [];
+    boxArea.innerHTML = `<p>Inventory cleared!</p>`;
+    updateUI();
+}
+
+document.getElementById("draw1").onclick = singleDraw;
+document.getElementById("draw10").onclick = tenDraw;
+
+updateUI();
+</script>
+</body>
+</html>

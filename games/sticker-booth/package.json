@@ -1,0 +1,22 @@
+{
+  "name": "sticker-booth",
+  "version": "1.0.0",
+  "description": "Face camera sticker booth app",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --mac"
+  },
+  "build": {
+    "appId": "com.example.stickerbooth",
+    "productName": "Sticker Booth",
+    "mac": {
+      "category": "public.app-category.entertainment",
+      "target": "dmg"
+    }
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  }
+}

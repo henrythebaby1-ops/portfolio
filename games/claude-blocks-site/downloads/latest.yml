@@ -1,0 +1,8 @@
+version: 1.2.0
+files:
+  - url: ClaudeBlocks-windows-setup.exe
+    sha512: slew724Kr7Xn5KG+wYlp3loaDBKbD2kWiBUG7snBrso/80fMM1s/74/2/Hw/zxIob7M0f9kpEZynsgqh/XnrGA==
+    size: 114239529
+path: ClaudeBlocks-windows-setup.exe
+sha512: slew724Kr7Xn5KG+wYlp3loaDBKbD2kWiBUG7snBrso/80fMM1s/74/2/Hw/zxIob7M0f9kpEZynsgqh/XnrGA==
+releaseDate: '2026-10-10T22:26:49.540Z'

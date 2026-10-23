@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snake Arena - Custom Skins & Power-ups</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+    
+    * {
+        font-family: 'Press Start 2P', cursive;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    body {
+        background: radial-gradient(circle at 50% 50%, #0f172a 0%, #020617 100%);
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+    
+    .game-container {
+        box-shadow: 0 0 40px rgba(34, 197, 94, 0.3), 
+                    inset 0 0 20px rgba(0, 0, 0, 0.5);
+        border: 4px solid #22c55e;
+        position: relative;
+    }
+    
+    .scanlines::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: repeating-linear-gradient(
+            0deg,
+            rgba(0, 0, 0, 0.15),
+            rgba(0, 0, 0, 0.15) 1px,
+            transparent 1px,
+            transparent 2px
+        );
+        pointer-events: none;
+        z-index: 10;
+    }
+    
+    .glow-text {
+        text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+    }
+    
+    .pixel-border {
+        box-shadow: 4px 0 0 0 #22c55e,
+                    -4px 0 0 0 #22c55e,
+                    0 4px 0 0 #22c55e,
+                    0 -4px 0 0 #22c55e;
+    }
+    
+    .pixel-border-red {
+        box-shadow: 4px 0 0 0 #ef4444,
+                    -4px 0 0 0 #ef4444,
+                    0 4px 0 0 #ef4444,
+                    0 -4px 0 0 #ef4444;
+    }
+    
+    .pixel-border-blue {
+        box-shadow: 4px 0 0 0 #3b82f6,
+                    -4px 0 0 0 #3b82f6,
+                    0 4px 0 0 #3b82f6,
+                    0 -4px 0 0 #3b82f6;
+    }
+    
+    .pixel-border-yellow {
+        box-shadow: 4px 0 0 0 #eab308,
+                    -4px 0 0 0 #eab308,
+                    0 4px 0 0 #eab308,
+                    0 -4px 0 0 #eab308;
+    }
+    
+    .pixel-border-purple {
+        box-shadow: 4px 0 0 0 #a855f7,
+                    -4px 0 0 0 #a855f7,
+                    0 4px 0 0 #a855f7,
+                    0 -4px 0 0 #a855f7;
+    }
+    
+    button {
+        transition: all 0.1s ease;
+        image-rendering: pixelated;
+    }
+    
+    button:active {
+        transform: scale(0.95);
+    }
+    
+    button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .pulse {
+        animation: pulse 1s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    
+    @keyframes blink {
+        0%, 50%, 100% { opacity: 1; }
+        25%, 75% { opacity: 0.3; }
+    }
+    
+    .blink {
+        animation: blink 0.5s;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+    
+    .float {
+        animation: float 2s ease-in-out infinite;
+    }
+    
+    canvas {
+        display: block;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+    }
+    
+    .mode-card {
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    
+    .mode-card:hover {
+        transform: translateY(-4px);
+    }
+    
+    .mode-card.selected {
+        background: rgba(34, 197, 94, 0.2);
+        outline: 2px solid #22c55e;
+    }
+    
+    input, input[type="color"] {
+        background: #0f172a;
+        border: 2px solid #22c55e;
+        color: #22c55e;
+    }
+    
+    input:focus {
+        outline: none;
+        box-shadow: 0 0 10px #22c55e;
+    }
+    
+    input[type="color"] {
+        cursor: pointer;
+        padding: 2px;
+    }
+    
+    @media (max-width: 640px) {
+        .game-text { font-size: 0.625rem; }
+        .game-title { font-size: 1.25rem; }
+        .game-score { font-size: 0.75rem; }
+        .player-list { max-height: 80px; overflow-y: auto; }
+    }
+    
+    .player-badge {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 2px;
+        margin-right: 4px;
+        flex-shrink: 0;
+    }
+    
+    .player-list {
+        scrollbar-width: thin;
+        scrollbar-color: #22c55e #0f172a;
+    }
+    
+    .player-list::-webkit-scrollbar {
+        height: 4px;
+        width: 4px;
+    }
+    
+    .player-list::-webkit-scrollbar-track {
+        background: #0f172a;
+    }
+    
+    .player-list::-webkit-scrollbar-thumb {
+        background: #22c55e;
+    }
+    
+    .skin-canvas {
+        cursor: crosshair;
+        image-rendering: pixelated;
+        border: 2px solid #22c55e;
+    }
+    
+    .powerup-icon {
+        display: inline-block;
+        font-size: 1.2rem;
+        margin-right: 4px;
+    }
+    
+    .powerup-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 8px;
+        background: rgba(168, 85, 247, 0.2);
+        border: 1px solid #a855f7;
+        font-size: 0.6rem;
+    }
+    
+    .shield-active {
+        animation: shieldPulse 0.5s infinite;
+    }
+    
+    @keyframes shieldPulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+    }
+</style>
+</head>
+<body class="flex items-center justify-center p-4 min-h-screen">
+    <div class="w-full max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-4">
+            <h1 class="game-title text-2xl md:text-4xl text-green-400 glow-text mb-3">SNAKE ARENA</h1>
+            <div id="gameStats" class="hidden">
+                <div class="flex justify-between items-center px-2 md:px-4 mb-2">
+                    <div class="text-left">
+                        <p class="game-score text-xs md:text-sm text-green-300">SCORE</p>
+                        <p id="score" class="game-score text-lg md:text-2xl text-green-400 glow-text">000</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="game-score text-xs md:text-sm text-yellow-300">ROOM</p>
+                        <p id="roomCode" class="game-score text-lg md:text-2xl text-yellow-400 glow-text">---</p>
+                        <p id="playerCountDisplay" class="game-text text-[0.5rem] text-cyan-400"></p>
+                    </div>
+                    <div class="text-right">
+                        <p class="game-score text-xs md:text-sm text-blue-300">SPEED</p>
+                        <p id="speed" class="game-score text-lg md:text-2xl text-blue-400 glow-text">1</p>
+                    </div>
+                </div>
+                <div id="powerupDisplay" class="flex gap-2 justify-center px-2 text-[0.6rem] md:text-xs pb-1 flex-wrap"></div>
+                <div id="playerList" class="player-list flex flex-wrap gap-2 justify-center px-2 text-[0.6rem] md:text-xs pb-1"></div>
+            </div>
+        </div>
+
+        <!-- Game Container -->
+        <div class="game-container bg-slate-950 rounded-lg overflow-hidden scanlines relative">
+            <canvas id="gameCanvas"></canvas>
+            
+            <!-- Main Menu -->
+            <div id="mainMenu" class="absolute inset-0 bg-slate-950/98 flex flex-col items-center justify-center z-20 p-4 md:p-6 overflow-y-auto">
+                <div class="text-center space-y-4 md:space-y-6 w-full max-w-2xl">
+                    <div class="text-5xl md:text-6xl mb-2 md:mb-4 float">🐍</div>
+                    <h2 class="text-lg md:text-2xl text-green-400 glow-text">SELECT MODE</h2>
+                    
+                    <!-- Mode Selection -->
+                    <div class="space-y-3">
+                        <div id="singlePlayerCard" class="mode-card pixel-border bg-slate-900 p-4 text-left">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-green-400 text-sm md:text-base mb-1">SINGLE PLAYER</h3>
+                                    <p class="text-[0.6rem] md:text-xs text-slate-400">Play solo classic snake</p>
+                                </div>
+                                <div class="text-2xl">👤</div>
+                            </div>
+                        </div>
+                        
+                        <div id="multiplayerCard" class="mode-card pixel-border bg-slate-900 p-4 text-left">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-cyan-400 text-sm md:text-base mb-1">MULTIPLAYER</h3>
+                                    <p class="text-[0.6rem] md:text-xs text-slate-400">Battle up to 10 friends</p>
+                                </div>
+                                <div class="text-2xl">👥</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Player Customization -->
+                    <div id="playerCustomization" class="hidden space-y-3">
+                        <p class="text-xs text-yellow-400">CUSTOMIZE PLAYER</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <input id="playerNameInput" type="text" placeholder="PLAYER NAME" maxlength="12" 
+                                       class="w-full px-4 py-3 text-xs md:text-sm text-center uppercase" />
+                            </div>
+                            <div class="flex gap-2 items-center">
+                                <label class="text-xs text-slate-400 whitespace-nowrap">COLOR:</label>
+                                <input id="playerColorInput" type="color" value="#22c55e" 
+                                       class="flex-1 px-2 py-3 cursor-pointer" />
+                            </div>
+                        </div>
+                        
+                        <!-- Pixel Snake Editor -->
+                        <div class="pixel-border bg-slate-900 p-4">
+                            <div class="flex justify-between items-center mb-3">
+                                <p class="text-xs text-purple-400">PIXEL SNAKE EDITOR</p>
+                                <div class="flex gap-2">
+                                    <button id="clearSkinBtn" class="text-[0.6rem] text-red-400 hover:text-red-300">CLEAR</button>
+                                    <button id="randomSkinBtn" class="text-[0.6rem] text-blue-400 hover:text-blue-300">RANDOM</button>
+                                </div>
+                            </div>
+                            <div class="flex flex-col md:flex-row gap-4 items-center justify-center">
+                                <div>
+                                    <canvas id="skinCanvas" width="128" height="128" class="skin-canvas"></canvas>
+                                    <p class="text-[0.5rem] text-slate-500 mt-1 text-center">16x16 Skin - Click to Draw</p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-xs text-slate-400 mb-2">PREVIEW</p>
+                                    <canvas id="skinPreview" width="64" height="64" class="skin-canvas mx-auto"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Game Mode Selection -->
+                    <div id="gameModeSection" class="hidden space-y-3">
+                        <p class="text-xs text-yellow-400">GAME MODE</p>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="mode-card pixel-border bg-slate-900 p-3 selected" data-mode="classic">
+                                <div class="text-xl mb-1">🎯</div>
+                                <p class="text-[0.55rem] md:text-xs text-green-400">CLASSIC</p>
+                            </div>
+                            <div class="mode-card pixel-border-red bg-slate-900 p-3" data-mode="speed">
+                                <div class="text-xl mb-1">⚡</div>
+                                <p class="text-[0.55rem] md:text-xs text-red-400">SPEED</p>
+                            </div>
+                            <div class="mode-card pixel-border-blue bg-slate-900 p-3" data-mode="maze">
+                                <div class="text-xl mb-1">🧱</div>
+                                <p class="text-[0.55rem] md:text-xs text-blue-400">MAZE</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Multiplayer Options -->
+                    <div id="multiplayerOptions" class="hidden space-y-3">
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="createRoomBtn" class="pixel-border bg-green-500 hover:bg-green-400 text-slate-950 px-4 py-3 text-xs md:text-sm">
+                                CREATE ROOM
+                            </button>
+                            <button id="joinRoomBtn" class="pixel-border-blue bg-blue-500 hover:bg-blue-400 text-slate-950 px-4 py-3 text-xs md:text-sm">
+                                JOIN ROOM
+                            </button>
+                        </div>
+                        <input id="roomCodeInput" type="text" placeholder="ROOM CODE" maxlength="6" 
+                               class="w-full px-4 py-3 text-xs md:text-sm text-center uppercase hidden" />
+                    </div>
+                    
+                    <!-- Single Player Start -->
+                    <div id="singlePlayerStart">
+                        <button id="startBtn" class="pixel-border bg-green-500 hover:bg-green-400 text-slate-950 px-8 py-4 text-sm md:text-base w-full">
+                            START GAME
+                        </button>
+                    </div>
+                    
+                    <div id="connectionStatus" class="text-xs text-slate-500 hidden">
+                        <p class="pulse">CONNECTING...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lobby Screen -->
+            <div id="lobbyScreen" class="absolute inset-0 bg-slate-950/98 flex flex-col items-center justify-center z-20 p-6 hidden overflow-y-auto">
+                <div class="text-center space-y-4 w-full max-w-md">
+                    <h2 class="text-xl md:text-2xl text-cyan-400 glow-text">LOBBY</h2>
+                    <div class="pixel-border bg-slate-900 p-4">
+                        <p class="text-xs text-slate-400 mb-2">ROOM CODE</p>
+                        <p id="lobbyRoomCode" class="text-3xl md:text-4xl text-yellow-400 glow-text mb-4">------</p>
+                        <button id="copyRoomBtn" class="text-xs text-cyan-400 hover:text-cyan-300">COPY CODE</button>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-400 mb-3">PLAYERS (<span id="playerCount">1</span>/10)</p>
+                        <div id="lobbyPlayerList" class="space-y-2 max-h-64 overflow-y-auto"></div>
+                    </div>
+                    <div class="space-y-2">
+                        <button id="readyBtn" class="pixel-border bg-green-500 hover:bg-green-400 text-slate-950 px-8 py-4 text-sm w-full">
+                            READY
+                        </button>
+                        <button id="leaveRoomBtn" class="pixel-border-red bg-red-500 hover:bg-red-400 text-slate-950 px-8 py-3 text-xs w-full">
+                            LEAVE ROOM
+                        </button>
+                    </div>
+                    <p class="text-[0.6rem] text-slate-500">WAITING FOR ALL PLAYERS TO READY UP</p>
+                </div>
+            </div>
+
+            <!-- Game Over Screen -->
+            <div id="gameOverScreen" class="absolute inset-0 bg-slate-950/95 items-center justify-center z-20 p-6 hidden">
+                <div class="text-center space-y-6">
+                    <h2 id="gameOverTitle" class="text-2xl md:text-3xl text-red-500 glow-text pulse">GAME OVER</h2>
+                    <div class="space-y-3">
+                        <p class="text-sm text-green-400">FINAL SCORE</p>
+                        <p id="finalScore" class="text-4xl md:text-5xl text-green-400 glow-text">000</p>
+                        <div id="leaderboard" class="hidden space-y-2 mt-4 max-h-48 overflow-y-auto"></div>
+                    </div>
+                    <div class="space-y-2">
+                        <button id="restartBtn" class="pixel-border bg-green-500 hover:bg-green-400 text-slate-950 px-8 py-4 text-sm md:text-base w-full">
+                            PLAY AGAIN
+                        </button>
+                        <button id="menuBtn" class="pixel-border-blue bg-blue-500 hover:bg-blue-400 text-slate-950 px-8 py-3 text-xs w-full">
+                            MAIN MENU
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pause Screen -->
+            <div id="pauseScreen" class="absolute inset-0 bg-slate-950/90 items-center justify-center z-20 p-6 hidden">
+                <div class="text-center space-y-4">
+                    <h2 class="text-2xl md:text-3xl text-blue-400 glow-text">PAUSED</h2>
+                    <p class="text-xs text-slate-300">PRESS SPACE TO RESUME</p>
+                    <button id="resumeBtn" class="pixel-border bg-green-500 hover:bg-green-400 text-slate-950 px-6 py-3 text-sm mt-4">
+                        RESUME
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls Info -->
+        <div class="mt-4 text-center">
+            <p class="game-text text-[0.5rem] md:text-xs text-slate-500 hidden md:block">
+                ARROW KEYS / WASD • SPACE TO PAUSE • R TO RESET
+            </p>
+            <p class="game-text text-[0.5rem] text-slate-500 md:hidden">
+                SWIPE TO MOVE • TAP CANVAS TO PAUSE
+            </p>
+        </div>
+
+        <!-- Mobile D-Pad -->
+        <div id="mobileControls" class="mt-4 grid grid-cols-3 gap-2 max-w-xs mx-auto md:hidden">
+            <div></div>
+            <button id="upBtn" class="pixel-border bg-slate-800 active:bg-green-500 text-green-400 py-4 text-xl">
+                ▲
+            </button>
+            <div></div>
+            <button id="leftBtn" class="pixel-border bg-slate-800 active:bg-green-500 text-green-400 py-4 text-xl">
+                ◄
+            </button>
+            <button id="downBtn" class="pixel-border bg-slate-800 active:bg-green-500 text-green-400 py-4 text-xl">
+                ▼
+            </button>
+            <button id="rightBtn" class="pixel-border bg-slate-800 active:bg-green-500 text-green-400 py-4 text-xl">
+                ►
+            </button>
+        </div>
+    </div>
+
+<script>
+// Config
+const WS_SERVER = 'wss://echo.websocket.org';
+const MAX_PLAYERS = 10;
+const PLAYER_COLORS = [
+    '#22c55e', '#3b82f6', '#eab308', '#ec4899', '#f97316',
+    '#a855f7', '#06b6d4', '#84cc16', '#f43f5e', '#14b8a6'
+];
+
+const POWERUP_TYPES = {
+    SPEED: { icon: '⚡', name: 'SPEED', duration: 5000, color: '#eab308' },
+    SHIELD: { icon: '🛡️', name: 'SHIELD', duration: 10000, color: '#3b82f6' },
+    SHRINK: { icon: '➖', name: 'SHRINK', duration: 0, color: '#ec4899' },
+    DOUBLE: { icon: '💎', name: '2X POINTS', duration: 10000, color: '#a855f7' }
+};
+
+// DOM Elements
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const roomCodeEl = document.getElementById('roomCode');
+const speedEl = document.getElementById('speed');
+const finalScoreEl = document.getElementById('finalScore');
+const playerListEl = document.getElementById('playerList');
+const powerupDisplayEl = document.getElementById('powerupDisplay');
+const gameStatsEl = document.getElementById('gameStats');
+const playerCountDisplayEl = document.getElementById('playerCountDisplay');
+
+const mainMenu = document.getElementById('mainMenu');
+const lobbyScreen = document.getElementById('lobbyScreen');
+const gameOverScreen = document.getElementById('gameOverScreen');
+const pauseScreen = document.getElementById('pauseScreen');
+
+const singlePlayerCard = document.getElementById('singlePlayerCard');
+const multiplayerCard = document.getElementById('multiplayerCard');
+const gameModeSection = document.getElementById('gameModeSection');
+const multiplayerOptions = document.getElementById('multiplayerOptions');
+const singlePlayerStart = document.getElementById('singlePlayerStart');
+const playerCustomization = document.getElementById('playerCustomization');
+
+const startBtn = document.getElementById('startBtn');
+const restartBtn = document.getElementById('restartBtn');
+const menuBtn = document.getElementById('menuBtn');
+const resumeBtn = document.getElementById('resumeBtn');
+const createRoomBtn = document.getElementById('createRoomBtn');
+const joinRoomBtn = document.getElementById('joinRoomBtn');
+const readyBtn = document.getElementById('readyBtn');
+const leaveRoomBtn = document.getElementById('leaveRoomBtn');
+const copyRoomBtn = document.getElementById('copyRoomBtn');
+const clearSkinBtn = document.getElementById('clearSkinBtn');
+const randomSkinBtn = document.getElementById('randomSkinBtn');
+
+const playerNameInput = document.getElementById('playerNameInput');
+const playerColorInput = document.getElementById('playerColorInput');
+const roomCodeInput = document.getElementById('roomCodeInput');
+const lobbyRoomCodeEl = document.getElementById('lobbyRoomCode');
+const lobbyPlayerListEl = document.getElementById('lobbyPlayerList');
+const playerCountEl = document.getElementById('playerCount');
+const connectionStatusEl = document.getElementById('connectionStatus');
+const leaderboardEl = document.getElementById('leaderboard');
+const gameOverTitleEl = document.getElementById('gameOverTitle');
+
+const skinCanvas = document.getElementById('skinCanvas');
+const skinCtx = skinCanvas.getContext('2d');
+const skinPreview = document.getElementById('skinPreview');
+const previewCtx = skinPreview.getContext('2d');
+
+// Game config
+const GRID_SIZE = 20;
+let canvasSize = 400;
+let tileCount = canvasSize / GRID_SIZE;
+let baseTileCount = 20;
+
+// Skin Editor
+const SKIN_SIZE = 16;
+let customSkin = null;
+let isDrawing = false;
+
+// Game state
+let gameMode = 'classic';
+let playMode = 'single';
+let playerId = Math.random().toString(36).substr(2, 9);
+let playerName = 'PLAYER';
+let playerColor = '#22c55e';
+let currentRoom = null;
+let isHost = false;
+let isReady = false;
+
+let snakes = {};
+let food = {};
+let obstacles = [];
+let powerups = [];
+let activePowerups = {};
+let mySnake = [];
+let dx = 0;
+let dy = 0;
+let score = 0;
+let baseScoreMultiplier = 1;
+let baseSpeed = 120;
+let gameSpeed = 120;
+let gameRunning = false;
+let gamePaused = false;
+let gameLoopId = null;
+let lastUpdateTime = 0;
+let inputQueue = [];
+let ws = null;
+let connected = false;
+
+// Skin Editor Setup
+function initSkinEditor() {
+    skinCtx.imageSmoothingEnabled = false;
+    previewCtx.imageSmoothingEnabled = false;
+    
+    // Initialize with solid color
+    customSkin = Array(SKIN_SIZE).fill(null).map(() => Array(SKIN_SIZE).fill(playerColor));
+    drawSkinCanvas();
+    
+    skinCanvas.addEventListener('mousedown', startDrawing);
+    skinCanvas.addEventListener('mousemove', draw);
+    skinCanvas.addEventListener('mouseup', stopDrawing);
+    skinCanvas.addEventListener('mouseleave', stopDrawing);
+    
+    skinCanvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = skinCanvas.getBoundingClientRect();
+        startDrawing({ offsetX: touch.clientX - rect.left, offsetY: touch.clientY - rect.top });
+    });
+    skinCanvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = skinCanvas.getBoundingClientRect();
+        draw({ offsetX: touch.clientX - rect.left, offsetY: touch.clientY - rect.top });
+    });
+    skinCanvas.addEventListener('touchend', stopDrawing);
+}
+
+function startDrawing(e) {
+    isDrawing = true;
+    draw(e);
+}
+
+function draw(e) {
+    if (!isDrawing) return;
+    const pixelSize = skinCanvas.width / SKIN_SIZE;
+    const x = Math.floor(e.offsetX / pixelSize);
+    const y = Math.floor(e.offsetY / pixelSize);
+    if (x >= 0 && x < SKIN_SIZE && y >= 0 && y < SKIN_SIZE) {
+        customSkin[y][x] = playerColor;
+        drawSkinCanvas();
+    }
+}
+
+function stopDrawing() {
+    isDrawing = false;
+}
+
+function drawSkinCanvas() {
+    const pixelSize = skinCanvas.width / SKIN_SIZE;
+    skinCtx.clearRect(0, 0, skinCanvas.width, skinCanvas.height);
+    
+    // Draw grid
+    skinCtx.strokeStyle = '#1e293b';
+    skinCtx.lineWidth = 0.5;
+    for (let i = 0; i <= SKIN_SIZE; i++) {
+        skinCtx.beginPath();
+        skinCtx.moveTo(i * pixelSize, 0);
+        skinCtx.lineTo(i * pixelSize, skinCanvas.height);
+        skinCtx.stroke();
+        skinCtx.beginPath();
+        skinCtx.moveTo(0, i * pixelSize);
+        skinCtx.lineTo(skinCanvas.width, i * pixelSize);
+        skinCtx.stroke();
+    }
+    
+    // Draw pixels
+    for (let y = 0; y < SKIN_SIZE; y++) {
+        for (let x = 0; x < SKIN_SIZE; x++) {
+            if (customSkin[y][x]) {
+                skinCtx.fillStyle = customSkin[y][x];
+                skinCtx.fillRect(x * pixelSize + 1, y * pixelSize + 1, pixelSize - 2, pixelSize - 2);
+            }
+        }
+    }
+    
+    updateSkinPreview();
+}
+
+function updateSkinPreview() {
+    previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+    const pixelSize = previewCanvas.width / SKIN_SIZE;
+    for (let y = 0; y < SKIN_SIZE; y++) {
+        for (let x = 0; x < SKIN_SIZE; x++) {
+            if (customSkin[y][x]) {
+                previewCtx.fillStyle = customSkin[y][x];
+                previewCtx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+            }
+        }
+    }
+}
+
+function clearSkin() {
+    customSkin = Array(SKIN_SIZE).fill(null).map(() => Array(SKIN_SIZE).fill(null));
+    drawSkinCanvas();
+}
+
+function randomizeSkin() {
+    customSkin = Array(SKIN_SIZE).fill(null).map(() => 
+        Array(SKIN_SIZE).fill(null).map(() => Math.random() > 0.5 ? playerColor : null)
+    );
+    drawSkinCanvas();
+}
+
+function getSkinData() {
+    return JSON.stringify(customSkin);
+}
+
+playerColorInput.addEventListener('input', (e) => {
+    playerColor = e.target.value;
+});
+
+clearSkinBtn.addEventListener('click', clearSkin);
+randomSkinBtn.addEventListener('click', randomizeSkin);
+
+// Calculate dynamic board size
+function calculateBoardSize(playerCount) {
+    if (playMode === 'single') return baseTileCount;
+    const calculated = baseTileCount + Math.max(0, playerCount - 2) * 3;
+    return Math.min(calculated, 40);
+}
+
+function resizeCanvas() {
+    const playerCount = Math.max(1, Object.keys(snakes).length);
+    tileCount = calculateBoardSize(playerCount);
+    
+    const maxSize = Math.min(window.innerWidth - 60, window.innerHeight - 420, 700);
+    const idealGridSize = Math.floor(maxSize / tileCount);
+    const actualGridSize = Math.max(12, Math.min(GRID_SIZE, idealGridSize));
+    canvasSize = tileCount * actualGridSize;
+    
+    canvas.width = canvasSize;
+    canvas.height = canvasSize;
+    
+    if (gameRunning && !gamePaused) {
+        draw();
+    }
+}
+
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// WebSocket setup
+function connectWebSocket() {
+    if (ws && ws.readyState === WebSocket.OPEN) return;
+    
+    connectionStatusEl.classList.remove('hidden');
+    ws = new WebSocket(WS_SERVER);
+    
+    ws.onopen = () => {
+        connected = true;
+        connectionStatusEl.classList.add('hidden');
+    };
+    
+    ws.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            handleServerMessage(data);
+        } catch (e) {}
+    };
+    
+    ws.onerror = () => {
+        connectionStatusEl.innerHTML = '<p class="text-red-400">CONNECTION ERROR</p>';
+    };
+    
+    ws.onclose = () => {
+        connected = false;
+        if (playMode === 'multi' && gameRunning) {
+            showNotification('DISCONNECTED FROM SERVER', 'red');
+            returnToMenu();
+        }
+    };
+}
+
+function sendToServer(data) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ 
+            ...data, 
+            playerId, 
+            playerName, 
+            playerColor,
+            customSkin: customSkin ? getSkinData() : null,
+            room: currentRoom 
+        }));
+    }
+}
+
+function handleServerMessage(data) {
+    if (data.type === 'room_created') {
+        currentRoom = data.room;
+        isHost = true;
+        showLobby();
+    } else if (data.type === 'room_joined') {
+        currentRoom = data.room;
+        snakes = data.players || {};
+        resizeCanvas();
+        updateLobby();
+    } else if (data.type === 'room_full') {
+        showNotification('ROOM IS FULL (10/10)', 'red');
+        roomCodeInput.value = '';
+    } else if (data.type === 'player_joined') {
+        snakes[data.player.id] = data.player;
+        resizeCanvas();
+        updateLobby();
+    } else if (data.type === 'player_left') {
+        delete snakes[data.playerId];
+        resizeCanvas();
+        if (gameRunning) {
+            updatePlayerList();
+        } else {
+            updateLobby();
+        }
+    } else if (data.type === 'player_ready') {
+        if (snakes[data.playerId]) {
+            snakes[data.playerId].ready = true;
+            updateLobby();
+        }
+    } else if (data.type === 'game_start') {
+        food = data.food;
+        obstacles = data.obstacles || [];
+        powerups = data.powerups || [];
+        startMultiplayerGame();
+    } else if (data.type === 'player_update') {
+        if (data.playerId !== playerId && snakes[data.playerId]) {
+            snakes[data.playerId].snake = data.snake;
+            snakes[data.playerId].score = data.score;
+            snakes[data.playerId].activePowerups = data.activePowerups;
+            updatePlayerList();
+        }
+    } else if (data.type === 'food_eaten') {
+        food = data.food;
+        if (data.playerId !== playerId && snakes[data.playerId]) {
+            snakes[data.playerId].score = data.score;
+        }
+    } else if (data.type === 'powerup_spawned') {
+        powerups.push(data.powerup);
+    } else if (data.type === 'powerup_collected') {
+        powerups = powerups.filter(p => p.id !== data.powerupId);
+        if (data.playerId !== playerId && snakes[data.playerId]) {
+            snakes[data.playerId].activePowerups = data.activePowerups;
+        }
+    } else if (data.type === 'player_died') {
+        if (snakes[data.playerId]) {
+            snakes[data.playerId].alive = false;
+        }
+        updatePlayerList();
+        checkGameEnd();
+    }
+}
+
+// Menu system
+singlePlayerCard.addEventListener('click', () => {
+    playMode = 'single';
+    singlePlayerCard.classList.add('selected');
+    multiplayerCard.classList.remove('selected');
+    gameModeSection.classList.remove('hidden');
+    multiplayerOptions.classList.add('hidden');
+    singlePlayerStart.classList.remove('hidden');
+    playerCustomization.classList.remove('hidden');
+});
+
+multiplayerCard.addEventListener('click', () => {
+    playMode = 'multi';
+    multiplayerCard.classList.add('selected');
+    singlePlayerCard.classList.remove('selected');
+    gameModeSection.classList.remove('hidden');
+    multiplayerOptions.classList.remove('hidden');
+    singlePlayerStart.classList.add('hidden');
+    playerCustomization.classList.remove('hidden');
+    connectWebSocket();
+});
+
+document.querySelectorAll('[data-mode]').forEach(card => {
+    card.addEventListener('click', () => {
+        document.querySelectorAll('[data-mode]').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        gameMode = card.dataset.mode;
+    });
+});
+
+createRoomBtn.addEventListener('click', () => {
+    playerName = playerNameInput.value.trim().toUpperCase() || 'PLAYER';
+    if (!connected) {
+        showNotification('NOT CONNECTED', 'red');
+        return;
+    }
+    sendToServer({ type: 'create_room', gameMode, maxPlayers: MAX_PLAYERS });
+});
+
+joinRoomBtn.addEventListener('click', () => {
+    if (roomCodeInput.classList.contains('hidden')) {
+        roomCodeInput.classList.remove('hidden');
+        roomCodeInput.focus();
+    } else {
+        const code = roomCodeInput.value.trim().toUpperCase();
+        playerName = playerNameInput.value.trim().toUpperCase() || 'PLAYER';
+        if (!code) {
+            showNotification('ENTER ROOM CODE', 'yellow');
+            return;
+        }
+        if (!connected) {
+            showNotification('NOT CONNECTED', 'red');
+            return;
+        }
+        sendToServer({ type: 'join_room', roomCode: code });
+    }
+});
+
+readyBtn.addEventListener('click', () => {
+    isReady = !isReady;
+    readyBtn.textContent = isReady ? 'UNREADY' : 'READY';
+    readyBtn.classList.toggle('bg-yellow-500');
+    readyBtn.classList.toggle('bg-green-500');
+    sendToServer({ type: 'player_ready', ready: isReady });
+});
+
+leaveRoomBtn.addEventListener('click', () => {
+    sendToServer({ type: 'leave_room' });
+    returnToMenu();
+});
+
+copyRoomBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(currentRoom);
+    showNotification('ROOM CODE COPIED', 'green');
+});
+
+function showLobby() {
+    mainMenu.classList.add('hidden');
+    lobbyScreen.classList.remove('hidden');
+    lobbyScreen.classList.add('flex');
+    lobbyRoomCodeEl.textContent = currentRoom;
+    snakes[playerId] = {
+        id: playerId,
+        name: playerName,
+        color: playerColor,
+        customSkin: customSkin,
+        ready: false,
+        score: 0,
+        alive: true,
+        activePowerups: {}
+    };
+    updateLobby();
+}
+
+function updateLobby() {
+    const players = Object.values(snakes);
+    playerCountEl.textContent = players.length;
+    lobbyPlayerListEl.innerHTML = players.map(p => `
+        <div class="pixel-border bg-slate-900 p-3 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="player-badge" style="background: ${p.color}"></span>
+                <span class="text-xs ${p.id === playerId ? 'text-green-400' : 'text-slate-300'}">${p.name}</span>
+                ${p.customSkin ? '<span class="text-purple-400 text-[0.5rem]">🎨</span>' : ''}
+            </div>
+            <span class="text-xs ${p.ready ? 'text-green-400' : 'text-slate-500'}">${p.ready ? 'READY' : 'WAITING'}</span>
+        </div>
+    `).join('');
+    
+    if (isHost && players.length > 1 && players.every(p => p.ready)) {
+        sendToServer({ type: 'start_game' });
+    }
+}
+
+function getSpawnPositions(playerCount) {
+    const margin = 3;
+    const mid = Math.floor(tileCount / 2);
+    const positions = [
+        { x: margin, y: margin },
+        { x: tileCount - margin - 1, y: margin },
+        { x: margin, y: tileCount - margin - 1 },
+        { x: tileCount - margin - 1, y: tileCount - margin - 1 },
+        { x: mid, y: margin },
+        { x: mid, y: tileCount - margin - 1 },
+        { x: margin, y: mid },
+        { x: tileCount - margin - 1, y: mid },
+        { x: Math.floor(tileCount / 3), y: Math.floor(tileCount / 3) },
+        { x: Math.floor(tileCount * 2 / 3), y: Math.floor(tileCount * 2 / 3) }
+    ];
+    return positions.slice(0, playerCount);
+}
+
+function initGame() {
+    resizeCanvas();
+    
+    if (playMode === 'single') {
+        const startX = Math.floor(tileCount / 2);
+        const startY = Math.floor(tileCount / 2);
+        mySnake = [{ x: startX, y: startY }];
+    } else {
+        const playerIds = Object.keys(snakes);
+        const spawnPositions = getSpawnPositions(playerIds.length);
+        const idx = playerIds.indexOf(playerId);
+        const spawn = spawnPositions[idx] || spawnPositions[0];
+        mySnake = [{ x: spawn.x, y: spawn.y }];
+        
+        Object.keys(snakes).forEach((id, i) => {
+            if (!snakes[id].color) {
+                snakes[id].color = PLAYER_COLORS[i % PLAYER_COLORS.length];
+            }
+        });
+        
+        snakes[playerId].snake = mySnake;
+        snakes[playerId].color = playerColor;
+        snakes[playerId].customSkin = customSkin;
+    }
+    
+    dx = 1;
+    dy = 0;
+    score = 0;
+    inputQueue = [];
+    activePowerups = {};
+    baseScoreMultiplier = 1;
+    
+    if (gameMode === 'speed') {
+        baseSpeed = 80;
+    } else if (gameMode === 'maze') {
+        baseSpeed = 140;
+        generateMaze();
+    } else {
+        baseSpeed = 120;
+        obstacles = [];
+    }
+    
+    gameSpeed = baseSpeed;
+    generateFood();
+    spawnPowerups();
+    updateScore();
+    updateSpeed();
+    updatePlayerList();
+    updatePowerupDisplay();
+}
+
+function generateMaze() {
+    obstacles = [];
+    const wallDensity = playMode === 'multi' ? 0.08 : 0.1;
+    const wallCount = Math.floor(tileCount * tileCount * wallDensity);
+    const centerX = Math.floor(tileCount / 2);
+    const centerY = Math.floor(tileCount / 2);
+    
+    for (let i = 0; i < wallCount; i++) {
+        let wall;
+        let attempts = 0;
+        do {
+            wall = {
+                x: Math.floor(Math.random() * tileCount),
+                y: Math.floor(Math.random() * tileCount)
+            };
+            attempts++;
+        } while (
+            attempts < 50 && (
+                (Math.abs(wall.x - centerX) < 4 && Math.abs(wall.y - centerY) < 4) ||
+                obstacles.some(o => o.x === wall.x && o.y === wall.y) ||
+                (playMode === 'multi' && Object.values(snakes).some(s => 
+                    s.snake && s.snake[0] && Math.abs(s.snake[0].x - wall.x) < 3 && Math.abs(s.snake[0].y - wall.y) < 3
+                ))
+            )
+        );
+        if (attempts < 50) obstacles.push(wall);
+    }
+}
+
+function generateFood() {
+    let newFood;
+    let attempts = 0;
+    do {
+        newFood = {
+            x: Math.floor(Math.random() * tileCount),
+            y: Math.floor(Math.random() * tileCount)
+        };
+        attempts++;
+    } while (
+        attempts < 100 && (
+            isPositionOccupied(newFood.x, newFood.y) ||
+            obstacles.some(o => o.x === newFood.x && o.y === newFood.y) ||
+            powerups.some(p => p.x === newFood.x && p.y === newFood.y)
+        )
+    );
+    food = newFood;
+    
+    if (playMode === 'multi' && isHost) {
+        sendToServer({ type: 'new_food', food });
+    }
+}
+
+function spawnPowerups() {
+    if (playMode === 'multi' && !isHost) return;
+    
+    const numPowerups = Math.min(3, Math.floor(tileCount / 10));
+    for (let i = 0; i < numPowerups; i++) {
+        const types = Object.keys(POWERUP_TYPES);
+        const type = types[Math.floor(Math.random() * types.length)];
+        let pos;
+        let attempts = 0;
+        do {
+            pos = {
+                x: Math.floor(Math.random() * tileCount),
+                y: Math.floor(Math.random() * tileCount)
+            };
+            attempts++;
+        } while (
+            attempts < 100 && (
+                isPositionOccupied(pos.x, pos.y) ||
+                obstacles.some(o => o.x === pos.x && o.y === pos.y) ||
+                (food.x === pos.x && food.y === pos.y) ||
+                powerups.some(p => p.x === pos.x && p.y === pos.y)
+            )
+        );
+        if (attempts < 100) {
+            const powerup = {
+                id: Math.random().toString(36).substr(2, 9),
+                type,
+                x: pos.x,
+                y: pos.y
+            };
+            powerups.push(powerup);
+            if (playMode === 'multi' && isHost) {
+                sendToServer({ type: 'powerup_spawned', powerup });
+            }
+        }
+    }
+}
+
+function isPositionOccupied(x, y) {
+    if (mySnake.some(s => s.x === x && s.y === y)) return true;
+    if (playMode === 'multi') {
+        return Object.values(snakes).some(s => 
+            s.id !== playerId && s.snake && s.alive && s.snake.some(seg => seg.x === x && seg.y === y)
+        );
+    }
+    return false;
+}
+
+function applyPowerup(type) {
+    const powerupData = POWERUP_TYPES[type];
+    if (!activePowerups[type]) {
+        activePowerups[type] = {
+            expiresAt: Date.now() + powerupData.duration
+        };
+    } else {
+        activePowerups[type].expiresAt = Date.now() + powerupData.duration;
+    }
+    
+    if (type === 'SPEED') {
+        gameSpeed = Math.max(30, baseSpeed / 1.5);
+    } else if (type === 'SHRINK') {
+        const shrinkAmount = Math.floor(mySnake.length * 0.3);
+        for (let i = 0; i < shrinkAmount && mySnake.length > 3; i++) {
+            mySnake.pop();
+        }
+    } else if (type === 'DOUBLE') {
+        baseScoreMultiplier = 2;
+    }
+    
+    updatePowerupDisplay();
+    if (playMode === 'multi') {
+        sendToServer({ type: 'powerup_collected', powerupId: type, activePowerups });
+    }
+}
+
+function updateActivePowerups() {
+    const now = Date.now();
+    let changed = false;
+    
+    Object.keys(activePowerups).forEach(type => {
+        if (activePowerups[type].expiresAt <= now) {
+            if (type === 'SPEED') {
+                gameSpeed = baseSpeed;
+            } else if (type === 'DOUBLE') {
+                baseScoreMultiplier = 1;
+            }
+            delete activePowerups[type];
+            changed = true;
+        }
+    });
+    
+    if (changed) updatePowerupDisplay();
+}
+
+function updatePowerupDisplay() {
+    const powerupItems = Object.keys(activePowerups).map(type => {
+        const data = POWERUP_TYPES[type];
+        const remaining = Math.ceil((activePowerups[type].expiresAt - Date.now()) / 1000);
+        return `
+            <div class="powerup-badge">
+                <span class="powerup-icon">${data.icon}</span>
+                <span style="color: ${data.color}">${data.name} ${remaining}s</span>
+            </div>
+        `;
+    }).join('');
+    powerupDisplayEl.innerHTML = powerupItems;
+}
+
+function updateScore() {
+    scoreEl.textContent = score.toString().padStart(3, '0');
+    if (playMode === 'multi' && snakes[playerId]) {
+        snakes[playerId].score = score;
+        sendToServer({ type: 'score_update', score, activePowerups });
+        updatePlayerList();
+    }
+}
+
+function updatePlayerList() {
+    if (playMode !== 'multi') {
+        playerCountDisplayEl.textContent = '';
+        return;
+    }
+    const players = Object.values(snakes).sort((a, b) => b.score - a.score);
+    const aliveCount = players.filter(p => p.alive).length;
+    playerCountDisplayEl.textContent = `${aliveCount}/${players.length} ALIVE`;
+    
+    playerListEl.innerHTML = players.map(p => {
+        const powerupIcons = p.activePowerups ? 
+            Object.keys(p.activePowerups).map(t => POWERUP_TYPES[t].icon).join('') : '';
+        return `
+            <div class="flex items-center gap-1 ${p.alive ? '' : 'opacity-50'}">
+                <span class="player-badge" style="background: ${p.color}"></span>
+                <span class="${p.id === playerId ? 'text-green-400' : 'text-slate-300'}">${p.name}: ${p.score}</span>
+                <span class="text-xs">${powerupIcons}</span>
+                ${!p.alive ? '<span class="text-red-500 text-[0.5rem]">✕</span>' : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+function updateSpeed() {
+    const speedLevel = Math.floor((120 - gameSpeed) / 10) + 1;
+    speedEl.textContent = Math.max(1, Math.min(speedLevel, 9));
+}
+
+function gameLoop(timestamp) {
+    if (!gameRunning || gamePaused) return;
+    
+    updateActivePowerups();
+    
+    if (timestamp - lastUpdateTime > gameSpeed) {
+        update();
+        lastUpdateTime = timestamp;
+    }
+    
+    draw();
+    gameLoopId = requestAnimationFrame(gameLoop);
+}
+
+function update() {
+    if (inputQueue.length > 0) {
+        const nextDir = inputQueue.shift();
+        if ((nextDir.dx !== -dx || nextDir.dy !== -dy) || mySnake.length === 1) {
+            dx = nextDir.dx;
+            dy = nextDir.dy;
+        }
+    }
+    
+    if (dx === 0 && dy === 0) return;
+    
+    const head = { x: mySnake[0].x + dx, y: mySnake[0].y + dy };
+    
+    // Wall collision
+    if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
+        if (activePowerups.SHIELD) {
+            delete activePowerups.SHIELD;
+            updatePowerupDisplay();
+            // Bounce back
+            dx = -dx;
+            dy = -dy;
+            return;
+        }
+        playerDie();
+        return;
+    }
+    
+    // Obstacle collision
+    if (obstacles.some(o => o.x === head.x && o.y === head.y)) {
+        if (activePowerups.SHIELD) {
+            delete activePowerups.SHIELD;
+            updatePowerupDisplay();
+            return;
+        }
+        playerDie();
+        return;
+    }
+    
+    // Self collision
+    if (mySnake.some(segment => segment.x === head.x && segment.y === head.y)) {
+        if (activePowerups.SHIELD) {
+            delete activePowerups.SHIELD;
+            updatePowerupDisplay();
+            return;
+        }
+        playerDie();
+        return;
+    }
+    
+    // Other player collision
+    if (playMode === 'multi') {
+        for (const [id, player] of Object.entries(snakes)) {
+            if (id !== playerId && player.snake && player.alive) {
+                if (player.snake.some(s => s.x === head.x && s.y === head.y)) {
+                    if (player.snake[0].x === head.x && player.snake[0].y === head.y) {
+                        if (mySnake.length <= player.snake.length) {
+                            if (activePowerups.SHIELD) {
+                                delete activePowerups.SHIELD;
+                                updatePowerupDisplay();
+                                return;
+                            }
+                            playerDie();
+                            return;
+                        }
+                    } else {
+                        if (activePowerups.SHIELD) {
+                            delete activePowerups.SHIELD;
+                            updatePowerupDisplay();
+                            return;
+                        }
+                        playerDie();
+                        return;
+                    }
+                }
+            }
+        }
+    }
+    
+    mySnake.unshift(head);
+    
+    // Food collision
+    if (head.x === food.x && head.y === food.y) {
+        score += 10 * baseScoreMultiplier;
+        updateScore();
+        generateFood();
+        
+        if (gameMode === 'speed') {
+            if (gameSpeed > 30) gameSpeed -= 5;
+        } else if (score % 50 === 0 && gameSpeed > 40) {
+            gameSpeed -= 10;
+        }
+        updateSpeed();
+        
+        if (playMode === 'multi') {
+            sendToServer({ type: 'food_eaten', score });
+        }
+    } else {
+        mySnake.pop();
+    }
+    
+    // Powerup collision
+    const powerupIdx = powerups.findIndex(p => p.x === head.x && p.y === head.y);
+    if (powerupIdx !== -1) {
+        const powerup = powerups[powerupIdx];
+        applyPowerup(powerup.type);
+        powerups.splice(powerupIdx, 1);
+        if (playMode === 'multi') {
+            sendToServer({ type: 'powerup_collected', powerupId: powerup.id, activePowerups });
+        }
+    }
+    
+    if (playMode === 'multi') {
+        snakes[playerId].snake = mySnake;
+        sendToServer({ type: 'player_update', snake: mySnake, score, activePowerups });
+    }
+}
+
+function playerDie() {
+    if (playMode === 'single') {
+        gameOver();
+    } else {
+        snakes[playerId].alive = false;
+        sendToServer({ type: 'player_died' });
+        showNotification('YOU DIED', 'red');
+        updatePlayerList();
+        checkGameEnd();
+    }
+}
+
+function checkGameEnd() {
+    const alivePlayers = Object.values(snakes).filter(p => p.alive);
+    if (alivePlayers.length <= 1) {
+        setTimeout(() => gameOver(), 1000);
+    }
+}
+
+function draw() {
+    ctx.fillStyle = '#020617';
+    ctx.fillRect(0, 0, canvasSize, canvasSize);
+    
+    const gridSize = canvasSize / tileCount;
+    
+    // Grid
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < tileCount; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * gridSize, 0);
+        ctx.lineTo(i * gridSize, canvasSize);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, i * gridSize);
+        ctx.lineTo(canvasSize, i * gridSize);
+        ctx.stroke();
+    }
+    
+    // Obstacles
+    ctx.fillStyle = '#475569';
+    obstacles.forEach(o => {
+        ctx.fillRect(o.x * gridSize + 2, o.y * gridSize + 2, gridSize - 4, gridSize - 4);
+    });
+    
+    // Powerups
+    powerups.forEach(p => {
+        const data = POWERUP_TYPES[p.type];
+        const x = p.x * gridSize + gridSize / 2;
+        const y = p.y * gridSize + gridSize / 2;
+        ctx.fillStyle = data.color;
+        ctx.shadowColor = data.color;
+        ctx.shadowBlur = 15;
+        ctx.font = `${gridSize * 0.8}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(data.icon, x, y);
+        ctx.shadowBlur = 0;
+    });
+    
+    // Food
+    ctx.fillStyle = '#ef4444';
+    ctx.shadowColor = '#ef4444';
+    ctx.shadowBlur = 15;
+    const foodX = food.x * gridSize + gridSize / 2;
+    const foodY = food.y * gridSize + gridSize / 2;
+    ctx.beginPath();
+    ctx.arc(foodX, foodY, gridSize / 2 - 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    
+    // Draw all snakes
+    const allSnakes = playMode === 'multi' ? Object.values(snakes) : [{ 
+        id: playerId, 
+        snake: mySnake, 
+        color: playerColor, 
+        customSkin: customSkin,
+        alive: true,
+        name: playerName,
+        activePowerups 
+    }];
+    
+    allSnakes.forEach(player => {
+        if (!player.snake || !player.alive) return;
+        
+        player.snake.forEach((segment, index) => {
+            const x = segment.x * gridSize;
+            const y = segment.y * gridSize;
+            const isHead = index === 0;
+            const isMe = player.id === playerId;
+            const hasShield = player.activePowerups && player.activePowerups.SHIELD;
+            
+            if (isHead) {
+                // Draw name tag above head
+                ctx.fillStyle = '#fff';
+                ctx.font = `${Math.max(10, gridSize * 0.5)}px "Press Start 2P"`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(player.name || 'PLAYER', x + gridSize / 2, y - 2);
+                
+                // Shield effect
+                if (hasShield) {
+                    ctx.strokeStyle = '#3b82f6';
+                    ctx.lineWidth = 3;
+                    ctx.shadowColor = '#3b82f6';
+                    ctx.shadowBlur = 10;
+                    ctx.beginPath();
+                    ctx.arc(x + gridSize / 2, y + gridSize / 2, gridSize / 2 + 4, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                }
+                
+                // Head
+                ctx.fillStyle = player.color;
+                ctx.shadowColor = player.color;
+                ctx.shadowBlur = isMe ? 10 : 5;
+                ctx.fillRect(x + 2, y + 2, gridSize - 4, gridSize - 4);
+                
+                // Eyes
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#020617';
+                const eyeSize = Math.max(2, gridSize / 6);
+                const eyeOffset = gridSize / 4;
+                ctx.fillRect(x + eyeOffset, y + eyeOffset, eyeSize, eyeSize);
+                ctx.fillRect(x + gridSize - eyeOffset - eyeSize, y + eyeOffset, eyeSize, eyeSize);
+            } else {
+                // Apply custom skin if available
+                if (player.customSkin) {
+                    const skin = typeof player.customSkin === 'string' ? JSON.parse(player.customSkin) : player.customSkin;
+                    const alpha = isMe ? 1 - (index / player.snake.length) * 0.4 : 0.7;
+                    ctx.globalAlpha = alpha;
+                    
+                    // Draw pattern
+                    const patternSize = 3;
+                    for (let py = 0; py < patternSize; py++) {
+                        for (let px = 0; px < patternSize; px++) {
+                            const skinY = Math.floor((py / patternSize) * SKIN_SIZE);
+                            const skinX = Math.floor((px / patternSize) * SKIN_SIZE);
+                            const color = skin[skinY] && skin[skinY][skinX];
+                            if (color) {
+                                ctx.fillStyle = color;
+                                ctx.fillRect(
+                                    x + (px * (gridSize - 6)) / patternSize + 3,
+                                    y + (py * (gridSize - 6)) / patternSize + 3,
+                                    (gridSize - 6) / patternSize,
+                                    (gridSize - 6) / patternSize
+                                );
+                            }
+                        }
+                    }
+                    ctx.globalAlpha = 1;
+                } else {
+                    const alpha = isMe ? 1 - (index / player.snake.length) * 0.4 : 0.7;
+                    const alphaHex = Math.floor(alpha * 255).toString(16).padStart(2, '0');
+                    ctx.fillStyle = player.color + alphaHex;
+                    ctx.shadowColor = player.color;
+                    ctx.shadowBlur = isMe ? 5 : 0;
+                    ctx.fillRect(x + 3, y + 3, gridSize - 6, gridSize - 6);
+                    ctx.shadowBlur = 0;
+                }
+            }
+        });
+    });
+}
+
+function gameOver() {
+    gameRunning = false;
+    if (gameLoopId) {
+        cancelAnimationFrame(gameLoopId);
+    }
+    
+    finalScoreEl.textContent = score.toString().padStart(3, '0');
+    
+    if (playMode === 'multi') {
+        const players = Object.values(snakes).sort((a, b) => b.score - a.score);
+        const winner = players[0];
+        gameOverTitleEl.textContent = winner.id === playerId ? 'VICTORY!' : 'GAME OVER';
+        gameOverTitleEl.className = winner.id === playerId 
+            ? 'text-2xl md:text-3xl text-green-500 glow-text' 
+            : 'text-2xl md:text-3xl text-red-500 glow-text pulse';
+        
+        leaderboardEl.classList.remove('hidden');
+        leaderboardEl.innerHTML = `
+            <p class="text-xs text-yellow-400 mb-2">LEADERBOARD</p>
+            ${players.map((p, i) => `
+                <div class="flex items-center justify-between text-xs ${p.id === playerId ? 'text-green-400' : 'text-slate-400'}">
+                    <div class="flex items-center gap-2">
+                        <span class="player-badge" style="background: ${p.color}"></span>
+                        <span>${i + 1}. ${p.name}</span>
+                        ${!p.alive ? '<span class="text-red-500">✕</span>' : ''}
+                        ${p.customSkin ? '<span class="text-purple-400">🎨</span>' : ''}
+                    </div>
+                    <span>${p.score}</span>
+                </div>
+            `).join('')}
+        `;
+    } else {
+        gameOverTitleEl.textContent = 'GAME OVER';
+        leaderboardEl.classList.add('hidden');
+    }
+    
+    gameOverScreen.classList.remove('hidden');
+    gameOverScreen.classList.add('flex');
+}
+
+function startGame() {
+    playerName = playerNameInput.value.trim().toUpperCase() || 'PLAYER';
+    
+    mainMenu.classList.add('hidden');
+    lobbyScreen.classList.add('hidden');
+    gameOverScreen.classList.add('hidden');
+    pauseScreen.classList.add('hidden');
+    gameStatsEl.classList.remove('hidden');
+    
+    if (playMode === 'single') {
+        roomCodeEl.textContent = 'SOLO';
+        playerCountDisplayEl.textContent = '';
+    } else {
+        roomCodeEl.textContent = currentRoom;
+    }
+    
+    initGame();
+    gameRunning = true;
+    gamePaused = false;
+    lastUpdateTime = 0;
+    gameLoopId = requestAnimationFrame(gameLoop);
+}
+
+function startMultiplayerGame() {
+    lobbyScreen.classList.add('hidden');
+    lobbyScreen.classList.remove('flex');
+    startGame();
+}
+
+function returnToMenu() {
+    gameRunning = false;
+    gamePaused = false;
+    if (gameLoopId) cancelAnimationFrame(gameLoopId);
+    
+    mainMenu.classList.remove('hidden');
+    lobbyScreen.classList.add('hidden');
+    gameOverScreen.classList.add('hidden');
+    pauseScreen.classList.add('hidden');
+    gameStatsEl.classList.add('hidden');
+    
+    currentRoom = null;
+    isHost = false;
+    isReady = false;
+    snakes = {};
+    obstacles = [];
+    powerups = [];
+    activePowerups = {};
+    tileCount = baseTileCount;
+    
+    if (ws) {
+        ws.close();
+        ws = null;
+    }
+    connected = false;
+    
+    playMode = 'single';
+    singlePlayerCard.classList.add('selected');
+    multiplayerCard.classList.remove('selected');
+    gameModeSection.classList.add('hidden');
+    multiplayerOptions.classList.add('hidden');
+    singlePlayerStart.classList.remove('hidden');
+    playerCustomization.classList.add('hidden');
+    
+    resizeCanvas();
+}
+
+function togglePause() {
+    if (!gameRunning || playMode === 'multi') return;
+    
+    gamePaused = !gamePaused;
+    if (gamePaused) {
+        pauseScreen.classList.remove('hidden');
+        pauseScreen.classList.add('flex');
+    } else {
+        pauseScreen.classList.add('hidden');
+        pauseScreen.classList.remove('flex');
+        lastUpdateTime = 0;
+        gameLoopId = requestAnimationFrame(gameLoop);
+    }
+}
+
+function queueDirection(newDx, newDy) {
+    if (!gameRunning || gamePaused) return;
+    if (playMode === 'multi' && snakes[playerId] && !snakes[playerId].alive) return;
+    
+    if (inputQueue.length === 0) {
+        if ((newDx === -dx && newDy === -dy) && mySnake.length > 1) return;
+    } else {
+        const lastInput = inputQueue[inputQueue.length - 1];
+        if ((newDx === -lastInput.dx && newDy === -lastInput.dy) && mySnake.length > 1) return;
+    }
+    
+    if (inputQueue.length < 2) {
+        inputQueue.push({ dx: newDx, dy: newDy });
+    }
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'r' || e.key === 'R') {
+        if (gameRunning) returnToMenu();
+        return;
+    }
+    
+    if (e.key === 'Escape') {
+        if (playMode === 'single') togglePause();
+        return;
+    }
+    
+    if (e.key === ' ' && gameRunning && playMode === 'single') {
+        e.preventDefault();
+        togglePause();
+        return;
+    }
+    
+    if (gamePaused) return;
+    
+    switch(e.key) {
+        case 'ArrowUp':
+        case 'w':
+        case 'W':
+            e.preventDefault();
+            queueDirection(0, -1);
+            break;
+        case 'ArrowDown':
+        case 's':
+        case 'S':
+            e.preventDefault();
+            queueDirection(0, 1);
+            break;
+        case 'ArrowLeft':
+        case 'a':
+        case 'A':
+            e.preventDefault();
+            queueDirection(-1, 0);
+            break;
+        case 'ArrowRight':
+        case 'd':
+        case 'D':
+            e.preventDefault();
+            queueDirection(1, 0);
+            break;
+    }
+});
+
+let touchStartX = 0;
+let touchStartY = 0;
+
+canvas.addEventListener('touchstart', (e) => {
+    if (gameRunning && playMode === 'single') {
+        togglePause();
+        return;
+    }
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+});
+
+canvas.addEventListener('touchend', (e) => {
+    if (!gameRunning || gamePaused) return;
+    
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    
+    const diffX = touchEndX - touchStartX;
+    const diffY = touchEndY - touchStartY;
+    
+    if (Math.abs(diffX) > Math.abs(diffY)) {
+        if (diffX > 30) queueDirection(1, 0);
+        else if (diffX < -30) queueDirection(-1, 0);
+    } else {
+        if (diffY > 30) queueDirection(0, 1);
+        else if (diffY < -30) queueDirection(0, -1);
+    }
+});
+
+document.getElementById('upBtn').addEventListener('click', () => queueDirection(0, -1));
+document.getElementById('downBtn').addEventListener('click', () => queueDirection(0, 1));
+document.getElementById('leftBtn').addEventListener('click', () => queueDirection(-1, 0));
+document.getElementById('rightBtn').addEventListener('click', () => queueDirection(1, 0));
+
+startBtn.addEventListener('click', startGame);
+restartBtn.addEventListener('click', () => {
+    if (playMode === 'multi') {
+        isReady = false;
+        readyBtn.textContent = 'READY';
+        readyBtn.classList.remove('bg-yellow-500');
+        readyBtn.classList.add('bg-green-500');
+        lobbyScreen.classList.remove('hidden');
+        lobbyScreen.classList.add('flex');
+        gameOverScreen.classList.add('hidden');
+    } else {
+        startGame();
+    }
+});
+menuBtn.addEventListener('click', returnToMenu);
+resumeBtn.addEventListener('click', togglePause);
+
+function showNotification(msg, color = 'green') {
+    const notif = document.createElement('div');
+    notif.className = `fixed top-4 left-1/2 transform -translate-x-1/2 z-50 pixel-border bg-slate-900 px-6 py-3 text-${color}-400 text-xs blink`;
+    notif.textContent = msg;
+    document.body.appendChild(notif);
+    setTimeout(() => notif.remove(), 2000);
+}
+
+document.body.addEventListener('touchmove', (e) => {
+    if (gameRunning) e.preventDefault();
+}, { passive: false });
+
+// Init
+singlePlayerCard.classList.add('selected');
+initSkinEditor();
+</script>
+</body>
+</html>

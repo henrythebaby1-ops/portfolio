@@ -1,0 +1,12 @@
+{
+  "version": "1.2.0",
+  "notes": "The Stage is now editable (backdrops and its own scripts), 141 sprites, Lists blocks, 44 templates including advanced ones, and faster loops.",
+  "released": "2026-10-10T22:26:52.908Z",
+  "files": {
+    "mac": "downloads/ClaudeBlocks-mac.dmg",
+    "windows": "downloads/ClaudeBlocks-windows-setup.exe",
+    "linux": "downloads/ClaudeBlocks-linux.AppImage",
+    "android": "downloads/ClaudeBlocks-android.apk",
+    "pibridge": "downloads/pi-bridge.py"
+  }
+}

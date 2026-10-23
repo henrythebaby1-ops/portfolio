@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CapSpin Championship | Registration</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="site-wrap">
+      <header class="topbar">
+        <a class="brand" href="index.html">CapSpin <span>Championship</span></a>
+        <nav class="nav" aria-label="Main navigation">
+          <a href="index.html">Home</a>
+          <a href="events.html">Events</a>
+          <a class="active" href="register.html">Register</a>
+          <a href="rules.html">Rules</a>
+          <a href="login.html">Login</a>
+          <a href="admin.html">Admin</a>
+        </nav>
+      </header>
+
+      <main class="grid">
+        <section class="card span-8">
+          <span class="pill">Season Registration</span>
+          <h1>Register for CapSpin Championship</h1>
+          <p class="muted">
+            Complete your season registration. Registration is free and accepted
+            instantly with no approval step.
+          </p>
+
+          <form id="registration-form" novalidate>
+            <label for="username">
+              Username
+              <input id="username" name="username" required />
+            </label>
+
+            <label for="password">
+              Password
+              <input id="password" name="password" type="password" required />
+            </label>
+
+            <label for="full-name">
+              Full Name
+              <input id="full-name" name="fullName" required />
+            </label>
+
+            <label for="grade-level">
+              Grade Level
+              <select id="grade-level" name="gradeLevel" required>
+                <option value="">Select grade</option>
+                <option>1</option>
+                <option>2</option>
+                <option>3</option>
+                <option>4</option>
+                <option>5</option>
+                <option>6</option>
+              </select>
+            </label>
+
+            <label for="campus">
+              Campus Selection
+              <select id="campus" name="campus" required>
+                <option value="">Select campus</option>
+                <option>Sunnyvale</option>
+                <option>Strawberry Park</option>
+                <option>Campbell</option>
+              </select>
+            </label>
+
+            <label for="division">
+              Division Type
+              <select id="division" name="division" required>
+                <option value="">Select division</option>
+                <option value="Solo Competitor">Solo Competitor</option>
+                <option value="Team Competitor">Team Competitor (2-3 students)</option>
+              </select>
+            </label>
+
+            <div id="team-fields" style="display: none">
+              <label for="team-name">
+                Team Name
+                <input id="team-name" name="teamName" />
+              </label>
+              <label for="captain-name">
+                Team Captain
+                <input id="captain-name" name="captainName" />
+              </label>
+            </div>
+
+            <label for="slot">
+              Preferred Competition Time
+              <select id="slot" name="slot" required>
+                <option value="">Select timeslot</option>
+                <option>11:20 AM (Lunch)</option>
+                <option>3:00 PM (After School)</option>
+              </select>
+            </label>
+
+            <label class="inline-check">
+              <input type="checkbox" id="equip-check" required />
+              <span>
+                I understand official rounds require approved Uncapped Marker
+                Caps only.
+              </span>
+            </label>
+
+            <label class="inline-check">
+              <input type="checkbox" id="conduct-check" required />
+              <span>
+                I agree to follow all safety, zone boundary, and sportsmanship
+                rules.
+              </span>
+            </label>
+
+            <button class="btn primary" type="submit">Submit Registration</button>
+          </form>
+
+          <div id="success" class="notice ok" role="status" aria-live="polite">
+            Registration complete. Your entry is active now, and your campus is
+            locked for this season.
+          </div>
+          <div id="error" class="notice warn" role="alert" aria-live="assertive"></div>
+        </section>
+
+        <aside class="card span-4">
+          <h2>Important Rules</h2>
+          <div class="rule">
+            <strong>Campus Lock:</strong> Campus assignment is fixed for the
+            season after registration.
+          </div>
+          <div class="rule">
+            <strong>No duplicates:</strong> Multiple season entries are blocked.
+          </div>
+          <div class="rule">
+            <strong>Transfers:</strong> Campus changes require League Owner
+            override.
+          </div>
+          <p class="meta">
+            This demo stores registrations locally in your browser for validation
+            behavior.
+          </p>
+        </aside>
+      </main>
+
+      <footer class="footer">
+        Uncapped owner controls events and standings. Registration is always
+        free and does not require approval.
+      </footer>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>

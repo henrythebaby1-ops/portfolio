@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DuelForge | Fortune Blade</title>
+  <style>
+    :root {
+      --bg: #121214;
+      --panel: #1f232b;
+      --text: #f5f7fa;
+      --accent: #f59e0b;
+      --muted: #a0a7b4;
+      --ok: #22c55e;
+      --warn: #f97316;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #1f2937 0, var(--bg) 50%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .wrap { max-width: 920px; margin: 0 auto; display: grid; gap: 16px; }
+    .card {
+      background: linear-gradient(160deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 16px;
+    }
+    h1 { margin: 0 0 8px; }
+    p { margin: 0; color: var(--muted); }
+    .grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    label { font-size: 0.85rem; color: var(--muted); display: block; margin-bottom: 4px; }
+    input, select, button {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: #0f1218;
+      color: var(--text);
+      padding: 10px 12px;
+      font-size: 0.95rem;
+    }
+    button {
+      cursor: pointer;
+      background: linear-gradient(160deg, #fb923c, #f59e0b);
+      border: none;
+      color: #1b1300;
+      font-weight: 700;
+    }
+    button.secondary { background: #2f3744; color: #f5f7fa; border: 1px solid rgba(255,255,255,0.16); }
+    .result { font-size: 1.05rem; font-weight: 600; color: var(--accent); min-height: 1.2em; }
+    .ok { color: var(--ok); }
+    .warn { color: var(--warn); }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      background: #0d1016;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 0.88rem;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <h1>DuelForge: Fortune Blade Wheel</h1>
+      <p>Create a fighter, then spin every 10 minutes for coins, potions, weapons, and ultra-rare drops.</p>
+    </section>
+
+    <section class="card">
+      <div class="grid">
+        <div>
+          <label for="name">Fighter Name</label>
+          <input id="name" value="Akira" />
+        </div>
+        <div>
+          <label for="element">Element</label>
+          <select id="element">
+            <option>fire</option>
+            <option>ice</option>
+            <option>shadow</option>
+            <option>lightning</option>
+          </select>
+        </div>
+        <div>
+          <label for="weaponType">Weapon Type</label>
+          <select id="weaponType">
+            <option>katana</option>
+            <option>greatsword</option>
+            <option>dual blades</option>
+          </select>
+        </div>
+        <div>
+          <label for="style">Style</label>
+          <select id="style">
+            <option>fast</option>
+            <option selected>balanced</option>
+            <option>heavy</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid" style="margin-top: 10px;">
+        <div><button id="createBtn">Create Fighter</button></div>
+        <div><button id="refreshBtn" class="secondary">Refresh Status</button></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="grid" style="grid-template-columns: repeat(2, minmax(220px, 1fr)); align-items: end;">
+        <div>
+          <label for="fighterSelect">Current Fighter</label>
+          <select id="fighterSelect"></select>
+        </div>
+        <div>
+          <button id="spinBtn">SPIN THE FORTUNE BLADE</button>
+        </div>
+      </div>
+      <p id="cooldown" class="warn" style="margin-top: 10px;"></p>
+      <p id="result" class="result">Ready to spin.</p>
+    </section>
+
+    <section class="card">
+      <pre id="fighterDump">No fighter selected.</pre>
+    </section>
+  </main>
+  <script src="duelforge.js"></script>
+</body>
+</html>

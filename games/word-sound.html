@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Word Sound Typing Game</title>
+  <style>
+    :root {
+      --bg-1: #081421;
+      --bg-2: #16314a;
+      --panel: rgba(7, 20, 34, 0.84);
+      --panel-2: rgba(15, 37, 60, 0.92);
+      --line: rgba(148, 205, 255, 0.18);
+      --text: #edf7ff;
+      --muted: #92acc3;
+      --accent: #75e6da;
+      --accent-2: #ffc857;
+      --danger: #ff6b6b;
+      --good: #7dff95;
+      --shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(117, 230, 218, 0.22), transparent 24%),
+        radial-gradient(circle at top right, rgba(255, 200, 87, 0.18), transparent 28%),
+        linear-gradient(160deg, var(--bg-1), var(--bg-2));
+      display: flex;
+      justify-content: center;
+      padding: 28px;
+    }
+
+    .shell {
+      width: min(1120px, 100%);
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 22px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .sidebar {
+      padding: 22px;
+    }
+
+    .title {
+      font-size: 2rem;
+      line-height: 1;
+      margin: 0 0 8px;
+      letter-spacing: 0.04em;
+    }
+
+    .subtitle {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .mode-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .mode-button,
+    button {
+      border: 0;
+      cursor: pointer;
+      color: var(--text);
+      transition: transform 0.16s ease, opacity 0.16s ease, background 0.16s ease;
+    }
+
+    .mode-button {
+      padding: 12px 14px;
+      text-align: left;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid transparent;
+    }
+
+    .mode-button strong {
+      display: block;
+      font-size: 0.98rem;
+      margin-bottom: 4px;
+    }
+
+    .mode-button span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .mode-button.active {
+      background: rgba(117, 230, 218, 0.12);
+      border-color: rgba(117, 230, 218, 0.4);
+    }
+
+    .mode-button:hover,
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    .custom-box {
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.045);
+      border: 1px solid var(--line);
+    }
+
+    .custom-box h2 {
+      margin: 0 0 12px;
+      font-size: 1rem;
+    }
+
+    .setting {
+      margin-bottom: 12px;
+    }
+
+    .setting label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 5px;
+      font-size: 0.86rem;
+      color: var(--muted);
+    }
+
+    .setting input,
+    .setting select,
+    .entry input {
+      width: 100%;
+      appearance: none;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(0, 0, 0, 0.18);
+      color: var(--text);
+      padding: 12px 14px;
+      font-size: 1rem;
+    }
+
+    .setting input[type="range"] {
+      padding: 0;
+    }
+
+    .content {
+      padding: 24px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 18px;
+    }
+
+    .card {
+      border-radius: 24px;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      padding: 20px;
+    }
+
+    .mode-name {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.88rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--accent);
+    }
+
+    .prompt-big {
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      margin: 14px 0 10px;
+      line-height: 0.95;
+    }
+
+    .prompt-note,
+    .small-text {
+      color: var(--muted);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .stat {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--line);
+    }
+
+    .stat-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .progress-wrap {
+      margin-top: 14px;
+    }
+
+    .progress-bar {
+      height: 14px;
+      width: 100%;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      border: 1px solid var(--line);
+    }
+
+    .progress {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      transition: width 0.18s linear;
+    }
+
+    .definitions {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .definition {
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--line);
+      color: #dcedfb;
+    }
+
+    .entry {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .action-button {
+      padding: 12px 18px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(117, 230, 218, 0.26), rgba(255, 200, 87, 0.28));
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      font-weight: 700;
+    }
+
+    .action-button.alt {
+      background: rgba(255, 255, 255, 0.08);
+      font-weight: 600;
+    }
+
+    .feed {
+      display: grid;
+      gap: 12px;
+    }
+
+    .log {
+      min-height: 74px;
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--line);
+      color: #d7e8f7;
+    }
+
+    .log.good {
+      color: var(--good);
+    }
+
+    .log.bad {
+      color: #ffd0d0;
+    }
+
+    .tips {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      display: grid;
+      gap: 6px;
+    }
+
+    @media (max-width: 920px) {
+      .shell,
+      .hero,
+      .entry,
+      .stats {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="panel sidebar">
+      <h1 class="title">EchoType</h1>
+      <p class="subtitle">Hear it. Type it. Survive all 10 modes.</p>
+      <div class="mode-grid" id="modeGrid"></div>
+
+      <section class="custom-box">
+        <h2>Custom Mode</h2>
+        <div class="setting">
+          <label for="customDifficulty"><span>Difficulty</span><span id="customDifficultyValue">medium</span></label>
+          <select id="customDifficulty">
+            <option value="easy">easy</option>
+            <option value="medium" selected>medium</option>
+            <option value="hard">hard</option>
+            <option value="extreme">extreme</option>
+          </select>
+        </div>
+        <div class="setting">
+          <label for="customTime"><span>Time</span><span id="customTimeValue">12s</span></label>
+          <input id="customTime" type="range" min="4" max="30" value="12">
+        </div>
+        <div class="setting">
+          <label for="customDefinitions"><span>Definitions</span><span id="customDefinitionsValue">2</span></label>
+          <input id="customDefinitions" type="range" min="0" max="3" value="2">
+        </div>
+        <div class="setting">
+          <label for="customSentence"><span>Prompt Type</span><span id="customSentenceValue">word</span></label>
+          <select id="customSentence">
+            <option value="word" selected>word</option>
+            <option value="sentence">sentence</option>
+          </select>
+        </div>
+        <div class="setting">
+          <label for="customRepeat"><span>Repeat Audio</span><span id="customRepeatValue">off</span></label>
+          <select id="customRepeat">
+            <option value="off" selected>off</option>
+            <option value="on">on</option>
+          </select>
+        </div>
+      </section>
+    </aside>
+
+    <main class="panel content">
+      <section class="hero">
+        <div class="card">
+          <div class="mode-name" id="modeName">Classic</div>
+          <div class="prompt-big" id="promptType">Word Round</div>
+          <p class="prompt-note" id="modeDescription">Press start, listen to the spoken word, then type exactly what you heard.</p>
+
+          <div class="progress-wrap">
+            <div class="small-text">Time left</div>
+            <div class="progress-bar">
+              <div class="progress" id="progressBar"></div>
+            </div>
+          </div>
+
+          <div class="definitions" id="definitions"></div>
+        </div>
+
+        <div class="card">
+          <div class="stats">
+            <div class="stat">
+              <div class="stat-label">Score</div>
+              <div class="stat-value" id="scoreValue">0</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Streak</div>
+              <div class="stat-value" id="streakValue">0</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Round</div>
+              <div class="stat-value" id="roundValue">0</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Best</div>
+              <div class="stat-value" id="bestValue">0</div>
+            </div>
+          </div>
+
+          <div class="entry" style="margin-top: 18px;">
+            <input id="answerInput" type="text" placeholder="Type what you hear" autocomplete="off" spellcheck="false">
+            <button class="action-button" id="submitButton">Submit</button>
+            <button class="action-button alt" id="playButton">Play Sound</button>
+          </div>
+
+          <div class="entry" style="margin-top: 12px;">
+            <button class="action-button" id="startButton">Start Game</button>
+            <button class="action-button alt" id="skipButton">Skip</button>
+            <button class="action-button alt" id="nextButton">Next</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="feed">
+        <div class="log" id="logBox">Pick a mode, then press Start Game.</div>
+        <ul class="tips">
+          <li>`Classic` is the default balanced mode.</li>
+          <li>`Sentence` and `Dead` expect the whole sentence, not one word.</li>
+          <li>`Auto` and `Dead` use the hardest words and almost no help.</li>
+          <li>The page uses your browser speech engine, so click once before the first sound if audio is blocked.</li>
+        </ul>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const WORD_BANK = {
+      easy: [
+        { text: "planet", defs: ["A large object that moves around a star.", "Earth is one example of this kind of world."] },
+        { text: "bridge", defs: ["A structure built to cross over something.", "It can connect two sides of a river or road."] },
+        { text: "basket", defs: ["A container used to carry things.", "It is often woven and lightweight."] },
+        { text: "winter", defs: ["The coldest season of the year.", "It often brings snow or ice in many places."] },
+        { text: "guitar", defs: ["A musical instrument with strings.", "You can strum or pluck it."] },
+        { text: "shadow", defs: ["A dark shape made when light is blocked.", "It follows the outline of an object."] },
+        { text: "forest", defs: ["A large area filled with trees.", "Wild animals often live there."] },
+        { text: "rocket", defs: ["A vehicle designed to travel into space.", "It launches with strong force."] }
+      ],
+      medium: [
+        { text: "glimmer", defs: ["A faint, unsteady shine.", "A small flash or weak light."] },
+        { text: "marvel", defs: ["Something that causes wonder.", "To feel amazed by something."] },
+        { text: "fracture", defs: ["A crack or break.", "To split under pressure."] },
+        { text: "harvest", defs: ["The act of gathering crops.", "To collect what has grown."] },
+        { text: "tempest", defs: ["A violent storm.", "A noisy and chaotic outburst."] },
+        { text: "lantern", defs: ["A portable light source.", "Often carried in the dark."] },
+        { text: "venture", defs: ["An uncertain but bold attempt.", "To go somewhere risky or new."] },
+        { text: "quarrel", defs: ["An argument or fight.", "To disagree angrily."] }
+      ],
+      hard: [
+        { text: "labyrinth", defs: ["A complicated maze.", "Something with many confusing paths."] },
+        { text: "zephyr", defs: ["A soft, gentle breeze.", "A mild wind, often poetic."] },
+        { text: "catalyst", defs: ["Something that causes change.", "A trigger that speeds action."] },
+        { text: "paradox", defs: ["A statement that seems impossible but may be true.", "A contradiction that challenges logic."] },
+        { text: "rhetoric", defs: ["Language used to persuade or impress.", "The art of effective speaking or writing."] },
+        { text: "resilient", defs: ["Able to recover quickly.", "Strong under stress or damage."] },
+        { text: "vigilance", defs: ["Careful watchfulness.", "Close attention to possible danger."] },
+        { text: "metaphor", defs: ["A figure of speech that compares unlike things.", "A symbolic comparison without using like or as."] }
+      ],
+      extreme: [
+        { text: "sesquipedalian", defs: ["Using long words.", "A person or style known for oversized vocabulary."] },
+        { text: "antediluvian", defs: ["Extremely old or outdated.", "Existing before a remote ancient time."] },
+        { text: "obstreperous", defs: ["Noisy and difficult to control.", "Stubbornly loud or unruly."] },
+        { text: "pulchritudinous", defs: ["Beautiful in a formal or unusual way.", "Having physical beauty."] },
+        { text: "circumlocution", defs: ["Using many words to say something simple.", "A roundabout style of speaking."] },
+        { text: "floccinaucinihilipilification", defs: ["The act of judging something worthless.", "A famously long English word for treating something as trivial."] },
+        { text: "synecdoche", defs: ["A figure of speech using a part to mean the whole.", "A rhetorical substitution."] },
+        { text: "zeugma", defs: ["A figure of speech where one word applies to two others in different senses.", "A compact but tricky rhetorical construction."] }
+      ]
+    };
+
+    const SENTENCE_BANK = {
+      easy: [
+        { text: "The silver rocket crossed the silent sky.", defs: ["A simple sentence about a rocket moving through the sky."] },
+        { text: "The forest trail curved behind the hill.", defs: ["A sentence describing a path in the woods."] },
+        { text: "A bright lantern swung beside the door.", defs: ["A sentence about a light hanging near an entrance."] }
+      ],
+      medium: [
+        { text: "The glimmer on the lake vanished before sunrise.", defs: ["A sentence about a faint shine disappearing from water."] },
+        { text: "Our bold venture began during the autumn storm.", defs: ["A sentence about a risky journey starting in bad weather."] },
+        { text: "The harvest wagon rattled across the empty field.", defs: ["A sentence about gathered crops being moved away."] }
+      ],
+      hard: [
+        { text: "Her resilient spirit turned the paradox into progress.", defs: ["A sentence combining recovery, contradiction, and growth."] },
+        { text: "The labyrinth beyond the gate required patience and vigilance.", defs: ["A sentence about a maze needing focus and care."] },
+        { text: "A sudden zephyr scattered the notes from the podium.", defs: ["A sentence about a breeze moving papers away."] }
+      ],
+      extreme: [
+        { text: "The obstreperous crowd mocked every circumlocution in the debate hall.", defs: ["A sentence about a loud crowd reacting to long-winded speech."] },
+        { text: "Her sesquipedalian reply made the simple question feel impossible.", defs: ["A sentence about using very long words in response."] },
+        { text: "The antediluvian machine survived by sheer pulchritudinous luck.", defs: ["A surreal sentence mixing ancient machinery and beauty."] }
+      ]
+    };
+
+    const MODES = {
+      classic: {
+        label: "Classic",
+        short: "Normal balanced play.",
+        settings: { difficulty: "easy", time: 14, definitions: 2, promptType: "word", repeat: false, deadLoop: false }
+      },
+      medium: {
+        label: "Medium",
+        short: "Middle difficulty words.",
+        settings: { difficulty: "medium", time: 11, definitions: 2, promptType: "word", repeat: false, deadLoop: false }
+      },
+      hard: {
+        label: "Hard",
+        short: "Hard words, tighter time.",
+        settings: { difficulty: "hard", time: 9, definitions: 1, promptType: "word", repeat: false, deadLoop: false }
+      },
+      demon: {
+        label: "Demon",
+        short: "Super hard words and pressure.",
+        settings: { difficulty: "extreme", time: 7, definitions: 1, promptType: "word", repeat: true, repeatMs: 3200, deadLoop: false }
+      },
+      auto: {
+        label: "Auto",
+        short: "Like demon, but much worse.",
+        settings: { difficulty: "extreme", time: 5, definitions: 0, promptType: "word", repeat: true, repeatMs: 1700, deadLoop: false }
+      },
+      noDefinition: {
+        label: "No Definition",
+        short: "No help text at all.",
+        settings: { difficulty: "medium", time: 10, definitions: 0, promptType: "word", repeat: false, deadLoop: false }
+      },
+      fast: {
+        label: "Fast",
+        short: "Less time to answer.",
+        settings: { difficulty: "medium", time: 6, definitions: 1, promptType: "word", repeat: false, deadLoop: false }
+      },
+      sentence: {
+        label: "Sentence",
+        short: "Type the full sentence.",
+        settings: { difficulty: "hard", time: 13, definitions: 1, promptType: "sentence", repeat: false, deadLoop: false }
+      },
+      custom: {
+        label: "Custom",
+        short: "You control the rules.",
+        settings: {}
+      },
+      dead: {
+        label: "Dead",
+        short: "Sentence mode with endless pain.",
+        settings: { difficulty: "extreme", time: 5, definitions: 0, promptType: "sentence", repeat: true, repeatMs: 1300, deadLoop: true }
+      }
+    };
+
+    const state = {
+      modeKey: "classic",
+      score: 0,
+      streak: 0,
+      round: 0,
+      best: 0,
+      currentPrompt: null,
+      timeLeft: 0,
+      totalTime: 0,
+      timerId: null,
+      repeatId: null,
+      started: false,
+      awaitingNext: false
+    };
+
+    const elements = {
+      modeGrid: document.getElementById("modeGrid"),
+      modeName: document.getElementById("modeName"),
+      promptType: document.getElementById("promptType"),
+      modeDescription: document.getElementById("modeDescription"),
+      definitions: document.getElementById("definitions"),
+      progressBar: document.getElementById("progressBar"),
+      scoreValue: document.getElementById("scoreValue"),
+      streakValue: document.getElementById("streakValue"),
+      roundValue: document.getElementById("roundValue"),
+      bestValue: document.getElementById("bestValue"),
+      answerInput: document.getElementById("answerInput"),
+      submitButton: document.getElementById("submitButton"),
+      playButton: document.getElementById("playButton"),
+      startButton: document.getElementById("startButton"),
+      skipButton: document.getElementById("skipButton"),
+      nextButton: document.getElementById("nextButton"),
+      logBox: document.getElementById("logBox"),
+      customDifficulty: document.getElementById("customDifficulty"),
+      customDifficultyValue: document.getElementById("customDifficultyValue"),
+      customTime: document.getElementById("customTime"),
+      customTimeValue: document.getElementById("customTimeValue"),
+      customDefinitions: document.getElementById("customDefinitions"),
+      customDefinitionsValue: document.getElementById("customDefinitionsValue"),
+      customSentence: document.getElementById("customSentence"),
+      customSentenceValue: document.getElementById("customSentenceValue"),
+      customRepeat: document.getElementById("customRepeat"),
+      customRepeatValue: document.getElementById("customRepeatValue")
+    };
+
+    function buildModeButtons() {
+      Object.entries(MODES).forEach(([key, mode]) => {
+        const button = document.createElement("button");
+        button.className = "mode-button";
+        button.dataset.mode = key;
+        button.innerHTML = `<strong>${mode.label}</strong><span>${mode.short}</span>`;
+        button.addEventListener("click", () => selectMode(key));
+        elements.modeGrid.appendChild(button);
+      });
+      syncModeButtons();
+    }
+
+    function syncModeButtons() {
+      document.querySelectorAll(".mode-button").forEach((button) => {
+        button.classList.toggle("active", button.dataset.mode === state.modeKey);
+      });
+    }
+
+    function updateCustomLabels() {
+      elements.customDifficultyValue.textContent = elements.customDifficulty.value;
+      elements.customTimeValue.textContent = `${elements.customTime.value}s`;
+      elements.customDefinitionsValue.textContent = elements.customDefinitions.value;
+      elements.customSentenceValue.textContent = elements.customSentence.value;
+      elements.customRepeatValue.textContent = elements.customRepeat.value;
+    }
+
+    function selectMode(modeKey) {
+      state.modeKey = modeKey;
+      syncModeButtons();
+      stopTimers();
+      state.started = false;
+      state.awaitingNext = false;
+      state.currentPrompt = null;
+      renderMode();
+      renderDefinitions([]);
+      setLog(`${MODES[modeKey].label} selected. Press Start Game to begin.`);
+      updateProgress(100);
+      elements.answerInput.value = "";
+    }
+
+    function getModeSettings() {
+      if (state.modeKey !== "custom") {
+        return { ...MODES[state.modeKey].settings };
+      }
+
+      return {
+        difficulty: elements.customDifficulty.value,
+        time: Number(elements.customTime.value),
+        definitions: Number(elements.customDefinitions.value),
+        promptType: elements.customSentence.value,
+        repeat: elements.customRepeat.value === "on",
+        repeatMs: elements.customSentence.value === "sentence" ? 2200 : 2600,
+        deadLoop: false
+      };
+    }
+
+    function pickPrompt(settings) {
+      const bank = settings.promptType === "sentence" ? SENTENCE_BANK : WORD_BANK;
+      const list = bank[settings.difficulty];
+      return list[Math.floor(Math.random() * list.length)];
+    }
+
+    function renderMode() {
+      const mode = MODES[state.modeKey];
+      const settings = getModeSettings();
+      const title = settings.promptType === "sentence" ? "Sentence Round" : "Word Round";
+      elements.modeName.textContent = mode.label;
+      elements.promptType.textContent = title;
+      elements.modeDescription.textContent = `${mode.short} Difficulty: ${settings.difficulty}. Time: ${settings.time}s. Definitions: ${settings.definitions}.`;
+      elements.answerInput.placeholder = settings.promptType === "sentence" ? "Type the full sentence" : "Type the exact word";
+    }
+
+    function renderDefinitions(defs) {
+      elements.definitions.innerHTML = "";
+      if (!defs.length) {
+        const empty = document.createElement("div");
+        empty.className = "definition";
+        empty.textContent = "No definitions for this mode.";
+        elements.definitions.appendChild(empty);
+        return;
+      }
+
+      defs.forEach((definition, index) => {
+        const card = document.createElement("div");
+        card.className = "definition";
+        card.textContent = `${index + 1}. ${definition}`;
+        elements.definitions.appendChild(card);
+      });
+    }
+
+    function setLog(message, status = "") {
+      elements.logBox.className = `log ${status}`.trim();
+      elements.logBox.textContent = message;
+    }
+
+    function updateStats() {
+      elements.scoreValue.textContent = state.score;
+      elements.streakValue.textContent = state.streak;
+      elements.roundValue.textContent = state.round;
+      elements.bestValue.textContent = state.best;
+    }
+
+    function updateProgress(percent) {
+      elements.progressBar.style.width = `${Math.max(0, Math.min(100, percent))}%`;
+    }
+
+    function normalize(text) {
+      return text.trim().replace(/\s+/g, " ").toLowerCase();
+    }
+
+    function speak(text) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = state.modeKey === "dead" ? 1.08 : state.modeKey === "auto" ? 1.02 : 0.95;
+      utterance.pitch = state.modeKey === "demon" || state.modeKey === "auto" || state.modeKey === "dead" ? 0.9 : 1;
+      utterance.volume = 1;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function stopTimers() {
+      clearInterval(state.timerId);
+      clearInterval(state.repeatId);
+      state.timerId = null;
+      state.repeatId = null;
+      window.speechSynthesis.cancel();
+    }
+
+    function revealPrompt() {
+      if (!state.currentPrompt) {
+        return;
+      }
+      setLog(`Time's up. The correct answer was: "${state.currentPrompt.text}"`, "bad");
+      state.streak = 0;
+      state.awaitingNext = true;
+      stopTimers();
+      updateStats();
+    }
+
+    function startRound() {
+      stopTimers();
+      const settings = getModeSettings();
+      state.currentPrompt = pickPrompt(settings);
+      state.round += 1;
+      state.timeLeft = settings.time;
+      state.totalTime = settings.time;
+      state.awaitingNext = false;
+      state.started = true;
+      renderMode();
+      renderDefinitions(state.currentPrompt.defs.slice(0, settings.definitions));
+      elements.answerInput.value = "";
+      elements.answerInput.focus();
+      speak(state.currentPrompt.text);
+      setLog("Listen carefully and type the answer.");
+      updateStats();
+      updateProgress(100);
+
+      state.timerId = setInterval(() => {
+        state.timeLeft -= 0.1;
+        const percent = (state.timeLeft / state.totalTime) * 100;
+        updateProgress(percent);
+        if (state.timeLeft <= 0) {
+          revealPrompt();
+        }
+      }, 100);
+
+      if (settings.repeat || settings.deadLoop) {
+        state.repeatId = setInterval(() => {
+          if (!state.awaitingNext && state.currentPrompt) {
+            speak(state.currentPrompt.text);
+          }
+        }, settings.repeatMs || 2500);
+      }
+    }
+
+    function submitAnswer() {
+      if (!state.currentPrompt || state.awaitingNext) {
+        setLog("Start or continue the game before submitting.");
+        return;
+      }
+
+      const guess = normalize(elements.answerInput.value);
+      const answer = normalize(state.currentPrompt.text);
+
+      if (!guess) {
+        setLog("Type something first.");
+        return;
+      }
+
+      if (guess === answer) {
+        stopTimers();
+        state.score += 10;
+        state.streak += 1;
+        state.best = Math.max(state.best, state.streak);
+        state.awaitingNext = true;
+        updateStats();
+        setLog(`Correct. You typed "${state.currentPrompt.text}" exactly.`, "good");
+      } else {
+        state.streak = 0;
+        state.score = Math.max(0, state.score - 2);
+        updateStats();
+        setLog(`Not correct. Keep trying.`, "bad");
+      }
+    }
+
+    function skipRound() {
+      if (!state.currentPrompt) {
+        setLog("Start the game before skipping.");
+        return;
+      }
+      stopTimers();
+      state.streak = 0;
+      state.awaitingNext = true;
+      updateStats();
+      setLog(`Skipped. The answer was "${state.currentPrompt.text}".`, "bad");
+    }
+
+    elements.submitButton.addEventListener("click", submitAnswer);
+    elements.playButton.addEventListener("click", () => {
+      if (!state.currentPrompt) {
+        setLog("There is no prompt yet. Start a round first.");
+        return;
+      }
+      speak(state.currentPrompt.text);
+      setLog("Sound replayed.");
+    });
+    elements.startButton.addEventListener("click", startRound);
+    elements.skipButton.addEventListener("click", skipRound);
+    elements.nextButton.addEventListener("click", startRound);
+    elements.answerInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        submitAnswer();
+      }
+    });
+
+    [
+      elements.customDifficulty,
+      elements.customTime,
+      elements.customDefinitions,
+      elements.customSentence,
+      elements.customRepeat
+    ].forEach((control) => {
+      control.addEventListener("input", () => {
+        updateCustomLabels();
+        if (state.modeKey === "custom") {
+          renderMode();
+        }
+      });
+      control.addEventListener("change", () => {
+        updateCustomLabels();
+        if (state.modeKey === "custom") {
+          renderMode();
+        }
+      });
+    });
+
+    buildModeButtons();
+    updateCustomLabels();
+    renderMode();
+    renderDefinitions([]);
+    updateStats();
+  </script>
+</body>
+</html>

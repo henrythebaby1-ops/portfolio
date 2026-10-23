@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Shockfront 3D Online FPS</title>
+<style>
+body{margin:0;overflow:hidden;background:#050912;color:#dbeafe;font-family:Trebuchet MS,Segoe UI,sans-serif}
+#ui{position:fixed;left:10px;top:10px;width:360px;background:#0f1b2ed9;border:1px solid #2f4a75;border-radius:10px;padding:10px;z-index:20}
+input,button{border-radius:8px;border:1px solid #355383;background:#091426;color:#dbeafe;padding:7px;font-weight:700}
+button{cursor:pointer}.r{display:flex;gap:6px;margin-top:6px}#state,#board,#weps{font-size:12px;color:#9fc2ff;margin-top:7px;line-height:1.35}
+#cross{position:fixed;left:50%;top:50%;width:20px;height:20px;transform:translate(-50%,-50%);pointer-events:none;z-index:15}
+#cross:before,#cross:after{content:'';position:absolute;background:#9ee7ff}#cross:before{left:9px;top:1px;width:2px;height:18px}#cross:after{left:1px;top:9px;width:18px;height:2px}
+</style>
+</head>
+<body>
+<div id="ui">
+  <div style="font-weight:900">Shockfront 3D Online FPS</div>
+  <div class="r"><input id="name" value="Soldier"/><input id="room" placeholder="Room ID"/></div>
+  <div class="r"><button id="host">Host</button><button id="join">Join</button><button id="leave">Leave</button></div>
+  <div id="state">WASD move, mouse aim. Click to shoot. 1-0 switch weapons.</div>
+  <div id="weps"></div>
+  <div id="board"></div>
+</div>
+<div id="cross"></div>
+<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+const WEAPONS=[
+{name:'Pistol',d:16,cd:220,r:70,spread:.012,pel:1,color:0x93c5fd},
+{name:'SMG',d:9,cd:90,r:58,spread:.028,pel:1,color:0x22d3ee},
+{name:'Assault Rifle',d:13,cd:120,r:82,spread:.018,pel:1,color:0x60a5fa},
+{name:'Battle Rifle',d:22,cd:260,r:92,spread:.01,pel:1,color:0xa78bfa},
+{name:'Shotgun',d:8,cd:460,r:34,spread:.1,pel:9,color:0xf59e0b},
+{name:'Sniper',d:80,cd:860,r:120,spread:.003,pel:1,color:0xfca5a5},
+{name:'LMG',d:11,cd:80,r:76,spread:.04,pel:1,color:0x4ade80},
+{name:'Plasma Gun',d:18,cd:170,r:68,spread:.016,pel:1,color:0x2dd4bf},
+{name:'Railgun',d:55,cd:980,r:130,spread:.002,pel:1,color:0xe879f9},
+{name:'Minigun',d:7,cd:55,r:64,spread:.05,pel:1,color:0xfb7185}
+];
+const ui={name:document.getElementById('name'),room:document.getElementById('room'),state:document.getElementById('state'),board:document.getElementById('board'),weps:document.getElementById('weps')};
+function drawW(){ui.weps.innerHTML=WEAPONS.map((w,i)=>`${i+1>9?0:i+1}:${w.name}`).join(' · ')} drawW();
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0x060b16);
+const cam=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.1,1500);
+const ren=new THREE.WebGLRenderer({antialias:true}); ren.setSize(innerWidth,innerHeight); document.body.appendChild(ren.domElement);
+scene.add(cam);
+scene.add(new THREE.HemisphereLight(0x9cc9ff,0x25354f,1)); const dl=new THREE.DirectionalLight(0xffffff,.8); dl.position.set(8,20,12); scene.add(dl);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(220,220),new THREE.MeshStandardMaterial({color:0x0f1c35})); floor.rotation.x=-Math.PI/2; scene.add(floor);
+const blocks=[]; for(let i=0;i<28;i++){const h=2+Math.random()*6,b=new THREE.Mesh(new THREE.BoxGeometry(4,h,4),new THREE.MeshStandardMaterial({color:0x1f365d}));b.position.set((Math.random()-.5)*170,h/2,(Math.random()-.5)*170);scene.add(b);blocks.push(b)}
+let peer=null,myId=null,isHost=false,hostConn=null,cons={};
+let players={},meshes={},tracers=[];
+const me={x:0,y:1.2,z:0,yaw:0,pitch:0,hp:100,k:0,d:0,weapon:0,name:'Soldier',t:0};
+const keys={}; let shooting=false,lastShot=0,mouseDX=0,mouseDY=0;
+let recoil=0;
+
+const viewRig=new THREE.Group();
+cam.add(viewRig);
+const gunMat=new THREE.MeshStandardMaterial({color:0x93c5fd,metalness:0.35,roughness:0.45});
+const gunBody=new THREE.Mesh(new THREE.BoxGeometry(0.28,0.2,0.9),gunMat);
+const gunBarrel=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.1,0.6),new THREE.MeshStandardMaterial({color:0x5f748d,metalness:0.6,roughness:0.3}));
+const handL=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.22,0.22),new THREE.MeshStandardMaterial({color:0xd8b48a,roughness:0.9}));
+const handR=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.22,0.22),new THREE.MeshStandardMaterial({color:0xd8b48a,roughness:0.9}));
+gunBody.position.set(0.28,-0.34,-0.75);
+gunBarrel.position.set(0.28,-0.31,-1.18);
+handL.position.set(0.1,-0.42,-0.72);
+handR.position.set(0.42,-0.4,-0.66);
+viewRig.add(gunBody,gunBarrel,handL,handR);
+function localId(){ return myId || 'local'; }
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;const n=parseInt(e.key,10);if(!isNaN(n))me.weapon=n===0?9:Math.max(0,Math.min(9,n-1));});
+addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+addEventListener('mousedown',()=>{shooting=true; if(document.pointerLockElement!==ren.domElement) ren.domElement.requestPointerLock();});
+addEventListener('mouseup',()=>shooting=false);
+addEventListener('mousemove',e=>{if(document.pointerLockElement===ren.domElement){mouseDX+=e.movementX;mouseDY+=e.movementY;}});
+function status(t){ui.state.textContent=t;}
+function boot(cb){if(peer){cb&&cb();return;}peer=new Peer();peer.on('open',id=>{myId=id;cb&&cb();});peer.on('connection',c=>bind(c));peer.on('error',e=>status('Peer error: '+e.type));}
+function bind(c){cons[c.peer]=c;c.on('data',m=>msg(c,m));c.on('close',()=>{delete cons[c.peer];delete players[c.peer];delete meshes[c.peer];});}
+function send(c,o){if(c&&c.open)c.send(o)} function bc(o){Object.values(cons).forEach(c=>send(c,o));}
+function msg(c,m){
+  if(isHost){
+    if(m.t==='join'){players[c.peer]={x:(Math.random()-.5)*60,y:1.2,z:(Math.random()-.5)*60,yaw:0,pitch:0,hp:100,k:0,d:0,weapon:0,name:m.name||'Player',t:Date.now()};send(c,{t:'hello',id:c.peer});}
+    if(m.t==='state'){players[c.peer]=Object.assign(players[c.peer]||{},m.p,{t:Date.now()});}
+    if(m.t==='shoot'){resolveShot(c.peer,m);}
+  } else if(m.t==='snapshot'){players=m.players||{};}
+}
+function resolveShot(shooterId,m){
+  const s=players[shooterId]||me; const w=WEAPONS[m.weapon|0]||WEAPONS[0];
+  const dir=new THREE.Vector3(m.dx,m.dy,m.dz).normalize();
+  for(let n=0;n<w.pel;n++){
+    const d2=dir.clone(); d2.x+=(Math.random()-.5)*w.spread; d2.y+=(Math.random()-.5)*w.spread; d2.z+=(Math.random()-.5)*w.spread; d2.normalize();
+    for(const id of Object.keys(players)){
+      if(id===shooterId)continue;
+      const p=players[id]; if(!p)continue;
+      const to=new THREE.Vector3(p.x-s.x,(p.y+0.8)-s.y,p.z-s.z);
+      const proj=to.dot(d2); if(proj<0||proj>w.r)continue;
+      const off=to.clone().sub(d2.clone().multiplyScalar(proj));
+      if(off.length()<1.1){ p.hp=(p.hp||100)-w.d; if(p.hp<=0){p.hp=100;p.x=(Math.random()-.5)*70;p.z=(Math.random()-.5)*70;p.d=(p.d||0)+1; if(players[shooterId])players[shooterId].k=(players[shooterId].k||0)+1;} }
+    }
+    tracers.push({x:s.x,y:s.y+0.5,z:s.z,dx:d2.x,dy:d2.y,dz:d2.z,l:w.r,t:12,c:w.color});
+  }
+}
+function hostRoom(){boot(()=>{isHost=true;ui.room.value=myId;me.name=ui.name.value||'Host';players[myId]=Object.assign({},me);status('Hosting '+myId);});}
+function joinRoom(){const room=ui.room.value.trim(); if(!room)return; boot(()=>{isHost=false;hostConn=peer.connect(room,{reliable:true}); hostConn.on('open',()=>{bind(hostConn); send(hostConn,{t:'join',name:ui.name.value||'Guest'}); status('Joined '+room);});});}
+function leaveAll(){try{peer&&peer.destroy()}catch{}peer=null;myId=null;isHost=false;hostConn=null;cons={};players={};Object.values(meshes).forEach(m=>scene.remove(m));meshes={};status('Disconnected');}
+document.getElementById('host').onclick=hostRoom; document.getElementById('join').onclick=joinRoom; document.getElementById('leave').onclick=leaveAll;
+function ensure(id,p){if(meshes[id])return;const m=new THREE.Mesh(new THREE.CapsuleGeometry(.6,1.6,4,8),new THREE.MeshStandardMaterial({color:id===myId?0x22d3ee:0xef4444}));scene.add(m);meshes[id]=m;}
+let tickN=0;
+function update(){
+  me.yaw-=mouseDX*0.0022; me.pitch=Math.max(-1.2,Math.min(1.2,me.pitch-mouseDY*0.0022)); mouseDX=0; mouseDY=0;
+  const fwd={x:Math.sin(me.yaw),z:Math.cos(me.yaw)}, right={x:Math.cos(me.yaw),z:-Math.sin(me.yaw)};
+  let vx=0,vz=0,sp=keys['shift']?0.36:0.22; if(keys['w']){vx+=fwd.x*sp;vz+=fwd.z*sp;} if(keys['s']){vx-=fwd.x*sp;vz-=fwd.z*sp;} if(keys['a']){vx-=right.x*sp;vz-=right.z*sp;} if(keys['d']){vx+=right.x*sp;vz+=right.z*sp;}
+  me.x=Math.max(-100,Math.min(100,me.x+vx)); me.z=Math.max(-100,Math.min(100,me.z+vz)); me.name=ui.name.value||'Soldier';
+  const w=WEAPONS[me.weapon];
+  if(shooting && performance.now()-lastShot>w.cd){lastShot=performance.now(); const dir={dx:Math.sin(me.yaw)*Math.cos(me.pitch),dy:Math.sin(me.pitch),dz:Math.cos(me.yaw)*Math.cos(me.pitch)};
+    recoil=0.11;
+    if(isHost) resolveShot(localId(),{weapon:me.weapon,...dir});
+    else if(hostConn&&hostConn.open) send(hostConn,{t:'shoot',weapon:me.weapon,...dir});
+    else resolveShot(localId(),{weapon:me.weapon,...dir});
+  }
+  players[localId()]=Object.assign(players[localId()]||{},me,{t:Date.now()});
+  if(isHost){for(const id of Object.keys(players)){if(id!==myId&&Date.now()-(players[id].t||0)>10000){delete players[id];}} if(tickN++%2===0) bc({t:'snapshot',players});}
+  else if(hostConn&&hostConn.open&&tickN++%2===0){send(hostConn,{t:'state',p:Object.assign({},me,{t:Date.now()})});}
+
+  recoil*=0.78;
+  gunBody.position.y=-0.34+recoil*0.6;
+  gunBarrel.position.y=-0.31+recoil*0.6;
+  handL.position.y=-0.42+recoil*0.45;
+  handR.position.y=-0.4+recoil*0.45;
+  gunMat.color.setHex(w.color);
+  gunBarrel.material.color.setHex(w.color);
+}
+function render(){
+  for(const id of Object.keys(players)){ensure(id,players[id]);const p=players[id],m=meshes[id];m.position.set(p.x||0,.9,p.z||0);m.rotation.y=p.yaw||0;m.material.color.setHex(id===myId?0x22d3ee:0xef4444);}
+  for(const id of Object.keys(meshes)){if(!players[id]){scene.remove(meshes[id]);delete meshes[id];}}
+  for(let i=tracers.length-1;i>=0;i--){const t=tracers[i];const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(t.x,t.y,t.z),new THREE.Vector3(t.x+t.dx*t.l,t.y+t.dy*t.l,t.z+t.dz*t.l)]);const l=new THREE.Line(g,new THREE.LineBasicMaterial({color:t.c}));scene.add(l);setTimeout(()=>scene.remove(l),45);if(--t.t<=0)tracers.splice(i,1);}
+  const eye=new THREE.Vector3(me.x,2.4,me.z), look=new THREE.Vector3(me.x+Math.sin(me.yaw)*Math.cos(me.pitch),2.4+Math.sin(me.pitch),me.z+Math.cos(me.yaw)*Math.cos(me.pitch)); cam.position.copy(eye); cam.lookAt(look);
+  const lid=localId();
+  const board=Object.entries(players).map(([id,p])=>({n:p.name||id.slice(0,6),k:p.k||0,d:p.d||0,h:p.hp||100,me:id===lid})).sort((a,b)=>b.k-a.k).slice(0,8);
+  ui.board.innerHTML='Weapon: '+WEAPONS[me.weapon].name+' | HP: '+(players[lid]?.hp||100)+'<br>'+board.map((r,i)=>`${i+1}. ${r.me?'[YOU] ':''}${r.n} K:${r.k} D:${r.d} HP:${r.h}`).join('<br>');
+}
+function loop(){requestAnimationFrame(loop);update();render();ren.render(scene,cam);} loop();
+addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();ren.setSize(innerWidth,innerHeight)});
+</script>
+</body>
+</html>

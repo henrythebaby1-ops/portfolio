@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PixelSprout Arcade | Ages 1-18</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chewy&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-app="arcade">
+  <div class="bg-shapes" aria-hidden="true">
+    <span class="shape shape-a"></span>
+    <span class="shape shape-b"></span>
+    <span class="shape shape-c"></span>
+    <span class="shape shape-d"></span>
+  </div>
+
+  <div class="site-shell">
+    <header class="hero" id="top">
+      <p class="eyebrow">Safe and Playful Online Arcade</p>
+      <h1>PixelSprout Arcade</h1>
+      <p class="tagline">Cute low-poly worlds for ages 1-18: fish, dance, survive, race, create, and learn.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#age-zones">Pick Your Age Zone</a>
+        <a class="btn btn-soft" href="#games">Jump Into Games</a>
+        <a class="btn btn-primary" href="kids-games.html">Play Ages 1-10 Games</a>
+        <a class="btn btn-soft" href="tiny-tots-games.html">Play Ages 1-4 Games</a>
+        <a class="btn btn-primary" href="all-ages-games.html">Play Ages 1-18 Games</a>
+      </div>
+      <div class="hero-badges">
+        <span>Parental Controls</span>
+        <span>Moderated Chat</span>
+        <span>Daily Challenges</span>
+        <span>Seasonal Events</span>
+      </div>
+    </header>
+
+    <section class="panel" id="music">
+      <h2>Music Corner</h2>
+      <p class="note">Tap play for cheerful kid-friendly background music. Pick a style anytime.</p>
+      <div class="controls-grid">
+        <label>
+          Background Track
+          <select data-bg-track>
+            <option value="sunny">Sunny Bubbles</option>
+            <option value="ocean">Ocean Sparkles</option>
+            <option value="adventure">Adventure Hops</option>
+          </select>
+        </label>
+        <button class="btn btn-primary" type="button" data-bg-toggle>Play Background Music</button>
+      </div>
+      <p class="note" data-bg-status>Background music is paused.</p>
+    </section>
+
+    <section class="panel" id="age-zones">
+      <h2>Choose Your Age Zone</h2>
+      <div class="age-grid">
+        <article class="age-card tiny">
+          <h3>Ages 1-4 Tiny Sprouts</h3>
+          <p>Big buttons, simple taps, shape matching, balloons, sounds, and story play.</p>
+        </article>
+        <article class="age-card kids">
+          <h3>Ages 5-8 Bright Explorers</h3>
+          <p>Easy adventures, mini racing, ocean fishing, letter quests, and memory games.</p>
+        </article>
+        <article class="age-card preteen">
+          <h3>Ages 9-12 Skill Builders</h3>
+          <p>Volcano missions, puzzle survival, dance battles, and teamwork challenges.</p>
+        </article>
+        <article class="age-card teen">
+          <h3>Ages 13-18 Pro Players</h3>
+          <p>Advanced strategy, multiplayer modes, creative builders, and high-score leagues.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel" id="games">
+      <h2>Arcade Worlds</h2>
+      <p class="note">Every game has playful rewards, safe design, and optional learning boosts.</p>
+      <div class="games-grid">
+        <article class="game-card" data-game="fishing">
+          <h3>Fishing Cove</h3>
+          <p>Cast lines in sparkling seas, discover caves, and collect rare fish.</p>
+          <ul>
+            <li>Unlock rods and boats</li>
+            <li>Relax mode + timer mode</li>
+            <li>Coins for daily catches</li>
+          </ul>
+          <button class="btn btn-primary game-play" type="button">Play Fishing Game</button>
+        </article>
+
+        <article class="game-card" data-game="volcano">
+          <h3>Volcano Dash</h3>
+          <p>Jump lava gaps, follow treasure maps, and escape before the cave closes.</p>
+          <ul>
+            <li>Fast reaction missions</li>
+            <li>Logic switches and map clues</li>
+            <li>Team up in duo mode</li>
+          </ul>
+          <button class="btn btn-primary game-play" type="button">Play Volcano Game</button>
+        </article>
+
+        <article class="game-card" data-game="survival">
+          <h3>Island Survival</h3>
+          <p>Gather food, build shelter, and finish fun goals before nightfall.</p>
+          <ul>
+            <li>No scary content</li>
+            <li>Strategy and planning rewards</li>
+            <li>Co-op build missions</li>
+          </ul>
+          <button class="btn btn-primary game-play" type="button">Play Survival Game</button>
+        </article>
+
+        <article class="game-card" data-game="dance">
+          <h3>Beat Buddy Dance</h3>
+          <p>Tap to rhythm, match arrows, and score combo streaks with friends.</p>
+          <ul>
+            <li>2-player dance pairs</li>
+            <li>Reflex and timing boosts</li>
+            <li>Weekly song battles</li>
+          </ul>
+          <button class="btn btn-primary game-play" type="button">Play Dance Game</button>
+        </article>
+
+        <article class="game-card" data-game="creative">
+          <h3>Creative Sandbox</h3>
+          <p>Dress up characters, build tracks, and design mini worlds with low-poly blocks.</p>
+          <ul>
+            <li>Avatar themes</li>
+            <li>Share safe creations</li>
+            <li>Build contests</li>
+          </ul>
+          <button class="btn btn-primary game-play" type="button">Play Creative Game</button>
+        </article>
+
+        <article class="game-card" data-game="learning">
+          <h3>Learning Quest Lab</h3>
+          <p>Math, spelling, grammar, science, and logic integrated into fun adventures.</p>
+          <ul>
+            <li>Power up with correct answers</li>
+            <li>Adaptive challenge levels</li>
+            <li>Badges and progress stars</li>
+          </ul>
+          <button class="btn btn-primary game-play" type="button">Play Learning Game</button>
+        </article>
+
+        <article class="game-card" data-game="snake">
+          <h3>Classic Snake</h3>
+          <p>Collect food, grow longer, and survive as long as possible on a clean grid.</p>
+          <ul>
+            <li>Arrow keys and WASD</li>
+            <li>Score + restart loop</li>
+            <li>Touch controls for mobile</li>
+          </ul>
+          <button class="btn btn-primary game-play" type="button">Play Snake Game</button>
+        </article>
+      </div>
+      <div class="result-card" data-game-result>
+        Choose a game to generate a quick mission and start game music.
+      </div>
+      <div class="result-card">
+        Want playable mini-games now? Open the Ages 1-10 pack:
+        <a class="btn btn-soft" href="kids-games.html">Open Kids Game Pack</a>
+        <a class="btn btn-primary" href="tiny-tots-games.html">Open Ages 1-4 Pack</a>
+        <a class="btn btn-soft" href="all-ages-games.html">Open Ages 1-18 Pack</a>
+      </div>
+    </section>
+
+    <section class="panel split" id="special">
+      <article class="subpanel">
+        <h2>Baby and Early Learning</h2>
+        <p>For little players: one-tap controls, joyful sounds, and friendly guides with no complex menus.</p>
+        <div class="chip-list">
+          <span>Shape Match</span>
+          <span>Animal Sounds</span>
+          <span>Balloon Pop</span>
+          <span>Memory Tiles</span>
+          <span>Story Tap</span>
+        </div>
+      </article>
+      <article class="subpanel">
+        <h2>Multiplayer and Events</h2>
+        <p>Join sibling duos, class teams, and seasonal tournaments across fishing, dance, and survival maps.</p>
+        <div class="chip-list">
+          <span>Daily Challenges</span>
+          <span>Fishing Cups</span>
+          <span>Dance Battles</span>
+          <span>Volcano Quests</span>
+          <span>Island Co-op</span>
+        </div>
+      </article>
+    </section>
+
+    <section class="panel" id="safety">
+      <h2>Safety and Parent Tools</h2>
+      <div class="safety-grid">
+        <article>
+          <h3>Safe Profiles</h3>
+          <p>Kid-safe avatars, nickname filters, and private-by-default settings.</p>
+        </article>
+        <article>
+          <h3>Moderated Communication</h3>
+          <p>Age-appropriate chat moderation and controlled social play spaces.</p>
+        </article>
+        <article>
+          <h3>Parental Dashboard</h3>
+          <p>Control playtime, limit game categories, and track learning progress.</p>
+        </article>
+      </div>
+    </section>
+
+    <footer>
+      <p>PixelSprout Arcade is designed to grow with players from toddler to teen.</p>
+      <a href="#top">Back to top</a>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
