@@ -95,6 +95,9 @@
 
 
   .play { align-self: flex-start; margin-top: 6px; font-family: var(--mono); font-size: 13px; color: var(--accent); text-decoration: none; border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); padding: 5px 12px; border-radius: 8px; }
+  .plays { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+  .plays .play { margin-top: 0; }
+  .play.alt { color: var(--accent-2); border-color: color-mix(in srgb, var(--accent-2) 45%, transparent); }
   .play:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
   .shot.pool { background: linear-gradient(#eef5f4 0 55%, #3fb3bb 55%); background-size: 100% 100%; }
   .shot.pool::before { content: ''; position: absolute; inset: 0; background-image: linear-gradient(#9db6b5 1px, transparent 1px), linear-gradient(90deg, #9db6b5 1px, transparent 1px); background-size: 22px 22px; opacity: .55; }
@@ -276,7 +279,7 @@
   <h1>Henry builds <em id="rotate" data-words="AI coding tools|chess engines|3D games|terminals|file managers">AI coding tools</em><br>and weird little games.</h1>
   <p class="lede">AI apps, developer tools, strategy games and chess bots. Mostly things that should exist, so Henry made them.</p>
   <div class="stats">
-    <div><b data-to="20">0</b><span>projects you can play</span></div>
+    <div><b data-to="22">0</b><span>projects you can play</span></div>
     <div><b data-to="1977">0</b><span>Backrooms levels</span></div>
     <div><b data-to="40" data-suffix="+">0</b><span>shader backgrounds</span></div>
     <div><b data-to="0">0</b><span>games Worstfish won</span></div>

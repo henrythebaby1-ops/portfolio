@@ -3,10 +3,19 @@
 //   port:  set for projects that need their own server (status is checked live)
 //   shot:  screenshot in shots/ (leave out to use the art in `art`)
 const PROJECTS = [
-  { id: 'opencode', name: 'OpenCode', cat: 'ai tools', featured: true, shot: 'opencode.jpg', play: 'games/opencode/index.html',
+  { id: 'opencode', name: 'OpenCode', cat: 'ai tools', featured: true, shot: 'opencode.jpg', play: 'https://henrythebaby1-ops.github.io/OpenCode/',
     desc: 'An AI coding workspace that runs entirely on your own machine using local models through Ollama. Type a prompt and get a working project.',
     bullets: ['5 modes: build, fix, design, talk, ship', 'Built-in terminal, file explorer and live code sandbox', 'Voice chat with on-device text-to-speech', '40+ animated WebGL backgrounds and themes'],
     tags: ['React', 'Vite', 'Ollama', 'Three.js', 'GSAP'], note: 'Chat needs Ollama running on this computer.' },
+  { id: 'paradise', name: 'The Other Side of Paradise', cat: 'games', shot: 'paradise.jpg', play: 'https://henrythebaby1-ops.github.io/the-other-side-of-paradise/',
+    extra: { label: 'PICO 4 emulator →', href: 'https://henrythebaby1-ops.github.io/the-other-side-of-paradise/pico-emulator.html' },
+    desc: "A VR puzzle game set to Glass Animals. Wake up in Professor Ersheim's room of illusions, escape it, then find the number between 3 and 4.",
+    bullets: ['Play with mouse and keyboard, or in a VR headset', 'PICO 4 emulator mode: try the VR version without a headset'],
+    tags: ['WebXR', 'Three.js', 'VR'] },
+  { id: 'breakfast', name: 'The Breakfast', cat: 'games', shot: 'breakfast.jpg', play: 'https://henrythebaby1-ops.github.io/the-breakfast/',
+    desc: 'A two-player cooking game on one keyboard. Player one presses A to stop pieces sideways, player two presses L to stop them up and down, and together you plate the order.',
+    bullets: ['Easy, Normal and Hard (rush hour) modes', 'A breakfast remake of The Dinner by Deanna Zhao'],
+    tags: ['Two players', 'JavaScript', 'Game jam remake'] },
   { id: 'worstfish', name: 'Worstfish', cat: 'games ai', shot: 'worstfish.jpg', play: 'games/worstfish.html',
     desc: 'A real chess engine that searches every line properly, then plays the move that helps you most. It wins almost never.',
     bullets: ['Live eval bar and a "worst first" shortlist', 'Roasts its own blunders', 'Worstfish vs Worstfish mode'],
@@ -83,7 +92,10 @@ const PROJECTS = [
         <p>${esc(p.desc)}</p>
         ${p.bullets ? `<ul>${p.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>` : ''}
         <div class="tags">${p.tags.map(t => `<span>${esc(t)}</span>`).join('')}</div>
-        <a class="play" data-magnet href="${p.play}" target="_blank" rel="noopener">Play it →</a>
+        <div class="plays">
+          <a class="play" data-magnet href="${p.play}" target="_blank" rel="noopener">Play it →</a>
+          ${p.extra ? `<a class="play alt" data-magnet href="${p.extra.href}" target="_blank" rel="noopener">${esc(p.extra.label)}</a>` : ''}
+        </div>
       </div>
     </article>`).join('');
 
